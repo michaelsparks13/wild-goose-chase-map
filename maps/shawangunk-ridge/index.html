@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1a2e">
+<title>Shawangunk Ridge Trail Run 70M - Course Map</title>
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #7B1FA2;
+  --primary-dark: #6A1B9A;
+  --accent: #6A1B9A;
+  --bg: #1a1a2e;
+  --bg-card: #252540;
+  --bg-alt: #16162a;
+  --text: #ffffff;
+  --text-secondary: #a0a0b0;
+  --text-muted: #666680;
+  --border: #333355;
+  --course: #7B1FA2;
+  --shadow: 0 4px 20px rgba(0,0,0,0.3);
+  --radius: 12px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg) 100%);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left h1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.5px;
+}
+.header-left .subtitle {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.header-left .subtitle a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.race-badge {
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.map-wrap { position: relative; }
+#map { width: 100%; height: 55vh; min-height: 300px; }
+
+.map-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.info-badge {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+}
+.info-badge .label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+.info-badge .value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.toggle-btns {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+}
+.toggle-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: all 0.2s;
+}
+.toggle-btn:hover { border-color: var(--primary); color: var(--text); }
+.toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.stats-section {
+  background: var(--bg-card);
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.stat-card {
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--bg-alt);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.stat-card .value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+.stat-card .label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+.profile-section {
+  background: var(--bg-alt);
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.profile-header h3 {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.profile-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+.profile-stats .val { font-weight: 600; color: var(--primary); }
+#profileCanvas {
+  width: 100%;
+  height: 100px;
+  display: block;
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.course-info {
+  padding: 20px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+}
+.course-info h3 {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.course-description {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+.course-description strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+.footer a { color: var(--primary); text-decoration: none; }
+
+/* Mapbox customization */
+.mapboxgl-popup-content {
+  background: var(--bg-card) !important;
+  color: var(--text) !important;
+  border-radius: var(--radius) !important;
+  padding: 12px 16px !important;
+  box-shadow: var(--shadow) !important;
+  font-family: inherit !important;
+  font-size: 0.85rem !important;
+  border: 1px solid var(--border) !important;
+}
+.mapboxgl-popup-tip { border-top-color: var(--bg-card) !important; }
+.mapboxgl-popup-close-button { color: var(--text-muted) !important; font-size: 18px !important; }
+.mapboxgl-ctrl-attrib { font-size: 9px !important; }
+.mapboxgl-ctrl-group { border-radius: 8px !important; overflow: hidden; }
+
+.start-marker {
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+.start-marker svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+/* View tabs */
+.view-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-alt);
+  padding: 3px;
+  border-radius: 8px;
+}
+.view-tab {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.view-tab:active { transform: scale(0.96); }
+.view-tab.active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.view { display: none; }
+.view.active { display: block; }
+
+/* Simulator */
+.sim-container { background: var(--bg); }
+.sim-split { display: flex; flex-direction: column; }
+
+/* Course map canvas */
+.course-map-wrap { position: relative; background: #1a2030; border-bottom: 1px solid var(--border); }
+#courseMapCanvas { width: 100%; height: 260px; display: block; }
+.runner-info-overlay {
+  position: absolute; top: 12px; left: 12px; pointer-events: none;
+}
+.runner-ele {
+  font-size: 1.8rem; font-weight: 700; color: #fff; line-height: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+.runner-ele .unit { font-size: 0.4em; font-weight: 400; opacity: 0.7; }
+.runner-meta { font-size: 0.7rem; color: rgba(255,255,255,0.7); margin-top: 2px; }
+
+/* Sim elevation profile */
+.sim-profile-wrap { position: relative; background: #1a2030; }
+#simProfileCanvas { width: 100%; height: 140px; display: block; }
+
+/* Scrubber */
+.scrubber {
+  background: var(--bg); padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.scrub-row { display: flex; align-items: center; gap: 12px; }
+.play-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--primary); border: none; color: #fff;
+  cursor: pointer; display: flex; align-items: center;
+  justify-content: center; font-size: 14px; flex-shrink: 0;
+  transition: all 0.15s;
+}
+.play-btn:active { transform: scale(0.95); background: var(--primary-dark); }
+.scrub-track { flex: 1; position: relative; height: 36px; cursor: pointer; }
+.scrub-bg {
+  position: absolute; top: 14px; left: 0; right: 0; height: 8px;
+  background: var(--bg-alt); border-radius: 4px; overflow: hidden;
+}
+.scrub-fill {
+  position: absolute; top: 0; left: 0; height: 100%;
+  background: var(--primary); opacity: 0.3; border-radius: 4px 0 0 4px;
+}
+.scrub-handle {
+  position: absolute; top: 8px; width: 20px; height: 20px;
+  background: var(--primary); border-radius: 50%; transform: translateX(-50%);
+  box-shadow: 0 2px 6px rgba(123,31,162,0.4); pointer-events: none;
+}
+.speed-btns { display: flex; gap: 4px; flex-shrink: 0; }
+.speed-btn {
+  padding: 6px 10px; border-radius: 6px; background: var(--bg-alt);
+  border: 1px solid var(--border); color: var(--text-muted);
+  font-family: inherit; font-size: 0.7rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.speed-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+/* Goal time */
+.goal-time-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; background: var(--bg);
+  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.goal-label {
+  font-size: 0.65rem; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.goal-inputs { display: flex; align-items: center; gap: 4px; }
+.goal-input {
+  width: 48px; padding: 8px 4px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg-alt);
+  color: var(--text); font-family: inherit; font-size: 1rem;
+  font-weight: 600; text-align: center; outline: none;
+}
+.goal-input:focus { border-color: var(--primary); }
+.goal-colon { font-size: 1.2rem; font-weight: 700; color: var(--text-muted); }
+.goal-pace { font-size: 0.8rem; color: var(--text-secondary); margin-left: auto; }
+.goal-pace strong { color: var(--text); font-weight: 600; }
+
+/* Sim stats */
+.sim-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--border);
+}
+.sim-stat {
+  background: var(--bg); padding: 12px 8px; text-align: center;
+}
+.sim-stat .val { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+.sim-stat .label {
+  font-size: 0.6rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;
+}
+
+/* Clock */
+.sim-clock {
+  background: var(--bg); padding: 16px; text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.clock-time { font-size: 2rem; font-weight: 700; color: var(--text); letter-spacing: 1px; }
+.clock-label {
+  font-size: 0.6rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;
+}
+
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-card .value { font-size: 1.2rem; }
+  #map { height: 45vh; }
+}
+@media (min-width: 768px) {
+  #courseMapCanvas { height: 320px; }
+  #simProfileCanvas { height: 180px; }
+  .sim-stats { grid-template-columns: repeat(6, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <h1>Shawangunk Ridge Trail Run</h1>
+    <div class="subtitle">September 12, 2026 &bull; <a href="https://shawangunkridgerun.com" target="_blank">RunWild, Inc.</a></div>
+  </div>
+  <div class="view-tabs">
+    <button class="view-tab active" onclick="switchView('map')">Map</button>
+    <button class="view-tab" onclick="switchView('sim')">Simulator</button>
+  </div>
+</header>
+
+<div id="mapView" class="view active">
+
+<div class="map-wrap">
+  <div id="map"></div>
+  <div class="map-overlay">
+    <div class="info-badge">
+      <div class="label">Start / Finish</div>
+      <div class="value">High Point, NJ &rarr; Rosendale, NY</div>
+    </div>
+  </div>
+  <div class="toggle-btns">
+    <button class="toggle-btn active" id="courseBtn">Course</button>
+    <button class="toggle-btn" id="trailBtn">Trails</button>
+    <button class="toggle-btn" id="terrainBtn">3D</button>
+  </div>
+</div>
+
+<section class="stats-section">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="value">70</div>
+      <div class="label">Miles</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">12,800</div>
+      <div class="label">Elev Gain (ft)</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">70 Mile</div>
+      <div class="label">Distance</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">Point-to-Point</div>
+      <div class="label">Course Type</div>
+    </div>
+  </div>
+</section>
+
+<section class="profile-section">
+  <div class="profile-header">
+    <h3>Elevation Profile</h3>
+    <div class="profile-stats">
+      <span>Gain: <span class="val">12,800 ft</span></span>
+      <span>High: <span class="val">1,917 ft</span></span>
+    </div>
+  </div>
+  <canvas id="profileCanvas"></canvas>
+</section>
+
+<section class="course-info">
+  <h3>Course Description</h3>
+  <div class="course-description">
+    <p>The <strong>Shawangunk Ridge Trail Run</strong> is an epic 70-mile point-to-point ultramarathon traversing the entire Shawangunk Ridge from <strong>High Point State Park in New Jersey</strong> to <strong>Rosendale, New York</strong>. The course follows the Long Path and Shawangunk Ridge Trail through remote wilderness, rocky ridgelines, and stunning viewpoints high above the Wallkill Valley. With nearly <strong>13,000 feet of climbing</strong> and technical terrain throughout, this is one of the most challenging ultramarathons in the Northeast.</p>
+  </div>
+</section>
+
+</div><!-- end mapView -->
+
+<div id="simView" class="view">
+  <div class="sim-container">
+
+    <div class="goal-time-bar">
+      <span class="goal-label">Goal Time</span>
+      <div class="goal-inputs">
+        <input type="number" class="goal-input" id="goalHrs" min="0" max="48" value="20" onchange="updateGoalTime()" onclick="this.select()">
+        <span class="goal-colon">:</span>
+        <input type="number" class="goal-input" id="goalMins" min="0" max="59" value="0" onchange="updateGoalTime()" onclick="this.select()">
+      </div>
+      <div class="goal-pace" id="goalPace">Avg pace: <strong>17:08 /mi</strong></div>
+    </div>
+
+    <div class="course-map-wrap">
+      <canvas id="courseMapCanvas"></canvas>
+      <div class="runner-info-overlay">
+        <div class="runner-ele" id="runnerEle">1338<span class="unit">ft</span></div>
+        <div class="runner-meta" id="runnerMeta">Mile 0.0 &middot; Starting</div>
+      </div>
+    </div>
+
+    <div class="sim-profile-wrap">
+      <canvas id="simProfileCanvas"></canvas>
+    </div>
+
+    <div class="scrubber">
+      <div class="scrub-row">
+        <button class="play-btn" id="playBtn" onclick="togglePlay()">&#9654;</button>
+        <div class="scrub-track" id="scrubTrack">
+          <div class="scrub-bg">
+            <div class="scrub-fill" id="scrubFill"></div>
+          </div>
+          <div class="scrub-handle" id="scrubHandle"></div>
+        </div>
+        <div class="speed-btns">
+          <button class="speed-btn active" onclick="setSpeed(1,this)">1x</button>
+          <button class="speed-btn" onclick="setSpeed(2,this)">2x</button>
+          <button class="speed-btn" onclick="setSpeed(4,this)">4x</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sim-clock">
+      <div class="clock-time" id="clockTime">5:00 AM</div>
+      <div class="clock-label">Current Time (Race starts 5:00 AM)</div>
+      <div style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary)">Finish: <strong id="finishTime" style="color:var(--primary)">1:00 AM</strong></div>
+    </div>
+
+    <div class="sim-stats">
+      <div class="sim-stat"><div class="val" id="statDist">0.0</div><div class="label">Miles</div></div>
+      <div class="sim-stat"><div class="val" id="statEle">0</div><div class="label">Elevation (ft)</div></div>
+      <div class="sim-stat"><div class="val" id="statGain">0</div><div class="label">Gain (ft)</div></div>
+      <div class="sim-stat"><div class="val" id="statGrade">0%</div><div class="label">Grade</div></div>
+      <div class="sim-stat"><div class="val" id="statPace">--:--</div><div class="label">Pace /mi</div></div>
+      <div class="sim-stat"><div class="val" id="statPct">0%</div><div class="label">Complete</div></div>
+    </div>
+
+  </div>
+</div><!-- end simView -->
+
+<footer class="footer">
+  Shawangunk Ridge Trail Run &bull; Produced by <a href="https://shawangunkridgerun.com" target="_blank">RunWild, Inc.</a>
+  <br>Interactive map powered by Mapbox
+</footer>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoibWljaGFlbHNwYXJrczEzIiwiYSI6ImNtbGp6cHNsNzA1OXEzam9iNWxkZnh6Y3AifQ.Z6IZuPPqMVcYTj1zP8AXYg';
+
+const START_COORDS = [-74.66344, 41.31870];
+const FINISH_COORDS = [-74.08777, 41.84826];
+
+// Course data - 500 sampled points
+const COURSE_COORDS = [
+  [-74.66344, 41.31870],[-74.66241, 41.32053],[-74.66093, 41.32220],[-74.65926, 41.32394],[-74.65812, 41.32599],
+  [-74.65614, 41.32745],[-74.65506, 41.32924],[-74.65348, 41.33093],[-74.65201, 41.33271],[-74.65150, 41.33470],
+  [-74.65274, 41.33581],[-74.65386, 41.33384],[-74.65529, 41.33215],[-74.65785, 41.33279],[-74.66012, 41.33295],
+  [-74.66114, 41.33393],[-74.65969, 41.33566],[-74.65963, 41.33776],[-74.65960, 41.33935],[-74.66096, 41.34101],
+  [-74.66282, 41.34215],[-74.66300, 41.34376],[-74.66150, 41.34459],[-74.65974, 41.34615],[-74.65835, 41.34653],
+  [-74.65727, 41.34826],[-74.65548, 41.34975],[-74.65521, 41.35119],[-74.65412, 41.35298],[-74.65329, 41.35473],
+  [-74.65430, 41.35663],[-74.65165, 41.35729],[-74.64922, 41.35842],[-74.64870, 41.35984],[-74.64853, 41.36135],
+  [-74.64671, 41.36306],[-74.64497, 41.36458],[-74.64358, 41.36607],[-74.64317, 41.36769],[-74.64234, 41.36940],
+  [-74.64159, 41.37100],[-74.63941, 41.37201],[-74.63690, 41.37249],[-74.63517, 41.37159],[-74.63285, 41.37060],
+  [-74.63020, 41.37007],[-74.62764, 41.36949],[-74.62583, 41.36803],[-74.62357, 41.36684],[-74.62131, 41.36711],
+  [-74.61920, 41.36873],[-74.61772, 41.37046],[-74.61949, 41.37207],[-74.62060, 41.37387],[-74.62261, 41.37458],
+  [-74.62136, 41.37656],[-74.62065, 41.37836],[-74.61952, 41.38019],[-74.61724, 41.38127],[-74.61563, 41.38279],
+  [-74.61400, 41.38446],[-74.61453, 41.38600],[-74.61681, 41.38688],[-74.61913, 41.38798],[-74.61992, 41.38946],
+  [-74.61863, 41.39118],[-74.62016, 41.39103],[-74.62228, 41.39056],[-74.62335, 41.39230],[-74.62241, 41.39421],
+  [-74.62296, 41.39589],[-74.62355, 41.39701],[-74.62180, 41.39865],[-74.62003, 41.40035],[-74.61828, 41.40202],
+  [-74.61660, 41.40362],[-74.61500, 41.40535],[-74.61496, 41.40451],[-74.61279, 41.40598],[-74.61096, 41.40755],
+  [-74.60866, 41.40825],[-74.60675, 41.40964],[-74.60571, 41.41072],[-74.60599, 41.41215],[-74.60458, 41.41397],
+  [-74.60288, 41.41534],[-74.60159, 41.41709],[-74.60020, 41.41889],[-74.59914, 41.42069],[-74.59803, 41.42256],
+  [-74.59744, 41.42462],[-74.59645, 41.42642],[-74.59583, 41.42824],[-74.59427, 41.43010],[-74.59299, 41.43193],
+  [-74.59168, 41.43371],[-74.59042, 41.43572],[-74.58910, 41.43757],[-74.58785, 41.43929],[-74.58646, 41.44134],
+  [-74.58529, 41.44303],[-74.58389, 41.44494],[-74.58248, 41.44664],[-74.58065, 41.44814],[-74.57856, 41.44957],
+  [-74.57748, 41.45152],[-74.57633, 41.45346],[-74.57509, 41.45533],[-74.57426, 41.45735],[-74.57373, 41.45933],
+  [-74.57217, 41.46119],[-74.57000, 41.46254],[-74.56853, 41.46431],[-74.56740, 41.46619],[-74.56596, 41.46790],
+  [-74.56433, 41.46973],[-74.56267, 41.47140],[-74.56090, 41.47311],[-74.55959, 41.47490],[-74.55738, 41.47609],
+  [-74.55455, 41.47607],[-74.55431, 41.47702],[-74.55501, 41.47923],[-74.55541, 41.48029],[-74.55399, 41.47996],
+  [-74.55389, 41.47823],[-74.55304, 41.48000],[-74.55263, 41.48190],[-74.55068, 41.48333],[-74.55073, 41.48437],
+  [-74.55006, 41.48632],[-74.54926, 41.48825],[-74.54958, 41.49027],[-74.55002, 41.49231],[-74.55081, 41.49407],
+  [-74.55164, 41.49594],[-74.55329, 41.49688],[-74.55276, 41.49887],[-74.55122, 41.50055],[-74.54992, 41.50224],
+  [-74.54783, 41.50373],[-74.54631, 41.50534],[-74.54508, 41.50732],[-74.54526, 41.50897],[-74.54632, 41.51039],
+  [-74.54625, 41.51230],[-74.54413, 41.51259],[-74.54189, 41.51333],[-74.54004, 41.51484],[-74.53818, 41.51637],
+  [-74.53636, 41.51794],[-74.53437, 41.51958],[-74.53256, 41.52125],[-74.53087, 41.52280],[-74.52891, 41.52436],
+  [-74.52696, 41.52583],[-74.52488, 41.52720],[-74.52266, 41.52844],[-74.52016, 41.52968],[-74.51795, 41.53089],
+  [-74.51603, 41.53238],[-74.51425, 41.53398],[-74.51228, 41.53549],[-74.51036, 41.53709],[-74.50845, 41.53869],
+  [-74.50665, 41.54018],[-74.50469, 41.54174],[-74.50284, 41.54309],[-74.50070, 41.54460],[-74.49879, 41.54604],
+  [-74.49682, 41.54747],[-74.49485, 41.54907],[-74.49341, 41.55086],[-74.49202, 41.55271],[-74.49060, 41.55458],
+  [-74.48924, 41.55642],[-74.48782, 41.55828],[-74.48643, 41.56014],[-74.48511, 41.56186],[-74.48656, 41.56367],
+  [-74.48660, 41.56541],[-74.48468, 41.56692],[-74.48378, 41.56902],[-74.48363, 41.57098],[-74.48348, 41.57315],
+  [-74.48270, 41.57479],[-74.48037, 41.57370],[-74.47800, 41.57264],[-74.47556, 41.57155],[-74.47269, 41.57152],
+  [-74.47099, 41.57297],[-74.46904, 41.57446],[-74.46683, 41.57525],[-74.46485, 41.57587],[-74.46289, 41.57741],
+  [-74.46050, 41.57810],[-74.45839, 41.57909],[-74.45777, 41.57826],[-74.45532, 41.57887],[-74.45360, 41.58010],
+  [-74.45185, 41.58156],[-74.45094, 41.58327],[-74.44935, 41.58489],[-74.44880, 41.58654],[-74.44693, 41.58722],
+  [-74.44615, 41.58823],[-74.44411, 41.58891],[-74.44411, 41.59077],[-74.44284, 41.59242],[-74.44082, 41.59361],
+  [-74.43932, 41.59530],[-74.43838, 41.59713],[-74.43779, 41.59890],[-74.43672, 41.60071],[-74.43667, 41.60240],
+  [-74.43582, 41.60391],[-74.43465, 41.60521],[-74.43576, 41.60698],[-74.43473, 41.60850],[-74.43477, 41.61000],
+  [-74.43441, 41.61091],[-74.43289, 41.61219],[-74.43207, 41.61398],[-74.43073, 41.61560],[-74.42882, 41.61668],
+  [-74.42821, 41.61696],[-74.42679, 41.61784],[-74.42622, 41.61965],[-74.42612, 41.62149],[-74.42587, 41.62355],
+  [-74.42546, 41.62553],[-74.42480, 41.62725],[-74.42528, 41.62910],[-74.42439, 41.63081],[-74.42413, 41.63248],
+  [-74.42176, 41.63318],[-74.42145, 41.63501],[-74.42179, 41.63683],[-74.42022, 41.63688],[-74.41931, 41.63582],
+  [-74.41743, 41.63707],[-74.41677, 41.63908],[-74.41618, 41.64072],[-74.41457, 41.64238],[-74.41421, 41.64424],
+  [-74.41363, 41.64610],[-74.41263, 41.64776],[-74.41229, 41.64945],[-74.41057, 41.65079],[-74.40898, 41.65250],
+  [-74.40788, 41.65427],[-74.40712, 41.65610],[-74.40713, 41.65794],[-74.40701, 41.65970],[-74.40749, 41.66147],
+  [-74.40843, 41.66304],[-74.40809, 41.66469],[-74.40872, 41.66504],[-74.40854, 41.66660],[-74.40968, 41.66821],
+  [-74.40873, 41.67002],[-74.40766, 41.67174],[-74.40672, 41.67370],[-74.40519, 41.67539],[-74.40397, 41.67738],
+  [-74.40295, 41.67925],[-74.40167, 41.68118],[-74.40027, 41.68281],[-74.39937, 41.68479],[-74.39816, 41.68646],
+  [-74.39687, 41.68846],[-74.39561, 41.69007],[-74.39441, 41.69201],[-74.39378, 41.69248],[-74.39253, 41.69176],
+  [-74.39069, 41.69022],[-74.39028, 41.68835],[-74.38959, 41.68655],[-74.38760, 41.68509],[-74.38603, 41.68360],
+  [-74.38421, 41.68208],[-74.38172, 41.68120],[-74.37942, 41.68096],[-74.37733, 41.67982],[-74.37578, 41.67898],
+  [-74.37437, 41.67750],[-74.37342, 41.67797],[-74.37207, 41.67781],[-74.37079, 41.67824],[-74.36967, 41.67939],
+  [-74.36861, 41.67865],[-74.36670, 41.67786],[-74.36456, 41.67700],[-74.36345, 41.67557],[-74.36100, 41.67498],
+  [-74.36070, 41.67313],[-74.36073, 41.67189],[-74.35985, 41.67048],[-74.35962, 41.67151],[-74.35889, 41.67157],
+  [-74.35753, 41.66982],[-74.35545, 41.67011],[-74.35411, 41.67191],[-74.35209, 41.67321],[-74.35069, 41.67430],
+  [-74.34806, 41.67464],[-74.34644, 41.67609],[-74.34587, 41.67801],[-74.34392, 41.67909],[-74.34194, 41.68011],
+  [-74.34072, 41.68180],[-74.33949, 41.68303],[-74.33692, 41.68377],[-74.33464, 41.68468],[-74.33200, 41.68551],
+  [-74.32932, 41.68531],[-74.32749, 41.68482],[-74.32545, 41.68600],[-74.32390, 41.68688],[-74.32149, 41.68785],
+  [-74.31915, 41.68909],[-74.31700, 41.69039],[-74.31594, 41.69199],[-74.31427, 41.69255],[-74.31269, 41.69394],
+  [-74.31089, 41.69544],[-74.30827, 41.69582],[-74.30590, 41.69627],[-74.30360, 41.69648],[-74.30244, 41.69834],
+  [-74.30087, 41.70011],[-74.29888, 41.70009],[-74.29900, 41.69819],[-74.29805, 41.69683],[-74.29621, 41.69741],
+  [-74.29597, 41.69860],[-74.29430, 41.69990],[-74.29280, 41.70114],[-74.29160, 41.70139],[-74.28920, 41.70058],
+  [-74.28686, 41.70001],[-74.28450, 41.69901],[-74.28260, 41.70025],[-74.28061, 41.70144],[-74.27898, 41.70151],
+  [-74.27755, 41.70142],[-74.27644, 41.70229],[-74.27440, 41.70275],[-74.27375, 41.70284],[-74.27472, 41.70433],
+  [-74.27371, 41.70606],[-74.27531, 41.70602],[-74.27746, 41.70562],[-74.27947, 41.70570],[-74.27750, 41.70627],
+  [-74.27716, 41.70799],[-74.27588, 41.70968],[-74.27419, 41.71119],[-74.27299, 41.71268],[-74.27455, 41.71365],
+  [-74.27665, 41.71460],[-74.27630, 41.71449],[-74.27582, 41.71557],[-74.27688, 41.71513],[-74.27809, 41.71577],
+  [-74.27997, 41.71628],[-74.28108, 41.71731],[-74.28192, 41.71859],[-74.27949, 41.71962],[-74.27701, 41.72028],
+  [-74.27482, 41.72077],[-74.27242, 41.72175],[-74.27013, 41.72278],[-74.26872, 41.72390],[-74.26634, 41.72476],
+  [-74.26407, 41.72566],[-74.26217, 41.72715],[-74.26134, 41.72879],[-74.25953, 41.73004],[-74.25917, 41.73195],
+  [-74.25778, 41.73367],[-74.25647, 41.73529],[-74.25782, 41.73698],[-74.25838, 41.73860],[-74.25781, 41.74043],
+  [-74.25564, 41.74132],[-74.25290, 41.74154],[-74.25207, 41.74044],[-74.25175, 41.73898],[-74.24920, 41.73861],
+  [-74.24710, 41.73729],[-74.24479, 41.73615],[-74.24256, 41.73576],[-74.24005, 41.73622],[-74.23770, 41.73628],
+  [-74.23571, 41.73748],[-74.23378, 41.73882],[-74.23161, 41.74005],[-74.22954, 41.74111],[-74.22715, 41.74182],
+  [-74.22467, 41.74186],[-74.22272, 41.74328],[-74.22192, 41.74522],[-74.22064, 41.74701],[-74.21926, 41.74604],
+  [-74.21710, 41.74549],[-74.21491, 41.74526],[-74.21265, 41.74553],[-74.21075, 41.74444],[-74.20937, 41.74288],
+  [-74.20751, 41.74301],[-74.20529, 41.74399],[-74.20296, 41.74497],[-74.20092, 41.74479],[-74.19863, 41.74492],
+  [-74.19640, 41.74480],[-74.19397, 41.74579],[-74.19126, 41.74585],[-74.18877, 41.74669],[-74.18602, 41.74685],
+  [-74.18431, 41.74795],[-74.18216, 41.74932],[-74.18048, 41.75099],[-74.17902, 41.75267],[-74.17715, 41.75436],
+  [-74.17496, 41.75568],[-74.17305, 41.75701],[-74.17097, 41.75833],[-74.16977, 41.76009],[-74.16913, 41.76196],
+  [-74.16872, 41.76393],[-74.16699, 41.76481],[-74.16645, 41.76574],[-74.16606, 41.76776],[-74.16546, 41.76961],
+  [-74.16433, 41.77144],[-74.16284, 41.77296],[-74.16171, 41.77469],[-74.15998, 41.77617],[-74.15863, 41.77782],
+  [-74.15743, 41.77978],[-74.15565, 41.78123],[-74.15392, 41.78279],[-74.15219, 41.78434],[-74.15014, 41.78561],
+  [-74.14842, 41.78722],[-74.14702, 41.78901],[-74.14535, 41.79062],[-74.14319, 41.79159],[-74.14103, 41.79253],
+  [-74.13878, 41.79366],[-74.13681, 41.79276],[-74.13458, 41.79313],[-74.13290, 41.79267],[-74.13122, 41.79301],
+  [-74.12933, 41.79429],[-74.12787, 41.79503],[-74.12577, 41.79582],[-74.12558, 41.79405],[-74.12361, 41.79301],
+  [-74.12308, 41.79129],[-74.12205, 41.78992],[-74.12049, 41.78989],[-74.11996, 41.78876],[-74.11862, 41.79039],
+  [-74.11708, 41.79187],[-74.11577, 41.79274],[-74.11441, 41.79350],[-74.11302, 41.79513],[-74.11253, 41.79695],
+  [-74.11207, 41.79865],[-74.11102, 41.80038],[-74.10974, 41.80214],[-74.10767, 41.80240],[-74.10530, 41.80303],
+  [-74.10334, 41.80447],[-74.10157, 41.80589],[-74.09986, 41.80718],[-74.09858, 41.80911],[-74.09758, 41.81092],
+  [-74.09679, 41.81286],[-74.09604, 41.81479],[-74.09516, 41.81673],[-74.09436, 41.81865],[-74.09325, 41.82027],
+  [-74.09270, 41.82225],[-74.09147, 41.82410],[-74.09030, 41.82597],[-74.08948, 41.82795],[-74.08939, 41.82991],
+  [-74.08907, 41.83164],[-74.08755, 41.83315],[-74.08595, 41.83469],[-74.08551, 41.83665],[-74.08659, 41.83855],
+  [-74.08669, 41.84064],[-74.08808, 41.84248],[-74.08828, 41.84470],[-74.08782, 41.84663],[-74.08777, 41.84826]
+];
+
+// Elevation data (meters, sampled - negatives clamped to 0)
+const ELEVATIONS = [
+  408, 453, 455, 448, 442, 443, 432, 435, 425, 395, 372, 373, 373, 373, 384, 360, 369, 360, 346, 322,
+  328, 339, 329, 329, 341, 328, 328, 302, 274, 263, 252, 273, 294, 303, 296, 292, 284, 285, 304, 305,
+  283, 271, 311, 331, 338, 323, 341, 363, 317, 287, 270, 253, 267, 281, 293, 284, 286, 295, 303, 315,
+  313, 317, 309, 282, 264, 288, 284, 237, 206, 183, 142, 123, 125, 128, 129, 131, 133, 140, 156, 163,
+  174, 188, 196, 174, 170, 170, 171, 161, 150, 151, 157, 163, 154, 156, 157, 159, 161, 162, 163, 165,
+  167, 168, 170, 171, 172, 173, 175, 176, 177, 178, 179, 181, 181, 183, 184, 185, 187, 187, 189, 190,
+  191, 185, 165, 160, 210, 228, 232, 216, 208, 201, 210, 216, 205, 178, 162, 136, 90, 79, 73, 72,
+  72, 72, 72, 72, 73, 75, 77, 72, 72, 72, 72, 72, 72, 73, 73, 74, 75, 74, 72, 72,
+  72, 73, 74, 72, 72, 72, 72, 72, 71, 71, 71, 71, 71, 70, 71, 71, 72, 72, 72, 72,
+  74, 75, 74, 75, 77, 80, 77, 75, 74, 84, 99, 114, 132, 155, 161, 182, 209, 235, 279, 299,
+  310, 309, 295, 247, 199, 203, 244, 274, 297, 323, 331, 333, 333, 329, 308, 277, 251, 199, 174, 201,
+  239, 300, 330, 357, 391, 398, 408, 403, 398, 396, 401, 403, 394, 402, 401, 387, 374, 346, 335, 341,
+  345, 359, 385, 394, 417, 433, 435, 432, 438, 448, 453, 452, 432, 407, 365, 306, 255, 231, 216, 199,
+  185, 173, 162, 153, 146, 140, 136, 126, 116, 127, 132, 123, 120, 128, 140, 142, 179, 225, 252, 283,
+  287, 285, 278, 293, 311, 340, 343, 359, 360, 390, 415, 454, 493, 520, 551, 541, 532, 519, 532, 550,
+  562, 581, 584, 584, 579, 573, 559, 556, 547, 543, 540, 532, 510, 488, 472, 451, 440, 458, 492, 498,
+  499, 491, 472, 476, 463, 461, 463, 471, 492, 487, 484, 483, 498, 509, 508, 506, 497, 479, 487, 502,
+  510, 514, 506, 468, 478, 505, 503, 518, 556, 546, 537, 532, 531, 528, 533, 512, 497, 483, 470, 425,
+  416, 420, 404, 449, 439, 422, 415, 433, 434, 430, 418, 424, 414, 409, 404, 395, 381, 372, 358, 352,
+  332, 317, 301, 294, 274, 267, 259, 248, 261, 278, 294, 317, 328, 330, 330, 323, 305, 298, 288, 273,
+  261, 242, 219, 190, 160, 204, 250, 277, 272, 256, 193, 164, 159, 138, 123, 109, 116, 119, 131, 144,
+  142, 152, 146, 133, 135, 158, 165, 172, 173, 151, 129, 124, 151, 146, 130, 101, 69, 67, 79, 98,
+  88, 85, 83, 72, 62, 47, 43, 27, 18, 25, 20, 19, 35, 65, 91, 98, 105, 124, 141, 165,
+  192, 218, 221, 226, 197, 175, 169, 185, 171, 180, 167, 157, 115, 82, 40, 9, 6, 14, 14, 14,
+  16, 19, 19, 10, 20, 33, 23, 15, 15, 25, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0
+];
+
+const COURSE = {
+  type: 'Feature',
+  properties: {
+    name: 'Shawangunk Ridge Trail Run 70M',
+    distance_mi: 70
+  },
+  geometry: {
+    type: 'LineString',
+    coordinates: COURSE_COORDS
+  }
+};
+
+let map;
+let courseVisible = true;
+let terrain3D = false;
+let trailsOn = false;
+let trailsData = null;
+
+function initMap() {
+  map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/outdoors-v12',
+    center: [-74.375, 41.583],
+    zoom: 9,
+    pitch: 0
+  });
+
+  map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+
+  map.on('load', () => {
+    // Add course line
+    map.addSource('course', { type: 'geojson', data: COURSE });
+    map.addLayer({
+      id: 'course-outline',
+      type: 'line',
+      source: 'course',
+      paint: {
+        'line-color': '#000',
+        'line-width': 7,
+        'line-opacity': 0.3
+      }
+    });
+    map.addLayer({
+      id: 'course-line',
+      type: 'line',
+      source: 'course',
+      paint: {
+        'line-color': '#7B1FA2',
+        'line-width': 4
+      }
+    });
+
+    // Add start marker
+    const startEl = document.createElement('div');
+    startEl.className = 'start-marker';
+    startEl.innerHTML = '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#7B1FA2" stroke="#fff" stroke-width="2"/><text x="16" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">S</text></svg>';
+    new mapboxgl.Marker({ element: startEl })
+      .setLngLat(START_COORDS)
+      .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong style="color:#7B1FA2">Start - High Point State Park, NJ</strong><br><span style="color:#a0a0b0">Shawangunk Ridge Trail Run</span>'))
+      .addTo(map);
+
+    // Add finish marker
+    const finishEl = document.createElement('div');
+    finishEl.className = 'start-marker';
+    finishEl.innerHTML = '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#7B1FA2" stroke="#fff" stroke-width="2"/><text x="16" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">F</text></svg>';
+    new mapboxgl.Marker({ element: finishEl })
+      .setLngLat(FINISH_COORDS)
+      .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong style="color:#7B1FA2">Finish - Rosendale, NY</strong><br><span style="color:#a0a0b0">Shawangunk Ridge Trail Run</span>'))
+      .addTo(map);
+
+    // Add course click interaction
+    map.on('click', 'course-line', e => {
+      new mapboxgl.Popup({ offset: 12 })
+        .setLngLat(e.lngLat)
+        .setHTML('<strong style="color:#7B1FA2">Shawangunk Ridge 70M</strong><br><span style="color:#a0a0b0">70 mi &bull; 12,800 ft gain</span>')
+        .addTo(map);
+    });
+    map.on('mouseenter', 'course-line', () => map.getCanvas().style.cursor = 'pointer');
+    map.on('mouseleave', 'course-line', () => map.getCanvas().style.cursor = '');
+
+    // Fit to course bounds
+    const bounds = new mapboxgl.LngLatBounds();
+    COURSE_COORDS.forEach(coord => bounds.extend(coord));
+    map.fitBounds(bounds, { padding: 40 });
+  });
+}
+
+function toggleCourse() {
+  courseVisible = !courseVisible;
+  document.getElementById('courseBtn').classList.toggle('active', courseVisible);
+  if (map.getLayer('course-line')) {
+    map.setLayoutProperty('course-line', 'visibility', courseVisible ? 'visible' : 'none');
+    map.setLayoutProperty('course-outline', 'visibility', courseVisible ? 'visible' : 'none');
+  }
+}
+
+function toggle3D() {
+  terrain3D = !terrain3D;
+  document.getElementById('terrainBtn').classList.toggle('active', terrain3D);
+  if (terrain3D) {
+    if (!map.getSource('mapbox-dem')) {
+      map.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
+    }
+    map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+    map.easeTo({ pitch: 45, duration: 1000 });
+  } else {
+    map.setTerrain(null);
+    map.easeTo({ pitch: 0, duration: 1000 });
+  }
+}
+
+function toggleTrails() {
+  trailsOn = !trailsOn;
+  document.getElementById('trailBtn').classList.toggle('active', trailsOn);
+  if (!map) return;
+
+  if (trailsOn) {
+    if (!map.getSource('park-trails')) {
+      if (trailsData) {
+        addTrailLayers();
+      } else {
+        fetch('data/trails.geojson')
+          .then(r => r.json())
+          .then(data => { trailsData = data; addTrailLayers(); });
+        return;
+      }
+    }
+    map.setLayoutProperty('park-trails-line', 'visibility', 'visible');
+    map.setLayoutProperty('park-trails-label', 'visibility', 'visible');
+  } else {
+    if (map.getLayer('park-trails-line')) map.setLayoutProperty('park-trails-line', 'visibility', 'none');
+    if (map.getLayer('park-trails-label')) map.setLayoutProperty('park-trails-label', 'visibility', 'none');
+  }
+}
+
+function addTrailLayers() {
+  if (!map.getSource('park-trails')) {
+    map.addSource('park-trails', { type: 'geojson', data: trailsData });
+  }
+  if (!map.getLayer('park-trails-line')) {
+    map.addLayer({
+      id: 'park-trails-line',
+      type: 'line',
+      source: 'park-trails',
+      paint: {
+        'line-color': ['match', ['get', 'blaze'],
+          'white', '#ffffff',
+          'blue', '#2196F3',
+          'yellow', '#FFD700',
+          'orange', '#FF9800',
+          'green', '#4CAF50',
+          'red', '#f44336',
+          'violet', '#9C27B0',
+          '#9E9E9E'
+        ],
+        'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1.5, 15, 3],
+        'line-opacity': 0.85
+      },
+      layout: { 'line-cap': 'round', 'line-join': 'round' }
+    }, 'course-outline');
+  }
+  if (!map.getLayer('park-trails-label')) {
+    map.addLayer({
+      id: 'park-trails-label',
+      type: 'symbol',
+      source: 'park-trails',
+      layout: {
+        'symbol-placement': 'line',
+        'text-field': ['get', 'name'],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 13, 9, 16, 12],
+        'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
+        'text-max-angle': 30,
+        'text-padding': 10
+      },
+      paint: {
+        'text-color': '#333',
+        'text-halo-color': '#fff',
+        'text-halo-width': 1.5,
+        'text-opacity': ['interpolate', ['linear'], ['zoom'], 13, 0, 13.5, 1]
+      },
+      minzoom: 13
+    });
+  }
+}
+
+function drawElevationProfile() {
+  const canvas = document.getElementById('profileCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+
+  const w = rect.width;
+  const h = rect.height;
+  const padding = { top: 10, right: 10, bottom: 25, left: 40 };
+  const chartW = w - padding.left - padding.right;
+  const chartH = h - padding.top - padding.bottom;
+
+  const maxDist = 70;
+  const maxEle = 600; // meters (~1970 ft)
+  const minEle = 0;
+
+  // Draw grid
+  ctx.strokeStyle = '#333355';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padding.top + (chartH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(w - padding.right, y);
+    ctx.stroke();
+  }
+
+  // Draw elevation area
+  ctx.beginPath();
+  ctx.moveTo(padding.left, padding.top + chartH);
+  ELEVATIONS.forEach((ele, i) => {
+    const x = padding.left + (i / (ELEVATIONS.length - 1)) * chartW;
+    const y = padding.top + chartH - ((ele - minEle) / (maxEle - minEle)) * chartH;
+    if (i === 0) ctx.lineTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.lineTo(padding.left + chartW, padding.top + chartH);
+  ctx.closePath();
+  const gradient = ctx.createLinearGradient(0, padding.top, 0, padding.top + chartH);
+  gradient.addColorStop(0, 'rgba(123, 31, 162, 0.4)');
+  gradient.addColorStop(1, 'rgba(123, 31, 162, 0.05)');
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  // Draw elevation line
+  ctx.beginPath();
+  ELEVATIONS.forEach((ele, i) => {
+    const x = padding.left + (i / (ELEVATIONS.length - 1)) * chartW;
+    const y = padding.top + chartH - ((ele - minEle) / (maxEle - minEle)) * chartH;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = '#7B1FA2';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Draw labels - distance
+  ctx.fillStyle = '#666680';
+  ctx.font = '10px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  for (let m = 0; m <= 70; m += 10) {
+    const x = padding.left + (m / maxDist) * chartW;
+    ctx.fillText(m + ' mi', x, h - 8);
+  }
+  // Elevation labels (convert meters to feet for display)
+  ctx.textAlign = 'right';
+  ctx.fillText('0 ft', padding.left - 5, padding.top + chartH);
+  ctx.fillText('985 ft', padding.left - 5, padding.top + chartH / 2);
+  ctx.fillText('1,970 ft', padding.left - 5, padding.top + 10);
+}
+
+document.getElementById('courseBtn').onclick = toggleCourse;
+document.getElementById('trailBtn').onclick = toggleTrails;
+document.getElementById('terrainBtn').onclick = toggle3D;
+
+// ===================================================================
+// VIEW SWITCHING
+// ===================================================================
+let currentView = 'map';
+let mapInitialized = false;
+let simInitialized = false;
+
+function switchView(view) {
+  currentView = view;
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t.textContent.toLowerCase() === view));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(view + 'View').classList.add('active');
+  if (view === 'map' && !mapInitialized) {
+    initMap();
+    mapInitialized = true;
+  }
+  if (view === 'sim') {
+    initSim();
+    renderSim();
+  }
+}
+
+// ===================================================================
+// SIMULATOR
+// ===================================================================
+const TOTAL_MILES = 70;
+const TOTAL_GAIN = 12800; // feet
+const RACE_START_HOUR = 5; // 5:00 AM
+let simProgress = 0;
+let simPlaying = false;
+let simSpeed = 1;
+let simFinishHours = 20;
+let simLastTick = 0;
+
+// Build distance array for each coordinate (cumulative miles)
+const coordDistances = [0];
+for (let i = 1; i < COURSE_COORDS.length; i++) {
+  const [x1, y1] = COURSE_COORDS[i - 1];
+  const [x2, y2] = COURSE_COORDS[i];
+  const dLng = (x2 - x1) * Math.cos((y1 + y2) / 2 * Math.PI / 180) * 69.172;
+  const dLat = (y2 - y1) * 69.172;
+  coordDistances.push(coordDistances[i - 1] + Math.sqrt(dLng * dLng + dLat * dLat));
+}
+// Normalize to actual total miles
+const rawTotal = coordDistances[coordDistances.length - 1];
+for (let i = 0; i < coordDistances.length; i++) {
+  coordDistances[i] = (coordDistances[i] / rawTotal) * TOTAL_MILES;
+}
+
+// Build elevation profile indexed by distance (in feet)
+const eleProfile = ELEVATIONS.map((e, i) => ({
+  d: (i / (ELEVATIONS.length - 1)) * TOTAL_MILES,
+  e: e * 3.28084 // meters to feet
+}));
+
+function getEleAtDist(dist) {
+  for (let i = 1; i < eleProfile.length; i++) {
+    if (eleProfile[i].d >= dist) {
+      const p0 = eleProfile[i - 1], p1 = eleProfile[i];
+      const t = (dist - p0.d) / (p1.d - p0.d);
+      return p0.e + (p1.e - p0.e) * t;
+    }
+  }
+  return eleProfile[eleProfile.length - 1].e;
+}
+
+function getGradeAtDist(dist) {
+  const delta = 0.05;
+  const e1 = getEleAtDist(Math.max(0, dist - delta));
+  const e2 = getEleAtDist(Math.min(TOTAL_MILES, dist + delta));
+  const dDist = delta * 2 * 5280;
+  return dDist > 0 ? ((e2 - e1) / dDist) * 100 : 0;
+}
+
+function getGainAtDist(dist) {
+  return (dist / TOTAL_MILES) * TOTAL_GAIN;
+}
+
+function getCoordAtDist(dist) {
+  for (let i = 1; i < coordDistances.length; i++) {
+    if (coordDistances[i] >= dist) {
+      const t = (dist - coordDistances[i - 1]) / (coordDistances[i] - coordDistances[i - 1]);
+      const c0 = COURSE_COORDS[i - 1], c1 = COURSE_COORDS[i];
+      return [c0[0] + (c1[0] - c0[0]) * t, c0[1] + (c1[1] - c0[1]) * t];
+    }
+  }
+  return COURSE_COORDS[COURSE_COORDS.length - 1];
+}
+
+function initSim() {
+  if (simInitialized) return;
+  simInitialized = true;
+  updateGoalPace();
+
+  // Scrubber interaction
+  const track = document.getElementById('scrubTrack');
+  let scrubbing = false;
+  const scrubTo = e => {
+    const rect = track.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    simProgress = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    renderSim();
+  };
+  track.addEventListener('mousedown', e => { scrubbing = true; simPlaying = false; document.getElementById('playBtn').innerHTML = '&#9654;'; scrubTo(e); });
+  window.addEventListener('mousemove', e => { if (scrubbing) scrubTo(e); });
+  window.addEventListener('mouseup', () => scrubbing = false);
+  track.addEventListener('touchstart', e => { scrubbing = true; simPlaying = false; document.getElementById('playBtn').innerHTML = '&#9654;'; scrubTo(e); }, { passive: true });
+  window.addEventListener('touchmove', e => { if (scrubbing) scrubTo(e); }, { passive: true });
+  window.addEventListener('touchend', () => scrubbing = false);
+}
+
+function updateGoalTime() {
+  const h = parseInt(document.getElementById('goalHrs').value) || 0;
+  const m = parseInt(document.getElementById('goalMins').value) || 0;
+  simFinishHours = h + m / 60;
+  if (simFinishHours < 0.1) simFinishHours = 0.1;
+  updateGoalPace();
+  renderSim();
+}
+
+function updateGoalPace() {
+  const totalMins = simFinishHours * 60;
+  const paceMin = totalMins / TOTAL_MILES;
+  const pm = Math.floor(paceMin);
+  const ps = Math.round((paceMin - pm) * 60);
+  document.getElementById('goalPace').innerHTML = 'Avg pace: <strong>' + pm + ':' + String(ps).padStart(2, '0') + ' /mi</strong>';
+}
+
+function togglePlay() {
+  simPlaying = !simPlaying;
+  document.getElementById('playBtn').innerHTML = simPlaying ? '&#9208;' : '&#9654;';
+  if (simPlaying) {
+    if (simProgress >= 0.999) simProgress = 0;
+    simLastTick = performance.now();
+    simTick();
+  }
+}
+
+function setSpeed(s, btn) {
+  simSpeed = s;
+  document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function simTick() {
+  if (!simPlaying) return;
+  const now = performance.now();
+  const dt = (now - simLastTick) / 1000;
+  simLastTick = now;
+  simProgress = Math.min(1, simProgress + (1 / 30) * simSpeed * dt);
+  renderSim();
+  if (simProgress >= 1) {
+    simPlaying = false;
+    document.getElementById('playBtn').innerHTML = '&#9654;';
+    return;
+  }
+  requestAnimationFrame(simTick);
+}
+
+function renderSim() {
+  const dist = simProgress * TOTAL_MILES;
+  const ele = getEleAtDist(dist);
+  const grade = getGradeAtDist(dist);
+  const gain = getGainAtDist(dist);
+
+  // Scrubber
+  document.getElementById('scrubFill').style.width = (simProgress * 100) + '%';
+  document.getElementById('scrubHandle').style.left = (simProgress * 100) + '%';
+
+  // Runner info
+  document.getElementById('runnerEle').innerHTML = Math.round(ele).toLocaleString() + '<span class="unit">ft</span>';
+  const gradeDir = grade > 2 ? 'Climbing' : grade < -2 ? 'Descending' : 'Rolling';
+  document.getElementById('runnerMeta').textContent = 'Mile ' + dist.toFixed(1) + ' \u00b7 ' + gradeDir;
+
+  // Clock
+  const elapsed = (dist / TOTAL_MILES) * simFinishHours;
+  const tod = RACE_START_HOUR + elapsed;
+  const hrs = Math.floor(tod) % 24;
+  const mins = Math.floor((tod % 1) * 60);
+  const ampm = hrs >= 12 ? 'PM' : 'AM';
+  const dispHrs = hrs > 12 ? hrs - 12 : (hrs === 0 ? 12 : hrs);
+  document.getElementById('clockTime').textContent = dispHrs + ':' + String(mins).padStart(2, '0') + ' ' + ampm;
+
+  const finishTod = RACE_START_HOUR + simFinishHours;
+  const finishHrs = Math.floor(finishTod) % 24;
+  const finishMins = Math.round((finishTod % 1) * 60);
+  const finishAmpm = finishHrs >= 12 ? 'PM' : 'AM';
+  const finishDispHrs = finishHrs > 12 ? finishHrs - 12 : (finishHrs === 0 ? 12 : finishHrs);
+  document.getElementById('finishTime').textContent = finishDispHrs + ':' + String(finishMins).padStart(2, '0') + ' ' + finishAmpm;
+
+  // Stats
+  document.getElementById('statDist').textContent = dist.toFixed(1);
+  document.getElementById('statEle').textContent = Math.round(ele).toLocaleString();
+  document.getElementById('statGain').textContent = Math.round(gain).toLocaleString();
+  document.getElementById('statGrade').textContent = (grade > 0 ? '+' : '') + grade.toFixed(0) + '%';
+  document.getElementById('statPct').textContent = Math.round(simProgress * 100) + '%';
+
+  // Pace
+  const totalMins = simFinishHours * 60;
+  const paceMin = totalMins / TOTAL_MILES;
+  const pm = Math.floor(paceMin);
+  const ps = Math.round((paceMin - pm) * 60);
+  document.getElementById('statPace').textContent = pm + ':' + String(ps).padStart(2, '0');
+
+  // Draw canvases
+  renderCourseMap(dist);
+  renderSimProfile(dist, ele);
+}
+
+// ===================================================================
+// COURSE MAP CANVAS - bird's-eye view of the course with runner dot
+// ===================================================================
+function renderCourseMap(currentDist) {
+  const canvas = document.getElementById('courseMapCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+
+  // Background
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, '#1a2030');
+  bgGrad.addColorStop(1, '#252540');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Compute bounding box of course
+  let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  for (const [lng, lat] of COURSE_COORDS) {
+    if (lng < minLng) minLng = lng;
+    if (lng > maxLng) maxLng = lng;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  }
+  const padding = 30;
+  const drawW = W - padding * 2;
+  const drawH = H - padding * 2;
+  const lngRange = maxLng - minLng;
+  const latRange = maxLat - minLat;
+  const scale = Math.min(drawW / lngRange, drawH / latRange);
+  const offsetX = padding + (drawW - lngRange * scale) / 2;
+  const offsetY = padding + (drawH - latRange * scale) / 2;
+
+  const toX = lng => offsetX + (lng - minLng) * scale;
+  const toY = lat => offsetY + (maxLat - lat) * scale; // flip Y
+
+  // Draw completed portion (bright)
+  const runnerCoord = getCoordAtDist(currentDist);
+  let runnerIdx = 0;
+  for (let i = 1; i < coordDistances.length; i++) {
+    if (coordDistances[i] >= currentDist) { runnerIdx = i; break; }
+  }
+
+  // Draw trail shadow (full course, dim)
+  ctx.beginPath();
+  for (let i = 0; i < COURSE_COORDS.length; i++) {
+    const x = toX(COURSE_COORDS[i][0]);
+    const y = toY(COURSE_COORDS[i][1]);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Draw remaining portion (dim purple)
+  ctx.beginPath();
+  for (let i = Math.max(0, runnerIdx - 1); i < COURSE_COORDS.length; i++) {
+    const x = toX(COURSE_COORDS[i][0]);
+    const y = toY(COURSE_COORDS[i][1]);
+    if (i === Math.max(0, runnerIdx - 1)) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = 'rgba(123,31,162,0.2)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Draw completed portion (bright purple)
+  if (runnerIdx > 0) {
+    ctx.beginPath();
+    for (let i = 0; i <= Math.min(runnerIdx, COURSE_COORDS.length - 1); i++) {
+      const x = toX(COURSE_COORDS[i][0]);
+      const y = toY(COURSE_COORDS[i][1]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    // Also draw to exact runner position
+    const rx = toX(runnerCoord[0]);
+    const ry = toY(runnerCoord[1]);
+    ctx.lineTo(rx, ry);
+    ctx.strokeStyle = '#7B1FA2';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+
+  // Start marker
+  const sx = toX(COURSE_COORDS[0][0]);
+  const sy = toY(COURSE_COORDS[0][1]);
+  ctx.beginPath();
+  ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = '#7B1FA2';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = '#7B1FA2';
+  ctx.font = 'bold 8px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('S', sx, sy + 0.5);
+
+  // Finish marker
+  const fx = toX(COURSE_COORDS[COURSE_COORDS.length - 1][0]);
+  const fy = toY(COURSE_COORDS[COURSE_COORDS.length - 1][1]);
+  ctx.beginPath();
+  ctx.arc(fx, fy, 6, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = '#7B1FA2';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = '#7B1FA2';
+  ctx.font = 'bold 8px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('F', fx, fy + 0.5);
+
+  // Runner dot
+  const rx = toX(runnerCoord[0]);
+  const ry = toY(runnerCoord[1]);
+
+  // Glow
+  ctx.beginPath();
+  ctx.arc(rx, ry, 14, 0, Math.PI * 2);
+  const glow = ctx.createRadialGradient(rx, ry, 4, rx, ry, 14);
+  glow.addColorStop(0, 'rgba(123,31,162,0.4)');
+  glow.addColorStop(1, 'rgba(123,31,162,0)');
+  ctx.fillStyle = glow;
+  ctx.fill();
+
+  // Dot
+  ctx.beginPath();
+  ctx.arc(rx, ry, 7, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = '#7B1FA2';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Mile markers every 10 miles
+  for (let m = 10; m < TOTAL_MILES; m += 10) {
+    const mc = getCoordAtDist(m);
+    const mx = toX(mc[0]);
+    const my = toY(mc[1]);
+    ctx.beginPath();
+    ctx.arc(mx, my, 10, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(37,37,64,0.85)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '600 8px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(m, mx, my);
+  }
+}
+
+// ===================================================================
+// SIMULATOR ELEVATION PROFILE - scrolling terrain with runner
+// ===================================================================
+function renderSimProfile(currentDist, currentEle) {
+  const canvas = document.getElementById('simProfileCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+
+  // Windowed view centered on runner
+  const windowMiles = Math.min(TOTAL_MILES, Math.max(6, TOTAL_MILES * 0.4));
+  let windowStart = Math.max(0, currentDist - windowMiles * 0.35);
+  const windowEnd = Math.min(TOTAL_MILES, windowStart + windowMiles);
+  if (windowEnd - windowStart < windowMiles) windowStart = Math.max(0, windowEnd - windowMiles);
+
+  // Sample points in view
+  const pts = [];
+  for (let i = 0; i < eleProfile.length; i++) {
+    if (eleProfile[i].d >= windowStart && eleProfile[i].d <= windowStart + windowMiles) {
+      pts.push(eleProfile[i]);
+    }
+  }
+  if (pts.length < 2) return;
+
+  const eles = pts.map(p => p.e);
+  const eMin = Math.min(...eles) - 30;
+  const eMax = Math.max(...eles) + 50;
+  const mt = 30, mb = 0;
+
+  const xScale = d => ((d - windowStart) / windowMiles) * W;
+  const yScale = e => mt + (H - mt - mb) - ((e - eMin) / (eMax - eMin)) * (H - mt - mb);
+
+  // Sky gradient
+  const elapsed = (currentDist / TOTAL_MILES) * simFinishHours;
+  const tod = RACE_START_HOUR + elapsed;
+  let skyTop, skyBot;
+  if (tod < 6) { skyTop = '#1a2030'; skyBot = '#252540'; }
+  else if (tod < 8) { skyTop = '#2a3050'; skyBot = '#4a4070'; }
+  else if (tod < 17) { skyTop = '#3a4560'; skyBot = '#5a6580'; }
+  else if (tod < 20) { skyTop = '#3a3055'; skyBot = '#4a4070'; }
+  else { skyTop = '#1a2030'; skyBot = '#252540'; }
+
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+  skyGrad.addColorStop(0, skyTop);
+  skyGrad.addColorStop(1, skyBot);
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Terrain fill
+  ctx.beginPath();
+  ctx.moveTo(xScale(pts[0].d), yScale(pts[0].e));
+  for (const p of pts) ctx.lineTo(xScale(p.d), yScale(p.e));
+  ctx.lineTo(xScale(pts[pts.length - 1].d), H);
+  ctx.lineTo(xScale(pts[0].d), H);
+  ctx.closePath();
+  const tGrad = ctx.createLinearGradient(0, mt, 0, H);
+  tGrad.addColorStop(0, 'rgba(123,31,162,0.3)');
+  tGrad.addColorStop(1, 'rgba(123,31,162,0.05)');
+  ctx.fillStyle = tGrad;
+  ctx.fill();
+
+  // Terrain line
+  ctx.beginPath();
+  ctx.moveTo(xScale(pts[0].d), yScale(pts[0].e));
+  for (const p of pts) ctx.lineTo(xScale(p.d), yScale(p.e));
+  ctx.strokeStyle = '#7B1FA2';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Dim behind runner
+  if (currentDist > windowStart) {
+    ctx.fillStyle = 'rgba(26,32,48,0.4)';
+    ctx.fillRect(0, 0, xScale(currentDist), H);
+  }
+
+  // Runner dot
+  const rx = xScale(currentDist);
+  const ry = yScale(currentEle);
+
+  // Glow
+  ctx.beginPath();
+  ctx.arc(rx, ry, 12, 0, Math.PI * 2);
+  const glow = ctx.createRadialGradient(rx, ry, 3, rx, ry, 12);
+  glow.addColorStop(0, 'rgba(123,31,162,0.5)');
+  glow.addColorStop(1, 'rgba(123,31,162,0)');
+  ctx.fillStyle = glow;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(rx, ry, 7, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = '#7B1FA2';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Mile markers in view
+  for (let m = Math.ceil(windowStart); m <= Math.floor(windowStart + windowMiles); m++) {
+    if (m <= 0 || m >= TOTAL_MILES) continue;
+    const mx = xScale(m);
+    ctx.beginPath();
+    ctx.moveTo(mx, mt);
+    ctx.lineTo(mx, H);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '9px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(m + ' mi', mx, mt - 8);
+  }
+}
+
+// ===================================================================
+// INIT
+// ===================================================================
+initMap();
+mapInitialized = true;
+window.addEventListener('load', drawElevationProfile);
+window.addEventListener('resize', () => {
+  drawElevationProfile();
+  if (currentView === 'sim') renderSim();
+});
+</script>
+</body>
+</html>

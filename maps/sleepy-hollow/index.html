@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1a2e">
+<title>Sleepy Hollow Half Marathon 2026 - Course Map</title>
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #FF6B35;
+  --primary-dark: #E55A2B;
+  --accent: #8B4513;
+  --bg: #1a1a2e;
+  --bg-card: #252540;
+  --bg-alt: #16162a;
+  --text: #ffffff;
+  --text-secondary: #a0a0b0;
+  --text-muted: #666680;
+  --border: #333355;
+  --course: #FF6B35;
+  --shadow: 0 4px 20px rgba(0,0,0,0.3);
+  --radius: 12px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg) 100%);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left h1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.5px;
+}
+.header-left .subtitle {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.header-left .subtitle a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.race-badge {
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.map-wrap { position: relative; }
+#map { width: 100%; height: 55vh; min-height: 300px; }
+
+.map-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.info-badge {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+}
+.info-badge .label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+.info-badge .value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.info-badge .value .unit {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.toggle-btns {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+}
+.toggle-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.toggle-btn:hover { border-color: var(--primary); color: var(--text); }
+.toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.stats-section {
+  background: var(--bg-card);
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.stat-card {
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--bg-alt);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.stat-card .value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+.stat-card .label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+.profile-section {
+  background: var(--bg-alt);
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.profile-header h3 {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.profile-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+.profile-stats .val { font-weight: 600; color: var(--primary); }
+#profileCanvas {
+  width: 100%;
+  height: 100px;
+  display: block;
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.landmarks-section {
+  padding: 20px;
+}
+.landmarks-section h3 {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.landmarks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+.landmark-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 14px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.landmark-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+.landmark-card .icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+}
+.landmark-card .name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.landmark-card .desc {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.course-info {
+  padding: 20px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+}
+.course-info h3 {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.course-description {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+.course-description strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+.footer a { color: var(--primary); text-decoration: none; }
+
+/* Mapbox customization */
+.mapboxgl-popup-content {
+  background: var(--bg-card) !important;
+  color: var(--text) !important;
+  border-radius: var(--radius) !important;
+  padding: 12px 16px !important;
+  box-shadow: var(--shadow) !important;
+  font-family: inherit !important;
+  font-size: 0.85rem !important;
+  border: 1px solid var(--border) !important;
+}
+.mapboxgl-popup-tip { border-top-color: var(--bg-card) !important; }
+.mapboxgl-popup-close-button { color: var(--text-muted) !important; font-size: 18px !important; }
+.mapboxgl-ctrl-attrib { font-size: 9px !important; }
+.mapboxgl-ctrl-group { border-radius: 8px !important; overflow: hidden; }
+
+.start-marker, .landmark-marker {
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+.start-marker svg, .landmark-marker svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+.mile-marker {
+  width: 24px;
+  height: 24px;
+  background: #fff;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--primary);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+.turn-marker {
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+}
+.turn-marker svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+.streetview-popup { max-width: 320px !important; }
+.streetview-popup .mapboxgl-popup-content { padding: 0 !important; overflow: hidden; border-radius: var(--radius) !important; }
+.streetview-img { width: 100%; height: 160px; object-fit: cover; display: block; }
+.streetview-caption { padding: 12px; background: var(--bg-card); }
+.streetview-caption strong { display: block; color: var(--text); margin-bottom: 4px; }
+.streetview-caption a { color: var(--primary); text-decoration: none; font-size: 0.75rem; }
+
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-card .value { font-size: 1.2rem; }
+  #map { height: 45vh; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <h1>Sleepy Hollow Half Marathon</h1>
+    <div class="subtitle">March 28, 2026 &bull; <a href="http://www.rivertownrunners.org" target="_blank">Rivertown Runners</a></div>
+  </div>
+  <div class="race-badge">13.1 Miles</div>
+</header>
+
+<div class="map-wrap">
+  <div id="map"></div>
+  <div class="map-overlay">
+    <div class="info-badge">
+      <div class="label">Start / Finish</div>
+      <div class="value">Beekman Ave</div>
+    </div>
+  </div>
+  <div class="toggle-btns">
+    <button class="toggle-btn active" id="courseBtn">Course</button>
+    <button class="toggle-btn" id="milesBtn">Miles</button>
+    <button class="toggle-btn" id="landmarksBtn">Landmarks</button>
+    <button class="toggle-btn" id="terrainBtn">3D</button>
+  </div>
+</div>
+
+<section class="stats-section">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="value">13.1</div>
+      <div class="label">Miles</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">~650</div>
+      <div class="label">Elev Gain (ft)</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">5</div>
+      <div class="label">Trail Miles</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">3:30</div>
+      <div class="label">Time Limit</div>
+    </div>
+  </div>
+</section>
+
+<section class="profile-section">
+  <div class="profile-header">
+    <h3>Elevation Profile</h3>
+    <div class="profile-stats">
+      <span>Gain: <span class="val">~650 ft</span></span>
+      <span>High: <span class="val">~270 ft</span></span>
+    </div>
+  </div>
+  <canvas id="profileCanvas"></canvas>
+</section>
+
+<section class="landmarks-section">
+  <h3>Course Landmarks</h3>
+  <div class="landmarks-grid" id="landmarksGrid"></div>
+</section>
+
+<section class="course-info">
+  <h3>Course Description</h3>
+  <div class="course-description">
+    <p>The course begins on <strong>Beekman Avenue</strong> in Sleepy Hollow, heading southwest toward the <strong>Hudson River shoreline</strong>. Runners pass through <strong>Kingsland Point County Park</strong> and the iconic <strong>Sleepy Hollow Lighthouse</strong>.</p>
+    <br>
+    <p>Continuing through the village via <strong>Palmer Avenue</strong> and <strong>Devries Avenue</strong>, the route heads north through the historic <strong>Philipse Manor</strong> and <strong>Sleepy Hollow Manor</strong> neighborhoods, passing <strong>Peabody Field</strong> and <strong>Freemont Pond</strong>.</p>
+    <br>
+    <p>Approximately <strong>5 miles</strong> of the course winds through <strong>Rockefeller State Park Preserve</strong> on scenic carriage roads, featuring an out-and-back stretch along <strong>Phelps Way</strong>. The final miles return runners south past the historic <strong>Old Dutch Church</strong> to the finish.</p>
+  </div>
+</section>
+
+<footer class="footer">
+  Sleepy Hollow Half Marathon &bull; Produced by <a href="http://www.rivertownrunners.org" target="_blank">Rivertown Runners</a>
+  <br>Interactive map powered by Mapbox
+</footer>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoibWljaGFlbHNwYXJrczEzIiwiYSI6ImNtbGp6cHNsNzA1OXEzam9iNWxkZnh6Y3AifQ.Z6IZuPPqMVcYTj1zP8AXYg';
+
+const START_COORDS = [-73.8587, 41.0854];
+
+const COURSE = {
+  type: 'Feature',
+  properties: {
+    name: 'Sleepy Hollow Half Marathon',
+    distance_mi: 13.1
+  },
+  geometry: {
+    type: 'LineString',
+    coordinates: [
+      [-73.8587, 41.0854],
+      [-73.8595, 41.0848],
+      [-73.8610, 41.0842],
+      [-73.8635, 41.0838],
+      [-73.8660, 41.0835],
+      [-73.8690, 41.0832],
+      [-73.8715, 41.0833],
+      [-73.8742, 41.0840],
+      [-73.8755, 41.0838],
+      [-73.8768, 41.0835],
+      [-73.8782, 41.0838],
+      [-73.8795, 41.0842],
+      [-73.8755, 41.0838],
+      [-73.8742, 41.0840],
+      [-73.8720, 41.0842],
+      [-73.8700, 41.0848],
+      [-73.8680, 41.0855],
+      [-73.8665, 41.0862],
+      [-73.8650, 41.0870],
+      [-73.8640, 41.0878],
+      [-73.8600, 41.0888],
+      [-73.8590, 41.0895],
+      [-73.8595, 41.0908],
+      [-73.8610, 41.0920],
+      [-73.8630, 41.0932],
+      [-73.8655, 41.0942],
+      [-73.8680, 41.0952],
+      [-73.8697, 41.0965],
+      [-73.8695, 41.0980],
+      [-73.8680, 41.0995],
+      [-73.8660, 41.1010],
+      [-73.8635, 41.1025],
+      [-73.8610, 41.1040],
+      [-73.8580, 41.1055],
+      [-73.8545, 41.1068],
+      [-73.8510, 41.1078],
+      [-73.8475, 41.1088],
+      [-73.8440, 41.1098],
+      [-73.8405, 41.1108],
+      [-73.8375, 41.1118],
+      [-73.8355, 41.1132],
+      [-73.8340, 41.1150],
+      [-73.8330, 41.1170],
+      [-73.8325, 41.1192],
+      [-73.8328, 41.1215],
+      [-73.8335, 41.1238],
+      [-73.8345, 41.1258],
+      [-73.8345, 41.1258],
+      [-73.8335, 41.1238],
+      [-73.8328, 41.1215],
+      [-73.8325, 41.1192],
+      [-73.8330, 41.1170],
+      [-73.8340, 41.1150],
+      [-73.8355, 41.1132],
+      [-73.8375, 41.1118],
+      [-73.8405, 41.1108],
+      [-73.8440, 41.1098],
+      [-73.8475, 41.1088],
+      [-73.8510, 41.1078],
+      [-73.8545, 41.1068],
+      [-73.8580, 41.1055],
+      [-73.8610, 41.1040],
+      [-73.8635, 41.1025],
+      [-73.8660, 41.1010],
+      [-73.8680, 41.0995],
+      [-73.8695, 41.0980],
+      [-73.8697, 41.0965],
+      [-73.8680, 41.0952],
+      [-73.8655, 41.0942],
+      [-73.8630, 41.0932],
+      [-73.8610, 41.0920],
+      [-73.8595, 41.0908],
+      [-73.8590, 41.0895],
+      [-73.8587, 41.0885],
+      [-73.8587, 41.0870],
+      [-73.8587, 41.0860],
+      [-73.8587, 41.0854]
+    ]
+  }
+};
+
+const LANDMARKS = [
+  { name: 'Start / Finish', icon: 'S', coords: [-73.8587, 41.0854], desc: 'Beekman Avenue - Race headquarters' },
+  { name: 'Sleepy Hollow Lighthouse', icon: '🗼', coords: [-73.8742, 41.0840], desc: 'Historic 1883 lighthouse at Kingsland Point' },
+  { name: 'Old Dutch Church', icon: '⛪', coords: [-73.8587, 41.0885], desc: 'Washington Irving\'s inspiration - est. 1685' },
+  { name: 'Philipse Manor', icon: '🏛', coords: [-73.8697, 41.0965], desc: 'Historic neighborhood along Hudson River' },
+  { name: 'Rockefeller State Park', icon: '🌲', coords: [-73.8345, 41.1200], desc: '~5 miles on scenic carriage roads' },
+  { name: 'Turnaround Point', icon: '↩', coords: [-73.8345, 41.1258], desc: 'Out-and-back turnaround in the park' }
+];
+
+const ELEVATION_PROFILE = [
+  {d: 0, e: 15}, {d: 0.5, e: 18}, {d: 1, e: 12}, {d: 1.5, e: 8}, {d: 2, e: 15},
+  {d: 2.5, e: 25}, {d: 3, e: 40}, {d: 3.5, e: 60}, {d: 4, e: 85}, {d: 4.5, e: 120},
+  {d: 5, e: 165}, {d: 5.5, e: 200}, {d: 6, e: 235}, {d: 6.5, e: 270},
+  {d: 7, e: 235}, {d: 7.5, e: 200}, {d: 8, e: 165}, {d: 8.5, e: 120},
+  {d: 9, e: 85}, {d: 9.5, e: 60}, {d: 10, e: 40}, {d: 10.5, e: 25},
+  {d: 11, e: 15}, {d: 11.5, e: 12}, {d: 12, e: 18}, {d: 12.5, e: 20}, {d: 13.1, e: 15}
+];
+
+// Mile markers along the course (approximate positions)
+const MILE_MARKERS = [
+  { mile: 1, coords: [-73.8742, 41.0840] },   // Near lighthouse
+  { mile: 2, coords: [-73.8650, 41.0870] },   // Returning through village
+  { mile: 3, coords: [-73.8620, 41.0935] },   // Heading north
+  { mile: 4, coords: [-73.8680, 41.0995] },   // Near Philipse Manor
+  { mile: 5, coords: [-73.8545, 41.1068] },   // Approaching Rockefeller
+  { mile: 6, coords: [-73.8355, 41.1132] },   // Entering park trails
+  { mile: 7, coords: [-73.8340, 41.1250] },   // Near turnaround (out-and-back)
+  { mile: 8, coords: [-73.8375, 41.1118] },   // Heading back through park
+  { mile: 9, coords: [-73.8545, 41.1068] },   // Exiting Rockefeller
+  { mile: 10, coords: [-73.8680, 41.0995] },  // Back through Philipse Manor
+  { mile: 11, coords: [-73.8620, 41.0935] },  // Heading south
+  { mile: 12, coords: [-73.8590, 41.0895] },  // Near Old Dutch Church
+  { mile: 13, coords: [-73.8587, 41.0860] }   // Approaching finish
+];
+
+// Key turns for Street View markers
+const TURNS = [
+  { name: 'Race Start - Beekman Ave', coords: [-73.858944, 41.0854011], pano: 'qZ5FL6ogJdYRReqMSXjHPQ', heading: 80.52, pitch: 19.11 },
+  { name: 'Turn toward Kingsland Point', coords: [-73.8661373, 41.0830529], pano: 'yeOQkhDScJfQ-i5wYAM3ww', heading: 235.92, pitch: 11.08 },
+  { name: 'Philipse Manor', coords: [-73.8699335, 41.0927471], pano: 'vBC-Da8kJSpVd2gLV1_P6Q', heading: 216.23, pitch: 12.30 }
+];
+
+let map;
+let landmarkMarkers = [];
+let mileMarkers = [];
+let turnMarkers = [];
+let courseVisible = true;
+let milesVisible = false;
+let landmarksVisible = false;
+let terrain3D = false;
+
+function initMap() {
+  map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/outdoors-v12',
+    center: [-73.855, 41.105],
+    zoom: 12,
+    pitch: 0
+  });
+
+  map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+
+  map.on('load', () => {
+    // Add course line
+    map.addSource('course', { type: 'geojson', data: COURSE });
+    map.addLayer({
+      id: 'course-outline',
+      type: 'line',
+      source: 'course',
+      paint: {
+        'line-color': '#000',
+        'line-width': 7,
+        'line-opacity': 0.3
+      }
+    });
+    map.addLayer({
+      id: 'course-line',
+      type: 'line',
+      source: 'course',
+      paint: {
+        'line-color': '#FF6B35',
+        'line-width': 4
+      }
+    });
+
+    // Add start/finish marker
+    const startEl = document.createElement('div');
+    startEl.className = 'start-marker';
+    startEl.innerHTML = '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#FF6B35" stroke="#fff" stroke-width="2"/><text x="16" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">S</text></svg>';
+    new mapboxgl.Marker({ element: startEl })
+      .setLngLat(START_COORDS)
+      .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong style="color:#FF6B35">Start / Finish</strong><br><span style="color:#a0a0b0">Beekman Avenue</span>'))
+      .addTo(map);
+
+    // Create landmark markers (initially hidden)
+    LANDMARKS.forEach(lm => {
+      const el = document.createElement('div');
+      el.className = 'landmark-marker';
+      el.innerHTML = '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="10" fill="#8B4513" stroke="#fff" stroke-width="2"/><text x="16" y="20" text-anchor="middle" font-size="10" fill="#fff">' + (lm.icon.length > 2 ? '•' : lm.icon) + '</text></svg>';
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat(lm.coords)
+        .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong style="color:#FF6B35">' + lm.name + '</strong><br><span style="color:#a0a0b0">' + lm.desc + '</span>'));
+      landmarkMarkers.push(marker);
+    });
+
+    // Create mile markers (initially hidden)
+    MILE_MARKERS.forEach(mm => {
+      const el = document.createElement('div');
+      el.className = 'mile-marker';
+      el.textContent = mm.mile;
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat(mm.coords)
+        .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong style="color:#FF6B35">Mile ' + mm.mile + '</strong>'));
+      mileMarkers.push(marker);
+    });
+
+    // Create turn markers with Street View (if configured)
+    TURNS.forEach(turn => {
+      if (!turn.pano) return; // Skip if no pano ID
+      const el = document.createElement('div');
+      el.className = 'turn-marker';
+      el.innerHTML = '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#FF6B35" stroke="#fff" stroke-width="2"/><path d="M12 16l6-4v8z" fill="#fff"/></svg>';
+      const streetViewUrl = 'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=' + turn.pano + '&cb_client=maps_sv.tactile&w=640&h=360&yaw=' + turn.heading + '&pitch=' + turn.pitch;
+      const mapsUrl = 'https://www.google.com/maps/@?api=1&map_action=pano&pano=' + turn.pano + '&heading=' + turn.heading + '&pitch=' + turn.pitch;
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat(turn.coords)
+        .setPopup(new mapboxgl.Popup({ offset: 18, className: 'streetview-popup' }).setHTML(
+          '<img class="streetview-img" src="' + streetViewUrl + '" alt="Street View">' +
+          '<div class="streetview-caption"><strong>' + turn.name + '</strong><a href="' + mapsUrl + '" target="_blank">Open in Google Maps</a></div>'
+        ));
+      turnMarkers.push(marker);
+    });
+
+    // Add course click interaction
+    map.on('click', 'course-line', e => {
+      new mapboxgl.Popup({ offset: 12 })
+        .setLngLat(e.lngLat)
+        .setHTML('<strong style="color:#FF6B35">Sleepy Hollow Half Marathon</strong><br><span style="color:#a0a0b0">13.1 mi &bull; Mixed road & trail</span>')
+        .addTo(map);
+    });
+    map.on('mouseenter', 'course-line', () => map.getCanvas().style.cursor = 'pointer');
+    map.on('mouseleave', 'course-line', () => map.getCanvas().style.cursor = '');
+  });
+}
+
+function toggleCourse() {
+  courseVisible = !courseVisible;
+  document.getElementById('courseBtn').classList.toggle('active', courseVisible);
+  if (map.getLayer('course-line')) {
+    map.setLayoutProperty('course-line', 'visibility', courseVisible ? 'visible' : 'none');
+    map.setLayoutProperty('course-outline', 'visibility', courseVisible ? 'visible' : 'none');
+  }
+}
+
+function toggleMiles() {
+  milesVisible = !milesVisible;
+  document.getElementById('milesBtn').classList.toggle('active', milesVisible);
+  mileMarkers.forEach(m => {
+    if (milesVisible) m.addTo(map);
+    else m.remove();
+  });
+  // Also show/hide turn markers with miles
+  turnMarkers.forEach(m => {
+    if (milesVisible) m.addTo(map);
+    else m.remove();
+  });
+}
+
+function toggleLandmarks() {
+  landmarksVisible = !landmarksVisible;
+  document.getElementById('landmarksBtn').classList.toggle('active', landmarksVisible);
+  landmarkMarkers.forEach(m => {
+    if (landmarksVisible) m.addTo(map);
+    else m.remove();
+  });
+}
+
+function toggle3D() {
+  terrain3D = !terrain3D;
+  document.getElementById('terrainBtn').classList.toggle('active', terrain3D);
+  if (terrain3D) {
+    if (!map.getSource('mapbox-dem')) {
+      map.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
+    }
+    map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+    map.easeTo({ pitch: 45, duration: 1000 });
+  } else {
+    map.setTerrain(null);
+    map.easeTo({ pitch: 0, duration: 1000 });
+  }
+}
+
+function drawElevationProfile() {
+  const canvas = document.getElementById('profileCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+
+  const w = rect.width;
+  const h = rect.height;
+  const padding = { top: 10, right: 10, bottom: 25, left: 35 };
+  const chartW = w - padding.left - padding.right;
+  const chartH = h - padding.top - padding.bottom;
+
+  const maxDist = 13.1;
+  const maxEle = 300;
+  const minEle = 0;
+
+  // Draw grid
+  ctx.strokeStyle = '#333355';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padding.top + (chartH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(w - padding.right, y);
+    ctx.stroke();
+  }
+
+  // Draw elevation area
+  ctx.beginPath();
+  ctx.moveTo(padding.left, padding.top + chartH);
+  ELEVATION_PROFILE.forEach((pt, i) => {
+    const x = padding.left + (pt.d / maxDist) * chartW;
+    const y = padding.top + chartH - ((pt.e - minEle) / (maxEle - minEle)) * chartH;
+    if (i === 0) ctx.lineTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.lineTo(padding.left + chartW, padding.top + chartH);
+  ctx.closePath();
+  const gradient = ctx.createLinearGradient(0, padding.top, 0, padding.top + chartH);
+  gradient.addColorStop(0, 'rgba(255, 107, 53, 0.4)');
+  gradient.addColorStop(1, 'rgba(255, 107, 53, 0.05)');
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  // Draw elevation line
+  ctx.beginPath();
+  ELEVATION_PROFILE.forEach((pt, i) => {
+    const x = padding.left + (pt.d / maxDist) * chartW;
+    const y = padding.top + chartH - ((pt.e - minEle) / (maxEle - minEle)) * chartH;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = '#FF6B35';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Draw labels
+  ctx.fillStyle = '#666680';
+  ctx.font = '10px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  for (let m = 0; m <= 13; m += 2) {
+    const x = padding.left + (m / maxDist) * chartW;
+    ctx.fillText(m + ' mi', x, h - 8);
+  }
+  ctx.textAlign = 'right';
+  ctx.fillText('0 ft', padding.left - 5, padding.top + chartH);
+  ctx.fillText('150', padding.left - 5, padding.top + chartH / 2);
+  ctx.fillText('300', padding.left - 5, padding.top + 10);
+}
+
+function renderLandmarksGrid() {
+  const grid = document.getElementById('landmarksGrid');
+  LANDMARKS.forEach(lm => {
+    const card = document.createElement('div');
+    card.className = 'landmark-card';
+    card.innerHTML = '<div class="icon">' + lm.icon + '</div><div class="name">' + lm.name + '</div><div class="desc">' + lm.desc + '</div>';
+    card.onclick = () => {
+      map.flyTo({ center: lm.coords, zoom: 15, duration: 1500 });
+      if (!landmarksVisible) toggleLandmarks();
+    };
+    grid.appendChild(card);
+  });
+}
+
+document.getElementById('courseBtn').onclick = toggleCourse;
+document.getElementById('milesBtn').onclick = toggleMiles;
+document.getElementById('landmarksBtn').onclick = toggleLandmarks;
+document.getElementById('terrainBtn').onclick = toggle3D;
+
+initMap();
+renderLandmarksGrid();
+window.addEventListener('load', drawElevationProfile);
+window.addEventListener('resize', drawElevationProfile);
+</script>
+</body>
+</html>

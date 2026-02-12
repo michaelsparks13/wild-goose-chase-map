@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1a2e">
+<title>Sleeping Giant Trail Runs 25K - Course Map</title>
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #FF6B35;
+  --primary-dark: #E55A25;
+  --accent: #CC4E1A;
+  --bg: #1a1a2e;
+  --bg-card: #252540;
+  --bg-alt: #16162a;
+  --text: #ffffff;
+  --text-secondary: #a0a0b0;
+  --text-muted: #666680;
+  --border: #333355;
+  --course: #FF6B35;
+  --shadow: 0 4px 20px rgba(0,0,0,0.3);
+  --radius: 12px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg) 100%);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left h1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.5px;
+}
+.header-left .subtitle {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.header-left .subtitle a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.race-badge {
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.map-wrap { position: relative; }
+#map { width: 100%; height: 55vh; min-height: 300px; }
+
+.map-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.info-badge {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+}
+.info-badge .label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+.info-badge .value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.toggle-btns {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+}
+.toggle-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: all 0.2s;
+}
+.toggle-btn:hover { border-color: var(--primary); color: var(--text); }
+.toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.stats-section {
+  background: var(--bg-card);
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.stat-card {
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--bg-alt);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.stat-card .value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+.stat-card .label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+.profile-section {
+  background: var(--bg-alt);
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.profile-header h3 {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.profile-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+.profile-stats .val { font-weight: 600; color: var(--primary); }
+#profileCanvas {
+  width: 100%;
+  height: 100px;
+  display: block;
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.course-info {
+  padding: 20px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+}
+.course-info h3 {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.course-description {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+.course-description strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+.footer a { color: var(--primary); text-decoration: none; }
+
+/* Mapbox customization */
+.mapboxgl-popup-content {
+  background: var(--bg-card) !important;
+  color: var(--text) !important;
+  border-radius: var(--radius) !important;
+  padding: 12px 16px !important;
+  box-shadow: var(--shadow) !important;
+  font-family: inherit !important;
+  font-size: 0.85rem !important;
+  border: 1px solid var(--border) !important;
+}
+.mapboxgl-popup-tip { border-top-color: var(--bg-card) !important; }
+.mapboxgl-popup-close-button { color: var(--text-muted) !important; font-size: 18px !important; }
+.mapboxgl-ctrl-attrib { font-size: 9px !important; }
+.mapboxgl-ctrl-group { border-radius: 8px !important; overflow: hidden; }
+
+.start-marker {
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+.start-marker svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+/* View tabs */
+.view-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-alt);
+  padding: 3px;
+  border-radius: 8px;
+}
+.view-tab {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.view-tab:active { transform: scale(0.96); }
+.view-tab.active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.view { display: none; }
+.view.active { display: block; }
+
+/* Simulator */
+.sim-container { background: var(--bg); }
+.sim-split { display: flex; flex-direction: column; }
+
+/* Course map canvas */
+.course-map-wrap { position: relative; background: #1a2030; border-bottom: 1px solid var(--border); }
+#courseMapCanvas { width: 100%; height: 260px; display: block; }
+.runner-info-overlay {
+  position: absolute; top: 12px; left: 12px; pointer-events: none;
+}
+.runner-ele {
+  font-size: 1.8rem; font-weight: 700; color: #fff; line-height: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+.runner-ele .unit { font-size: 0.4em; font-weight: 400; opacity: 0.7; }
+.runner-meta { font-size: 0.7rem; color: rgba(255,255,255,0.7); margin-top: 2px; }
+
+/* Sim elevation profile */
+.sim-profile-wrap { position: relative; background: #1a2030; }
+#simProfileCanvas { width: 100%; height: 140px; display: block; }
+
+/* Scrubber */
+.scrubber {
+  background: var(--bg); padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.scrub-row { display: flex; align-items: center; gap: 12px; }
+.play-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--primary); border: none; color: #fff;
+  cursor: pointer; display: flex; align-items: center;
+  justify-content: center; font-size: 14px; flex-shrink: 0;
+  transition: all 0.15s;
+}
+.play-btn:active { transform: scale(0.95); background: var(--primary-dark); }
+.scrub-track { flex: 1; position: relative; height: 36px; cursor: pointer; }
+.scrub-bg {
+  position: absolute; top: 14px; left: 0; right: 0; height: 8px;
+  background: var(--bg-alt); border-radius: 4px; overflow: hidden;
+}
+.scrub-fill {
+  position: absolute; top: 0; left: 0; height: 100%;
+  background: var(--primary); opacity: 0.3; border-radius: 4px 0 0 4px;
+}
+.scrub-handle {
+  position: absolute; top: 8px; width: 20px; height: 20px;
+  background: var(--primary); border-radius: 50%; transform: translateX(-50%);
+  box-shadow: 0 2px 6px rgba(255,107,53,0.4); pointer-events: none;
+}
+.speed-btns { display: flex; gap: 4px; flex-shrink: 0; }
+.speed-btn {
+  padding: 6px 10px; border-radius: 6px; background: var(--bg-alt);
+  border: 1px solid var(--border); color: var(--text-muted);
+  font-family: inherit; font-size: 0.7rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.speed-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+/* Goal time */
+.goal-time-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; background: var(--bg);
+  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.distance-picker { display: flex; gap: 4px; }
+.dist-btn {
+  padding: 6px 14px; border-radius: 6px; background: var(--bg-alt);
+  border: 1px solid var(--border); color: var(--text-muted);
+  font-family: inherit; font-size: 0.75rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+}
+.dist-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.goal-label {
+  font-size: 0.65rem; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.goal-inputs { display: flex; align-items: center; gap: 4px; }
+.goal-input {
+  width: 48px; padding: 8px 4px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg-alt);
+  color: var(--text); font-family: inherit; font-size: 1rem;
+  font-weight: 600; text-align: center; outline: none;
+}
+.goal-input:focus { border-color: var(--primary); }
+.goal-colon { font-size: 1.2rem; font-weight: 700; color: var(--text-muted); }
+.goal-pace { font-size: 0.8rem; color: var(--text-secondary); margin-left: auto; }
+.goal-pace strong { color: var(--text); font-weight: 600; }
+
+/* Sim stats */
+.sim-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--border);
+}
+.sim-stat {
+  background: var(--bg); padding: 12px 8px; text-align: center;
+}
+.sim-stat .val { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+.sim-stat .label {
+  font-size: 0.6rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;
+}
+
+/* Clock */
+.sim-clock {
+  background: var(--bg); padding: 16px; text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.clock-time { font-size: 2rem; font-weight: 700; color: var(--text); letter-spacing: 1px; }
+.clock-label {
+  font-size: 0.6rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;
+}
+
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-card .value { font-size: 1.2rem; }
+  #map { height: 45vh; }
+}
+@media (min-width: 768px) {
+  #courseMapCanvas { height: 320px; }
+  #simProfileCanvas { height: 180px; }
+  .sim-stats { grid-template-columns: repeat(6, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <h1>Sleeping Giant Trail Runs</h1>
+    <div class="subtitle">March 29, 2026 &bull; <a href="https://steependurance.com" target="_blank">Steep Endurance</a></div>
+  </div>
+  <div class="view-tabs">
+    <button class="view-tab active" onclick="switchView('map')">Map</button>
+    <button class="view-tab" onclick="switchView('sim')">Simulator</button>
+  </div>
+</header>
+
+<div id="mapView" class="view active">
+
+<div class="map-wrap">
+  <div id="map"></div>
+  <div class="map-overlay">
+    <div class="info-badge">
+      <div class="label">Start / Finish</div>
+      <div class="value">Mt Carmel Ave</div>
+    </div>
+  </div>
+  <div class="toggle-btns">
+    <button class="toggle-btn active" id="courseBtn">Course</button>
+    <button class="toggle-btn" id="trailBtn">Park Trails</button>
+    <button class="toggle-btn" id="terrainBtn">3D</button>
+  </div>
+</div>
+
+<section class="stats-section">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="value">15.5</div>
+      <div class="label">Miles</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">4,314</div>
+      <div class="label">Elev Gain (ft)</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">25K</div>
+      <div class="label">Distance</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">Loop</div>
+      <div class="label">Course Type</div>
+    </div>
+  </div>
+</section>
+
+<section class="profile-section">
+  <div class="profile-header">
+    <h3>Elevation Profile</h3>
+    <div class="profile-stats">
+      <span>Gain: <span class="val">4,314 ft</span></span>
+      <span>High: <span class="val">722 ft</span></span>
+    </div>
+  </div>
+  <canvas id="profileCanvas"></canvas>
+</section>
+
+<section class="course-info">
+  <h3>Course Description</h3>
+  <div class="course-description">
+    <p>The <strong>Sleeping Giant Trail Runs 25K loop</strong> spans 25 kilometers with over <strong>3,000 feet of vertical gain</strong>. The terrain varies considerably, featuring <strong>smooth carriage roads</strong> alternating with <strong>technical, rocky, winding singletrack</strong>.</p>
+    <br>
+    <p>Key features include a lung-busting <strong>500-foot rock scramble</strong> at the 5-mile mark and the infamous <strong>White Trail section</strong> with moderately challenging obstacles. The course winds through the beautiful <strong>Sleeping Giant State Park</strong> in Hamden, Connecticut.</p>
+  </div>
+</section>
+
+</div><!-- end mapView -->
+
+<div id="simView" class="view">
+  <div class="sim-container">
+
+    <div class="goal-time-bar">
+      <div class="distance-picker">
+        <button class="dist-btn active" onclick="setDistance('25k',this)">25K</button>
+        <button class="dist-btn" onclick="setDistance('50k',this)">50K</button>
+      </div>
+      <span class="goal-label">Goal Time</span>
+      <div class="goal-inputs">
+        <input type="number" class="goal-input" id="goalHrs" min="0" max="48" value="2" onchange="updateGoalTime()" onclick="this.select()">
+        <span class="goal-colon">:</span>
+        <input type="number" class="goal-input" id="goalMins" min="0" max="59" value="30" onchange="updateGoalTime()" onclick="this.select()">
+      </div>
+      <div class="goal-pace" id="goalPace">Avg pace: <strong>10:54 /mi</strong></div>
+    </div>
+
+    <div class="course-map-wrap">
+      <canvas id="courseMapCanvas"></canvas>
+      <div class="runner-info-overlay">
+        <div class="runner-ele" id="runnerEle">164<span class="unit">ft</span></div>
+        <div class="runner-meta" id="runnerMeta">Mile 0.0 &middot; Starting</div>
+      </div>
+    </div>
+
+    <div class="sim-profile-wrap">
+      <canvas id="simProfileCanvas"></canvas>
+    </div>
+
+    <div class="scrubber">
+      <div class="scrub-row">
+        <button class="play-btn" id="playBtn" onclick="togglePlay()">&#9654;</button>
+        <div class="scrub-track" id="scrubTrack">
+          <div class="scrub-bg">
+            <div class="scrub-fill" id="scrubFill"></div>
+          </div>
+          <div class="scrub-handle" id="scrubHandle"></div>
+        </div>
+        <div class="speed-btns">
+          <button class="speed-btn active" onclick="setSpeed(1,this)">1x</button>
+          <button class="speed-btn" onclick="setSpeed(2,this)">2x</button>
+          <button class="speed-btn" onclick="setSpeed(4,this)">4x</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sim-clock">
+      <div class="clock-time" id="clockTime">7:00 AM</div>
+      <div class="clock-label">Current Time (Race starts 7:00 AM)</div>
+      <div style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary)">Finish: <strong id="finishTime" style="color:var(--primary)">9:30 AM</strong></div>
+    </div>
+
+    <div class="sim-stats">
+      <div class="sim-stat"><div class="val" id="statDist">0.0</div><div class="label">Miles</div></div>
+      <div class="sim-stat"><div class="val" id="statEle">0</div><div class="label">Elevation (ft)</div></div>
+      <div class="sim-stat"><div class="val" id="statGain">0</div><div class="label">Gain (ft)</div></div>
+      <div class="sim-stat"><div class="val" id="statGrade">0%</div><div class="label">Grade</div></div>
+      <div class="sim-stat"><div class="val" id="statPace">--:--</div><div class="label">Pace /mi</div></div>
+      <div class="sim-stat"><div class="val" id="statPct">0%</div><div class="label">Complete</div></div>
+    </div>
+
+  </div>
+</div><!-- end simView -->
+
+<footer class="footer">
+  Sleeping Giant Trail Runs &bull; Produced by <a href="https://steependurance.com" target="_blank">Steep Endurance</a>
+  <br>Race map created by <a href="https://falsesummitstudio.com" target="_blank">False Summit Studio</a>
+</footer>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoibWljaGFlbHNwYXJrczEzIiwiYSI6ImNtbGp6cHNsNzA1OXEzam9iNWxkZnh6Y3AifQ.Z6IZuPPqMVcYTj1zP8AXYg';
+
+const START_COORDS = [-72.90161, 41.4217];
+
+// Course data loaded from GPX
+const COURSE_COORDS = [
+  [-72.90161, 41.4217],[-72.90135, 41.42177],[-72.90106, 41.42208],[-72.90047, 41.4227],[-72.90007, 41.42238],
+  [-72.89952, 41.42167],[-72.90087, 41.42104],[-72.90137, 41.42078],[-72.90186, 41.42073],[-72.90211, 41.42125],
+  [-72.9022, 41.42163],[-72.9026, 41.42215],[-72.90362, 41.42227],[-72.9039, 41.42245],[-72.90424, 41.42257],
+  [-72.90429, 41.4228],[-72.9041, 41.4232],[-72.90387, 41.42367],[-72.9037, 41.4241],[-72.90354, 41.42434],
+  [-72.90396, 41.42486],[-72.90403, 41.4259],[-72.90385, 41.42695],[-72.90348, 41.42792],[-72.90337, 41.42867],
+  [-72.90328, 41.42932],[-72.90292, 41.42968],[-72.90229, 41.42986],[-72.90136, 41.4307],[-72.90034, 41.43155],
+  [-72.89948, 41.43231],[-72.89853, 41.43307],[-72.89759, 41.43381],[-72.89682, 41.4343],[-72.89619, 41.43483],
+  [-72.89567, 41.4352],[-72.8951, 41.43568],[-72.89441, 41.43625],[-72.89405, 41.43651],[-72.89307, 41.43733],
+  [-72.89282, 41.43772],[-72.89242, 41.43808],[-72.89222, 41.43835],[-72.89171, 41.43843],[-72.89146, 41.4386],
+  [-72.89085, 41.43902],[-72.89029, 41.4393],[-72.88961, 41.4395],[-72.88891, 41.43968],[-72.88789, 41.43983],
+  [-72.88736, 41.4399],[-72.88674, 41.43999],[-72.88584, 41.44008],[-72.88509, 41.44018],[-72.88431, 41.44045],
+  [-72.8834, 41.44063],[-72.8831, 41.44077],[-72.88254, 41.44104],[-72.88191, 41.44126],[-72.88159, 41.44181],
+  [-72.88112, 41.44204],[-72.88059, 41.44197],[-72.8802, 41.442],[-72.87961, 41.4421],[-72.87893, 41.44259],
+  [-72.87784, 41.44306],[-72.87727, 41.44326],[-72.8771, 41.44395],[-72.8769, 41.444],[-72.87669, 41.4438],
+  [-72.8769, 41.444],[-72.87711, 41.44389],[-72.87708, 41.44314],[-72.8768, 41.44288],[-72.87682, 41.44266],
+  [-72.87685, 41.44226],[-72.87708, 41.44177],[-72.87797, 41.44156],[-72.8786, 41.44132],[-72.87932, 41.44099],
+  [-72.87959, 41.44083],[-72.88099, 41.44065],[-72.88167, 41.44033],[-72.88225, 41.43983],[-72.88246, 41.43929],
+  [-72.88281, 41.43888],[-72.88314, 41.43871],[-72.88335, 41.43825],[-72.88376, 41.43796],[-72.88421, 41.43755],
+  [-72.8848, 41.43721],[-72.88556, 41.4367],[-72.88608, 41.43631],[-72.88656, 41.43594],[-72.88706, 41.43605],
+  [-72.88744, 41.43588],[-72.88788, 41.43592],[-72.88841, 41.43594],[-72.88866, 41.43618],[-72.88914, 41.43633],
+  [-72.88915, 41.4362],[-72.88916, 41.43593],[-72.88923, 41.4354],[-72.88932, 41.43502],[-72.8892, 41.43462],
+  [-72.88908, 41.43424],[-72.88905, 41.43394],[-72.89063, 41.43353],[-72.89215, 41.43271],[-72.89315, 41.43209],
+  [-72.89381, 41.43202],[-72.89536, 41.43166],[-72.89724, 41.43058],[-72.89907, 41.43004],[-72.89998, 41.42908],
+  [-72.90017, 41.42866],[-72.90055, 41.42838],[-72.90084, 41.42833],[-72.90117, 41.42818],[-72.90135, 41.42804],
+  [-72.90151, 41.42723],[-72.90241, 41.42641],[-72.90278, 41.4259],[-72.90305, 41.42535],[-72.90301, 41.42507],
+  [-72.90277, 41.42471],[-72.90266, 41.42433],[-72.90255, 41.4241],[-72.90201, 41.42417],[-72.90168, 41.42428],
+  [-72.90132, 41.42471],[-72.90118, 41.42503],[-72.90079, 41.4256],[-72.90044, 41.4256],[-72.89997, 41.42574],
+  [-72.89959, 41.4258],[-72.89906, 41.42595],[-72.89893, 41.4263],[-72.89875, 41.42674],[-72.89868, 41.42701],
+  [-72.8989, 41.42728],[-72.89872, 41.42766],[-72.89865, 41.42817],[-72.8987, 41.42856],[-72.89819, 41.42864],
+  [-72.89794, 41.42868],[-72.89779, 41.42856],[-72.8976, 41.42826],[-72.89737, 41.4281],[-72.89716, 41.42794],
+  [-72.8964, 41.42799],[-72.89597, 41.42818],[-72.8957, 41.42843],[-72.89526, 41.42891],[-72.895, 41.42894],
+  [-72.89462, 41.42898],[-72.89431, 41.4292],[-72.89407, 41.4293],[-72.89398, 41.42947],[-72.89366, 41.42963],
+  [-72.89308, 41.42949],[-72.89279, 41.42935],[-72.89303, 41.42872],[-72.89289, 41.42808],[-72.89261, 41.42744],
+  [-72.89279, 41.42645],[-72.89308, 41.42554],[-72.89449, 41.42476],[-72.89524, 41.42455],[-72.89472, 41.42446],
+  [-72.8945, 41.42431],[-72.89437, 41.42429],[-72.89407, 41.42428],[-72.89366, 41.42419],[-72.89339, 41.42416],
+  [-72.89307, 41.42409],[-72.89277, 41.42411],[-72.89258, 41.42426],[-72.89223, 41.42458],[-72.89206, 41.42491],
+  [-72.8919, 41.42512],[-72.89167, 41.42531],[-72.89129, 41.42536],[-72.89072, 41.42508],[-72.89041, 41.42502],
+  [-72.88974, 41.42519],[-72.8892, 41.42528],[-72.88887, 41.42538],[-72.88856, 41.42547],[-72.88836, 41.42564],
+  [-72.88794, 41.42577],[-72.88769, 41.42593],[-72.88722, 41.42585],[-72.8867, 41.42603],[-72.8865, 41.42621],
+  [-72.88632, 41.42634],[-72.88604, 41.42634],[-72.88566, 41.42635],[-72.8845, 41.42645],[-72.88351, 41.42696],
+  [-72.8829, 41.42722],[-72.88266, 41.42728],[-72.88238, 41.42742],[-72.882, 41.42758],[-72.88158, 41.42771],
+  [-72.88109, 41.42751],[-72.88052, 41.42755],[-72.88, 41.42759],[-72.87961, 41.42773],[-72.87925, 41.42784],
+  [-72.87883, 41.42784],[-72.87856, 41.42776],[-72.87812, 41.4277],[-72.87766, 41.42768],[-72.87725, 41.4281],
+  [-72.87687, 41.42899],[-72.8764, 41.42964],[-72.87648, 41.43004],[-72.87644, 41.43051],[-72.87601, 41.43097],
+  [-72.87552, 41.43117],[-72.87477, 41.43123],[-72.87416, 41.43118],[-72.87397, 41.43096],[-72.87363, 41.43087],
+  [-72.87333, 41.4308],[-72.87302, 41.43082],[-72.87255, 41.43072],[-72.87225, 41.43092],[-72.87203, 41.43108],
+  [-72.8717, 41.43129],[-72.87176, 41.43154],[-72.87163, 41.43183],[-72.87127, 41.43215],[-72.87085, 41.43245],
+  [-72.87065, 41.43311],[-72.87073, 41.43384],[-72.87087, 41.4344],[-72.87099, 41.43453],[-72.87128, 41.43435],
+  [-72.87155, 41.43408],[-72.87187, 41.43371],[-72.87249, 41.43331],[-72.87294, 41.43299],[-72.87349, 41.43271],
+  [-72.87408, 41.43259],[-72.87453, 41.43252],[-72.87559, 41.43238],[-72.87632, 41.43249],[-72.87684, 41.43283],
+  [-72.87727, 41.43241],[-72.8773, 41.43201],[-72.87776, 41.43166],[-72.87843, 41.43161],[-72.8789, 41.43186],
+  [-72.87933, 41.43191],[-72.87967, 41.43164],[-72.87994, 41.43125],[-72.87988, 41.43111],[-72.8799, 41.43077],
+  [-72.88017, 41.43064],[-72.88051, 41.43061],[-72.88075, 41.43046],[-72.88098, 41.43021],[-72.88094, 41.43007],
+  [-72.88094, 41.42993],[-72.88118, 41.42963],[-72.88138, 41.42936],[-72.88134, 41.42915],[-72.88151, 41.42906],
+  [-72.88168, 41.42899],[-72.88219, 41.42882],[-72.88245, 41.42887],[-72.8827, 41.42874],[-72.88305, 41.42876],
+  [-72.88345, 41.42868],[-72.8837, 41.42846],[-72.88415, 41.42822],[-72.88451, 41.4283],[-72.8848, 41.42835],
+  [-72.88525, 41.42812],[-72.8855, 41.42798],[-72.88589, 41.42797],[-72.88633, 41.42786],[-72.88657, 41.42803],
+  [-72.88711, 41.42768],[-72.88748, 41.42761],[-72.88772, 41.42763],[-72.88792, 41.42776],[-72.88824, 41.42768],
+  [-72.88854, 41.42744],[-72.88875, 41.42761],[-72.88908, 41.42781],[-72.88968, 41.42823],[-72.89012, 41.42806],
+  [-72.89022, 41.4279],[-72.89046, 41.42786],[-72.89069, 41.42767],[-72.89084, 41.42744],[-72.89099, 41.42726],
+  [-72.89123, 41.42735],[-72.89153, 41.42752],[-72.89138, 41.4279],[-72.89074, 41.42841],[-72.89009, 41.42852],
+  [-72.88876, 41.4291],[-72.88784, 41.4297],[-72.88738, 41.43052],[-72.88628, 41.43022],[-72.88594, 41.43037],
+  [-72.88536, 41.43093],[-72.88473, 41.43137],[-72.88386, 41.43139],[-72.88348, 41.4324],[-72.88305, 41.43221],
+  [-72.88219, 41.43175],[-72.88165, 41.43177],[-72.8823, 41.4331],[-72.88187, 41.4331],[-72.88125, 41.43275],
+  [-72.88095, 41.43294],[-72.88075, 41.43332],[-72.88039, 41.43367],[-72.87982, 41.43376],[-72.87961, 41.43397],
+  [-72.87951, 41.4345],[-72.87948, 41.43523],[-72.87968, 41.43612],[-72.87965, 41.43638],[-72.8789, 41.43642],
+  [-72.87882, 41.43633],[-72.87921, 41.43611],[-72.87917, 41.43568],[-72.87919, 41.43534],[-72.87918, 41.43493],
+  [-72.87927, 41.43461],[-72.87908, 41.43418],[-72.87885, 41.43414],[-72.87854, 41.43423],[-72.87836, 41.43429],
+  [-72.87796, 41.43417],[-72.8774, 41.43446],[-72.87699, 41.43465],[-72.87659, 41.43454],[-72.87645, 41.43431],
+  [-72.87646, 41.43417],[-72.87601, 41.43363],[-72.87482, 41.43355],[-72.87355, 41.43363],[-72.87302, 41.43392],
+  [-72.87316, 41.4342],[-72.87346, 41.43461],[-72.87308, 41.43472],[-72.87244, 41.43472],[-72.8715, 41.43474],
+  [-72.87095, 41.43455],[-72.87115, 41.43491],[-72.87151, 41.43527],[-72.87185, 41.43558],[-72.87225, 41.43594],
+  [-72.87271, 41.43624],[-72.87303, 41.43652],[-72.8739, 41.43701],[-72.87466, 41.43701],[-72.8754, 41.43719],
+  [-72.87576, 41.43731],[-72.8757, 41.43751],[-72.87577, 41.43815],[-72.87603, 41.4388],[-72.87627, 41.43945],
+  [-72.8766, 41.44004],[-72.87695, 41.44041],[-72.8773, 41.44076],[-72.87739, 41.44042],[-72.87799, 41.44015],
+  [-72.87862, 41.44026],[-72.87885, 41.43988],[-72.87841, 41.43954],[-72.87803, 41.43922],[-72.8778, 41.43876],
+  [-72.87759, 41.43839],[-72.87774, 41.43818],[-72.8781, 41.43812],[-72.87866, 41.43806],[-72.87932, 41.4382],
+  [-72.87947, 41.43779],[-72.8796, 41.4375],[-72.87968, 41.43709],[-72.87987, 41.43669],[-72.88009, 41.4366],
+  [-72.88041, 41.43663],[-72.8809, 41.43667],[-72.8811, 41.43685],[-72.88138, 41.4369],[-72.88182, 41.4369],
+  [-72.88183, 41.43664],[-72.88125, 41.4363],[-72.8813, 41.43579],[-72.88139, 41.43545],[-72.88125, 41.43521],
+  [-72.88119, 41.435],[-72.88122, 41.43473],[-72.8814, 41.4345],[-72.88174, 41.43427],[-72.88201, 41.43413],
+  [-72.88255, 41.43404],[-72.88297, 41.43391],[-72.88329, 41.4339],[-72.88366, 41.43384],[-72.88407, 41.43373],
+  [-72.88453, 41.4337],[-72.88493, 41.43378],[-72.88524, 41.43385],[-72.88551, 41.43393],[-72.88566, 41.43369],
+  [-72.88592, 41.43347],[-72.88657, 41.4332],[-72.88716, 41.43293],[-72.88746, 41.43277],[-72.88779, 41.43262],
+  [-72.88835, 41.43253],[-72.88853, 41.4325],[-72.88853, 41.43229],[-72.88883, 41.43194],[-72.88905, 41.43182],
+  [-72.88929, 41.43156],[-72.88951, 41.43133],[-72.88986, 41.43119],[-72.89, 41.43091],[-72.89023, 41.4307],
+  [-72.89047, 41.43032],[-72.89083, 41.43012],[-72.89119, 41.42986],[-72.89164, 41.4297],[-72.8919, 41.42945],
+  [-72.89241, 41.42962],[-72.89265, 41.43023],[-72.8927, 41.43033],[-72.89312, 41.42993],[-72.8936, 41.43005],
+  [-72.89365, 41.43046],[-72.89412, 41.43059],[-72.89454, 41.43029],[-72.89532, 41.43001],[-72.89604, 41.42948],
+  [-72.89694, 41.42916],[-72.89736, 41.42859],[-72.89736, 41.42816],[-72.89776, 41.42772],[-72.89781, 41.42713],
+  [-72.89783, 41.42653],[-72.89782, 41.42587],[-72.89746, 41.42545],[-72.89671, 41.42518],[-72.89616, 41.42499],
+  [-72.89587, 41.42475],[-72.89598, 41.42462],[-72.89647, 41.42457],[-72.89711, 41.42451],[-72.89748, 41.4243],
+  [-72.89721, 41.42408],[-72.89691, 41.42391],[-72.89673, 41.42377],[-72.89633, 41.42394],[-72.89564, 41.42378],
+  [-72.89529, 41.42365],[-72.89562, 41.42348],[-72.89629, 41.42325],[-72.89687, 41.42299],[-72.89763, 41.42278],
+  [-72.89778, 41.42262],[-72.89701, 41.42251],[-72.89695, 41.4224],[-72.89762, 41.42238],[-72.89847, 41.42212],
+  [-72.89909, 41.42183],[-72.89994, 41.42172],[-72.90138, 41.42174],[-72.9016, 41.4217]
+];
+
+// Elevation data (meters, sampled from GPX)
+const ELEVATIONS = [
+  50, 49, 45, 43, 41, 36, 41, 35, 29, 31, 29, 27, 29, 32, 28, 29, 30, 32, 37, 37,
+  36, 35, 34, 34, 33, 32, 32, 34, 37, 37, 37, 38, 42, 46, 47, 49, 48, 51, 53, 52,
+  51, 51, 46, 47, 45, 50, 56, 64, 71, 76, 77, 79, 83, 87, 93, 103, 104, 102, 103, 101,
+  101, 101, 102, 102, 96, 94, 93, 83, 83, 87, 83, 84, 96, 101, 103, 110, 118, 121, 121, 122,
+  122, 125, 124, 124, 125, 124, 124, 127, 129, 130, 127, 122, 120, 121, 121, 123, 123, 121, 117, 114,
+  117, 121, 128, 134, 142, 148, 153, 145, 147, 144, 141, 132, 119, 111, 109, 111, 113, 110, 107, 106,
+  104, 86, 76, 65, 59, 54, 54, 60, 75, 90, 124, 142, 175, 185, 191, 191, 190, 198, 188, 185,
+  198, 189, 171, 147, 148, 148, 150, 153, 155, 158, 172, 185, 189, 194, 200, 206, 205, 203, 200, 187,
+  183, 184, 182, 189, 191, 174, 161, 128, 115, 113, 106, 105, 104, 97, 93, 91, 95, 100, 107, 111,
+  110, 107, 100, 88, 85, 83, 82, 83, 86, 93, 99, 111, 122, 136, 144, 149, 151, 154, 145, 139,
+  135, 134, 135, 134, 133, 122, 120, 122, 118, 117, 112, 108, 108, 101, 107, 117, 115, 119, 121, 120,
+  116, 109, 107, 107, 107, 102, 99, 103, 106, 106, 109, 110, 112, 113, 112, 110, 108, 107, 108, 110,
+  111, 113, 119, 119, 120, 121, 122, 124, 130, 140, 144, 141, 144, 156, 168, 177, 180, 186, 188, 199,
+  200, 198, 198, 195, 198, 199, 195, 191, 189, 179, 168, 173, 183, 185, 193, 198, 201, 205, 211, 212,
+  211, 208, 204, 195, 196, 191, 193, 194, 198, 198, 194, 197, 195, 205, 192, 187, 181, 175, 169, 160,
+  160, 165, 172, 177, 189, 204, 209, 209, 206, 201, 202, 205, 200, 188, 194, 188, 182, 176, 174, 171,
+  172, 168, 167, 173, 177, 180, 182, 188, 188, 183, 183, 189, 194, 193, 191, 186, 186, 192, 200, 203,
+  191, 187, 186, 173, 162, 155, 139, 135, 129, 129, 132, 140, 135, 125, 113, 108, 111, 117, 121, 127,
+  131, 131, 134, 143, 150, 152, 149, 147, 144, 137, 133, 136, 134, 139, 148, 153, 163, 171, 176, 180,
+  179, 180, 187, 193, 198, 200, 207, 207, 202, 202, 210, 207, 204, 196, 185, 179, 186, 201, 207, 210,
+  210, 201, 196, 196, 195, 195, 187, 182, 174, 166, 163, 159, 159, 165, 173, 178, 184, 182, 184, 189,
+  205, 209, 210, 211, 213, 215, 214, 220, 219, 218, 214, 216, 211, 209, 203, 198, 191, 189, 185, 182,
+  179, 177, 176, 174, 171, 164, 159, 155, 149, 143, 135, 130, 125, 123, 118, 116, 115, 110, 103, 96,
+  92, 92, 88, 87, 81, 81, 78, 72, 65, 60, 55, 55, 52, 51, 43, 38, 36, 49, 50, 50
+];
+
+const COURSE = {
+  type: 'Feature',
+  properties: {
+    name: 'Sleeping Giant Trail Runs 25K',
+    distance_mi: 15.5
+  },
+  geometry: {
+    type: 'LineString',
+    coordinates: COURSE_COORDS
+  }
+};
+
+let map;
+let courseVisible = true;
+let terrain3D = false;
+let trailsOn = false;
+let trailsData = {"type":"FeatureCollection","features":[{"type":"Feature","properties":{"name":"Mt Carmel Avenue","blaze":null},"geometry":{"type":"LineString","coordinates":[[-72.90161,41.4217],[-72.90135,41.42177],[-72.90106,41.42208],[-72.90047,41.4227],[-72.90007,41.42238],[-72.89952,41.42167],[-72.90087,41.42104],[-72.90137,41.42078],[-72.90186,41.42073],[-72.90211,41.42125],[-72.9022,41.42163],[-72.9026,41.42215],[-72.90362,41.42227],[-72.9039,41.42245],[-72.90424,41.42257],[-72.90429,41.4228],[-72.9041,41.4232],[-72.90387,41.42367],[-72.9037,41.4241],[-72.90354,41.42434],[-72.90396,41.42486]]}},{"type":"Feature","properties":{"name":"Tower Trail","blaze":"red"},"geometry":{"type":"LineString","coordinates":[[-72.90396,41.42486],[-72.90403,41.4259],[-72.90385,41.42695],[-72.90348,41.42792],[-72.90337,41.42867],[-72.90328,41.42932],[-72.90292,41.42968],[-72.90229,41.42986],[-72.90136,41.4307],[-72.90034,41.43155],[-72.89948,41.43231],[-72.89853,41.43307],[-72.89759,41.43381],[-72.89682,41.4343],[-72.89619,41.43483],[-72.89567,41.4352],[-72.8951,41.43568],[-72.89441,41.43625],[-72.89405,41.43651],[-72.89307,41.43733],[-72.89282,41.43772],[-72.89242,41.43808],[-72.89222,41.43835],[-72.89171,41.43843],[-72.89146,41.4386],[-72.89085,41.43902]]}},{"type":"Feature","properties":{"name":"Blue Trail","blaze":"blue"},"geometry":{"type":"LineString","coordinates":[[-72.89085,41.43902],[-72.89029,41.4393],[-72.88961,41.4395],[-72.88891,41.43968],[-72.88789,41.43983],[-72.88736,41.4399],[-72.88674,41.43999],[-72.88584,41.44008],[-72.88509,41.44018],[-72.88431,41.44045],[-72.8834,41.44063],[-72.8831,41.44077],[-72.88254,41.44104],[-72.88191,41.44126],[-72.88159,41.44181],[-72.88112,41.44204],[-72.88059,41.44197],[-72.8802,41.442],[-72.87961,41.4421],[-72.87893,41.44259],[-72.87784,41.44306],[-72.87727,41.44326],[-72.8771,41.44395],[-72.8769,41.444],[-72.87669,41.4438],[-72.8769,41.444],[-72.87711,41.44389],[-72.87708,41.44314],[-72.8768,41.44288],[-72.87682,41.44266],[-72.87685,41.44226],[-72.87708,41.44177],[-72.87797,41.44156],[-72.8786,41.44132],[-72.87932,41.44099],[-72.87959,41.44083],[-72.88099,41.44065],[-72.88167,41.44033],[-72.88225,41.43983],[-72.88246,41.43929],[-72.88281,41.43888],[-72.88314,41.43871],[-72.88335,41.43825],[-72.88376,41.43796],[-72.88421,41.43755],[-72.8848,41.43721],[-72.88556,41.4367],[-72.88608,41.43631],[-72.88656,41.43594],[-72.88706,41.43605],[-72.88744,41.43588]]}},{"type":"Feature","properties":{"name":"White Trail","blaze":"white"},"geometry":{"type":"LineString","coordinates":[[-72.88744,41.43588],[-72.88788,41.43592],[-72.88841,41.43594],[-72.88866,41.43618],[-72.88914,41.43633],[-72.88915,41.4362],[-72.88916,41.43593],[-72.88923,41.4354],[-72.88932,41.43502],[-72.8892,41.43462],[-72.88908,41.43424],[-72.88905,41.43394],[-72.89063,41.43353],[-72.89215,41.43271],[-72.89315,41.43209],[-72.89381,41.43202],[-72.89536,41.43166],[-72.89724,41.43058],[-72.89907,41.43004],[-72.89998,41.42908],[-72.90017,41.42866],[-72.90055,41.42838],[-72.90084,41.42833],[-72.90117,41.42818],[-72.90135,41.42804],[-72.90151,41.42723],[-72.90241,41.42641],[-72.90278,41.4259],[-72.90305,41.42535],[-72.90301,41.42507],[-72.90277,41.42471],[-72.90266,41.42433],[-72.90255,41.4241],[-72.90201,41.42417],[-72.90168,41.42428],[-72.90132,41.42471]]}},{"type":"Feature","properties":{"name":"Violet Trail","blaze":"violet"},"geometry":{"type":"LineString","coordinates":[[-72.90132,41.42471],[-72.90118,41.42503],[-72.90079,41.4256],[-72.90044,41.4256],[-72.89997,41.42574],[-72.89959,41.4258],[-72.89906,41.42595],[-72.89893,41.4263],[-72.89875,41.42674],[-72.89868,41.42701],[-72.8989,41.42728],[-72.89872,41.42766],[-72.89865,41.42817],[-72.8987,41.42856],[-72.89819,41.42864],[-72.89794,41.42868],[-72.89779,41.42856],[-72.8976,41.42826],[-72.89737,41.4281],[-72.89716,41.42794],[-72.8964,41.42799],[-72.89597,41.42818],[-72.8957,41.42843],[-72.89526,41.42891],[-72.895,41.42894],[-72.89462,41.42898],[-72.89431,41.4292],[-72.89407,41.4293],[-72.89398,41.42947],[-72.89366,41.42963],[-72.89308,41.42949],[-72.89279,41.42935],[-72.89303,41.42872],[-72.89289,41.42808],[-72.89261,41.42744],[-72.89279,41.42645],[-72.89308,41.42554],[-72.89449,41.42476],[-72.89524,41.42455],[-72.89472,41.42446],[-72.8945,41.42431]]}},{"type":"Feature","properties":{"name":"Green Trail","blaze":"green"},"geometry":{"type":"LineString","coordinates":[[-72.8945,41.42431],[-72.89437,41.42429],[-72.89407,41.42428],[-72.89366,41.42419],[-72.89339,41.42416],[-72.89307,41.42409],[-72.89277,41.42411],[-72.89258,41.42426],[-72.89223,41.42458],[-72.89206,41.42491],[-72.8919,41.42512],[-72.89167,41.42531],[-72.89129,41.42536],[-72.89072,41.42508],[-72.89041,41.42502],[-72.88974,41.42519],[-72.8892,41.42528],[-72.88887,41.42538],[-72.88856,41.42547],[-72.88836,41.42564],[-72.88794,41.42577],[-72.88769,41.42593],[-72.88722,41.42585],[-72.8867,41.42603],[-72.8865,41.42621],[-72.88632,41.42634],[-72.88604,41.42634],[-72.88566,41.42635],[-72.8845,41.42645],[-72.88351,41.42696],[-72.8829,41.42722],[-72.88266,41.42728],[-72.88238,41.42742],[-72.882,41.42758],[-72.88158,41.42771],[-72.88109,41.42751],[-72.88052,41.42755],[-72.88,41.42759],[-72.87961,41.42773],[-72.87925,41.42784],[-72.87883,41.42784]]}},{"type":"Feature","properties":{"name":"Yellow Trail","blaze":"yellow"},"geometry":{"type":"LineString","coordinates":[[-72.87883,41.42784],[-72.87856,41.42776],[-72.87812,41.4277],[-72.87766,41.42768],[-72.87725,41.4281],[-72.87687,41.42899],[-72.8764,41.42964],[-72.87648,41.43004],[-72.87644,41.43051],[-72.87601,41.43097],[-72.87552,41.43117],[-72.87477,41.43123],[-72.87416,41.43118],[-72.87397,41.43096],[-72.87363,41.43087],[-72.87333,41.4308],[-72.87302,41.43082],[-72.87255,41.43072],[-72.87225,41.43092],[-72.87203,41.43108],[-72.8717,41.43129],[-72.87176,41.43154],[-72.87163,41.43183],[-72.87127,41.43215],[-72.87085,41.43245],[-72.87065,41.43311],[-72.87073,41.43384],[-72.87087,41.4344],[-72.87099,41.43453],[-72.87128,41.43435],[-72.87155,41.43408],[-72.87187,41.43371],[-72.87249,41.43331],[-72.87294,41.43299],[-72.87349,41.43271],[-72.87408,41.43259],[-72.87453,41.43252],[-72.87559,41.43238],[-72.87632,41.43249],[-72.87684,41.43283],[-72.87727,41.43241],[-72.8773,41.43201],[-72.87776,41.43166],[-72.87843,41.43161],[-72.8789,41.43186],[-72.87933,41.43191],[-72.87967,41.43164],[-72.87994,41.43125],[-72.87988,41.43111],[-72.8799,41.43077],[-72.88017,41.43064]]}},{"type":"Feature","properties":{"name":"Orange Trail","blaze":"orange"},"geometry":{"type":"LineString","coordinates":[[-72.88017,41.43064],[-72.88051,41.43061],[-72.88075,41.43046],[-72.88098,41.43021],[-72.88094,41.43007],[-72.88094,41.42993],[-72.88118,41.42963],[-72.88138,41.42936],[-72.88134,41.42915],[-72.88151,41.42906],[-72.88168,41.42899],[-72.88219,41.42882],[-72.88245,41.42887],[-72.8827,41.42874],[-72.88305,41.42876],[-72.88345,41.42868],[-72.8837,41.42846],[-72.88415,41.42822],[-72.88451,41.4283],[-72.8848,41.42835],[-72.88525,41.42812],[-72.8855,41.42798],[-72.88589,41.42797],[-72.88633,41.42786],[-72.88657,41.42803],[-72.88711,41.42768],[-72.88748,41.42761],[-72.88772,41.42763],[-72.88792,41.42776],[-72.88824,41.42768],[-72.88854,41.42744],[-72.88875,41.42761],[-72.88908,41.42781],[-72.88968,41.42823],[-72.89012,41.42806],[-72.89022,41.4279],[-72.89046,41.42786],[-72.89069,41.42767],[-72.89084,41.42744],[-72.89099,41.42726],[-72.89123,41.42735],[-72.89153,41.42752],[-72.89138,41.4279],[-72.89074,41.42841],[-72.89009,41.42852],[-72.88876,41.4291],[-72.88784,41.4297],[-72.88738,41.43052],[-72.88628,41.43022],[-72.88594,41.43037],[-72.88536,41.43093]]}},{"type":"Feature","properties":{"name":"Blue Trail","blaze":"blue"},"geometry":{"type":"LineString","coordinates":[[-72.88536,41.43093],[-72.88473,41.43137],[-72.88386,41.43139],[-72.88348,41.4324],[-72.88305,41.43221],[-72.88219,41.43175],[-72.88165,41.43177],[-72.8823,41.4331],[-72.88187,41.4331],[-72.88125,41.43275],[-72.88095,41.43294],[-72.88075,41.43332],[-72.88039,41.43367],[-72.87982,41.43376],[-72.87961,41.43397],[-72.87951,41.4345],[-72.87948,41.43523],[-72.87968,41.43612],[-72.87965,41.43638],[-72.8789,41.43642],[-72.87882,41.43633],[-72.87921,41.43611],[-72.87917,41.43568],[-72.87919,41.43534],[-72.87918,41.43493],[-72.87927,41.43461],[-72.87908,41.43418],[-72.87885,41.43414],[-72.87854,41.43423],[-72.87836,41.43429],[-72.87796,41.43417],[-72.8774,41.43446],[-72.87699,41.43465],[-72.87659,41.43454],[-72.87645,41.43431],[-72.87646,41.43417],[-72.87601,41.43363],[-72.87482,41.43355],[-72.87355,41.43363],[-72.87302,41.43392],[-72.87316,41.4342],[-72.87346,41.43461],[-72.87308,41.43472],[-72.87244,41.43472],[-72.8715,41.43474],[-72.87095,41.43455],[-72.87115,41.43491],[-72.87151,41.43527],[-72.87185,41.43558],[-72.87225,41.43594],[-72.87271,41.43624],[-72.87303,41.43652],[-72.8739,41.43701],[-72.87466,41.43701],[-72.8754,41.43719],[-72.87576,41.43731],[-72.8757,41.43751],[-72.87577,41.43815],[-72.87603,41.4388],[-72.87627,41.43945],[-72.8766,41.44004]]}},{"type":"Feature","properties":{"name":"Red Circle Trail","blaze":"red"},"geometry":{"type":"LineString","coordinates":[[-72.8766,41.44004],[-72.87695,41.44041],[-72.8773,41.44076],[-72.87739,41.44042],[-72.87799,41.44015],[-72.87862,41.44026],[-72.87885,41.43988],[-72.87841,41.43954],[-72.87803,41.43922],[-72.8778,41.43876],[-72.87759,41.43839],[-72.87774,41.43818],[-72.8781,41.43812],[-72.87866,41.43806],[-72.87932,41.4382],[-72.87947,41.43779],[-72.8796,41.4375],[-72.87968,41.43709],[-72.87987,41.43669],[-72.88009,41.4366],[-72.88041,41.43663],[-72.8809,41.43667],[-72.8811,41.43685],[-72.88138,41.4369],[-72.88182,41.4369],[-72.88183,41.43664],[-72.88125,41.4363],[-72.8813,41.43579],[-72.88139,41.43545],[-72.88125,41.43521],[-72.88119,41.435],[-72.88122,41.43473],[-72.8814,41.4345],[-72.88174,41.43427],[-72.88201,41.43413],[-72.88255,41.43404],[-72.88297,41.43391],[-72.88329,41.4339],[-72.88366,41.43384],[-72.88407,41.43373],[-72.88453,41.4337],[-72.88493,41.43378],[-72.88524,41.43385],[-72.88551,41.43393],[-72.88566,41.43369],[-72.88592,41.43347],[-72.88657,41.4332],[-72.88716,41.43293],[-72.88746,41.43277],[-72.88779,41.43262],[-72.88835,41.43253]]}},{"type":"Feature","properties":{"name":"White Trail","blaze":"white"},"geometry":{"type":"LineString","coordinates":[[-72.88835,41.43253],[-72.88853,41.4325],[-72.88853,41.43229],[-72.88883,41.43194],[-72.88905,41.43182],[-72.88929,41.43156],[-72.88951,41.43133],[-72.88986,41.43119],[-72.89,41.43091],[-72.89023,41.4307],[-72.89047,41.43032],[-72.89083,41.43012],[-72.89119,41.42986],[-72.89164,41.4297],[-72.8919,41.42945],[-72.89241,41.42962],[-72.89265,41.43023],[-72.8927,41.43033],[-72.89312,41.42993],[-72.8936,41.43005],[-72.89365,41.43046],[-72.89412,41.43059],[-72.89454,41.43029],[-72.89532,41.43001],[-72.89604,41.42948],[-72.89694,41.42916],[-72.89736,41.42859],[-72.89736,41.42816],[-72.89776,41.42772],[-72.89781,41.42713],[-72.89783,41.42653],[-72.89782,41.42587],[-72.89746,41.42545],[-72.89671,41.42518],[-72.89616,41.42499],[-72.89587,41.42475],[-72.89598,41.42462],[-72.89647,41.42457],[-72.89711,41.42451],[-72.89748,41.4243],[-72.89721,41.42408]]}},{"type":"Feature","properties":{"name":"Mt Carmel Avenue","blaze":null},"geometry":{"type":"LineString","coordinates":[[-72.89721,41.42408],[-72.89691,41.42391],[-72.89673,41.42377],[-72.89633,41.42394],[-72.89564,41.42378],[-72.89529,41.42365],[-72.89562,41.42348],[-72.89629,41.42325],[-72.89687,41.42299],[-72.89763,41.42278],[-72.89778,41.42262],[-72.89701,41.42251],[-72.89695,41.4224],[-72.89762,41.42238],[-72.89847,41.42212],[-72.89909,41.42183],[-72.89994,41.42172],[-72.90138,41.42174],[-72.9016,41.4217],[-72.9016,41.4217]]}}]};
+
+function initMap() {
+  map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/outdoors-v12',
+    center: [-72.885, 41.432],
+    zoom: 13,
+    pitch: 0
+  });
+
+  map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+
+  map.on('load', () => {
+    // Hide basemap POI icons and trail/path layers
+    map.getStyle().layers.forEach(layer => {
+      if (layer.type === 'symbol' && layer.id.startsWith('poi-')) {
+        map.setLayoutProperty(layer.id, 'visibility', 'none');
+      }
+    });
+    setBasemapTrails(false);
+
+    // Add course line
+    map.addSource('course', { type: 'geojson', data: COURSE });
+    map.addLayer({
+      id: 'course-outline',
+      type: 'line',
+      source: 'course',
+      paint: {
+        'line-color': '#000',
+        'line-width': 7,
+        'line-opacity': 0.3
+      }
+    });
+    map.addLayer({
+      id: 'course-line',
+      type: 'line',
+      source: 'course',
+      paint: {
+        'line-color': '#FF6B35',
+        'line-width': 4
+      }
+    });
+
+    // Add start/finish marker
+    const startEl = document.createElement('div');
+    startEl.className = 'start-marker';
+    startEl.innerHTML = '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#FF6B35" stroke="#fff" stroke-width="2"/><text x="16" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">S</text></svg>';
+    new mapboxgl.Marker({ element: startEl })
+      .setLngLat(START_COORDS)
+      .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong style="color:#FF6B35">Start / Finish</strong><br><span style="color:#a0a0b0">Sleeping Giant State Park<br>200 Mt Carmel Ave, Hamden, CT</span>'))
+      .addTo(map);
+
+    // Fit to course bounds
+    const bounds = new mapboxgl.LngLatBounds();
+    COURSE_COORDS.forEach(coord => bounds.extend(coord));
+    map.fitBounds(bounds, { padding: 40 });
+  });
+}
+
+function toggleCourse() {
+  courseVisible = !courseVisible;
+  document.getElementById('courseBtn').classList.toggle('active', courseVisible);
+  if (map.getLayer('course-line')) {
+    map.setLayoutProperty('course-line', 'visibility', courseVisible ? 'visible' : 'none');
+    map.setLayoutProperty('course-outline', 'visibility', courseVisible ? 'visible' : 'none');
+  }
+}
+
+function toggle3D() {
+  terrain3D = !terrain3D;
+  document.getElementById('terrainBtn').classList.toggle('active', terrain3D);
+  if (terrain3D) {
+    if (!map.getSource('mapbox-dem')) {
+      map.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
+    }
+    map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+    map.easeTo({ pitch: 45, duration: 1000 });
+  } else {
+    map.setTerrain(null);
+    map.easeTo({ pitch: 0, duration: 1000 });
+  }
+}
+
+// Basemap trail/path layer IDs in Mapbox outdoors-v12 that overlap with our custom trails
+const BASEMAP_TRAIL_LAYERS = [
+  'road-path-bg', 'road-path-trail', 'road-path-cycleway-piste', 'road-path',
+  'road-steps-bg', 'road-steps', 'road-pedestrian',
+  'tunnel-path-trail', 'tunnel-path-cycleway-piste', 'tunnel-path',
+  'tunnel-steps', 'tunnel-pedestrian',
+  'bridge-path-bg', 'bridge-path-trail', 'bridge-path-cycleway-piste', 'bridge-path',
+  'bridge-steps-bg', 'bridge-steps', 'bridge-pedestrian',
+  'path-pedestrian-label'
+];
+
+function setBasemapTrails(visible) {
+  const v = visible ? 'visible' : 'none';
+  BASEMAP_TRAIL_LAYERS.forEach(id => {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', v);
+  });
+}
+
+function toggleTrails() {
+  trailsOn = !trailsOn;
+  document.getElementById('trailBtn').classList.toggle('active', trailsOn);
+  if (!map) return;
+
+  if (trailsOn) {
+    if (!map.getSource('park-trails')) {
+      addTrailLayers();
+    }
+    map.setLayoutProperty('park-trails-line', 'visibility', 'visible');
+    map.setLayoutProperty('park-trails-label', 'visibility', 'visible');
+  } else {
+    if (map.getLayer('park-trails-line')) map.setLayoutProperty('park-trails-line', 'visibility', 'none');
+    if (map.getLayer('park-trails-label')) map.setLayoutProperty('park-trails-label', 'visibility', 'none');
+  }
+}
+
+function addTrailLayers() {
+  if (!map.getSource('park-trails')) {
+    map.addSource('park-trails', { type: 'geojson', data: trailsData });
+  }
+  if (!map.getLayer('park-trails-line')) {
+    map.addLayer({
+      id: 'park-trails-line',
+      type: 'line',
+      source: 'park-trails',
+      paint: {
+        'line-color': ['match', ['get', 'blaze'],
+          'white', '#ffffff',
+          'blue', '#2196F3',
+          'yellow', '#FFD700',
+          'orange', '#FF9800',
+          'green', '#4CAF50',
+          'red', '#f44336',
+          'violet', '#9C27B0',
+          '#9E9E9E'
+        ],
+        'line-width': ['interpolate', ['linear'], ['zoom'], 12, 3, 15, 5],
+        'line-dasharray': [2, 3],
+        'line-opacity': 0.9
+      },
+      layout: { 'line-cap': 'butt', 'line-join': 'round' }
+    }); // no beforeId — renders on top of course
+  }
+  if (!map.getLayer('park-trails-label')) {
+    map.addLayer({
+      id: 'park-trails-label',
+      type: 'symbol',
+      source: 'park-trails',
+      layout: {
+        'symbol-placement': 'line',
+        'text-field': ['get', 'name'],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 13, 9, 16, 12],
+        'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
+        'text-max-angle': 30,
+        'text-padding': 10
+      },
+      paint: {
+        'text-color': '#333',
+        'text-halo-color': '#fff',
+        'text-halo-width': 1.5,
+        'text-opacity': ['interpolate', ['linear'], ['zoom'], 13, 0, 13.5, 1]
+      },
+      minzoom: 13
+    });
+  }
+}
+
+function drawElevationProfile() {
+  const canvas = document.getElementById('profileCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+
+  const w = rect.width;
+  const h = rect.height;
+  const padding = { top: 10, right: 10, bottom: 25, left: 40 };
+  const chartW = w - padding.left - padding.right;
+  const chartH = h - padding.top - padding.bottom;
+
+  const maxDist = 15.5;
+  const maxEle = 250; // meters
+  const minEle = 20;
+
+  // Draw grid
+  ctx.strokeStyle = '#333355';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padding.top + (chartH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(w - padding.right, y);
+    ctx.stroke();
+  }
+
+  // Draw elevation area
+  ctx.beginPath();
+  ctx.moveTo(padding.left, padding.top + chartH);
+  ELEVATIONS.forEach((ele, i) => {
+    const x = padding.left + (i / (ELEVATIONS.length - 1)) * chartW;
+    const y = padding.top + chartH - ((ele - minEle) / (maxEle - minEle)) * chartH;
+    if (i === 0) ctx.lineTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.lineTo(padding.left + chartW, padding.top + chartH);
+  ctx.closePath();
+  const gradient = ctx.createLinearGradient(0, padding.top, 0, padding.top + chartH);
+  gradient.addColorStop(0, 'rgba(255, 107, 53, 0.4)');
+  gradient.addColorStop(1, 'rgba(255, 107, 53, 0.05)');
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  // Draw elevation line
+  ctx.beginPath();
+  ELEVATIONS.forEach((ele, i) => {
+    const x = padding.left + (i / (ELEVATIONS.length - 1)) * chartW;
+    const y = padding.top + chartH - ((ele - minEle) / (maxEle - minEle)) * chartH;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = '#FF6B35';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Draw labels
+  ctx.fillStyle = '#666680';
+  ctx.font = '10px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  for (let m = 0; m <= 15; m += 3) {
+    const x = padding.left + (m / maxDist) * chartW;
+    ctx.fillText(m + ' mi', x, h - 8);
+  }
+  ctx.textAlign = 'right';
+  // Convert meters to feet for display
+  ctx.fillText('65 ft', padding.left - 5, padding.top + chartH);
+  ctx.fillText('440 ft', padding.left - 5, padding.top + chartH / 2);
+  ctx.fillText('820 ft', padding.left - 5, padding.top + 10);
+}
+
+document.getElementById('courseBtn').onclick = toggleCourse;
+document.getElementById('trailBtn').onclick = toggleTrails;
+document.getElementById('terrainBtn').onclick = toggle3D;
+
+// ═══════════════════════════════════════════════════════════
+// VIEW SWITCHING
+// ═══════════════════════════════════════════════════════════
+let currentView = 'map';
+let mapInitialized = false;
+let simInitialized = false;
+
+function switchView(view) {
+  currentView = view;
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t.textContent.toLowerCase() === view));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(view + 'View').classList.add('active');
+  if (view === 'map' && !mapInitialized) {
+    initMap();
+    mapInitialized = true;
+  }
+  if (view === 'sim') {
+    initSim();
+    renderSim();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// SIMULATOR
+// ═══════════════════════════════════════════════════════════
+const LOOP_MILES = 15.5;
+const LOOP_GAIN = 4314; // feet
+const RACE_START_HOUR = 7; // 7:00 AM
+let raceLaps = 1; // 1 = 25K, 2 = 50K
+let TOTAL_MILES = LOOP_MILES;
+let TOTAL_GAIN = LOOP_GAIN;
+let simProgress = 0;
+let simPlaying = false;
+let simSpeed = 1;
+let simFinishHours = 2.5;
+let simLastTick = 0;
+
+function setDistance(dist, btn) {
+  document.querySelectorAll('.dist-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (dist === '50k') {
+    raceLaps = 2;
+    TOTAL_MILES = LOOP_MILES * 2;
+    TOTAL_GAIN = LOOP_GAIN * 2;
+    document.getElementById('goalHrs').value = 5;
+    document.getElementById('goalMins').value = 0;
+  } else {
+    raceLaps = 1;
+    TOTAL_MILES = LOOP_MILES;
+    TOTAL_GAIN = LOOP_GAIN;
+    document.getElementById('goalHrs').value = 2;
+    document.getElementById('goalMins').value = 30;
+  }
+  simProgress = 0;
+  simPlaying = false;
+  document.getElementById('playBtn').innerHTML = '&#9654;';
+  updateGoalTime();
+}
+
+// Build distance array for each coordinate (cumulative miles)
+const coordDistances = [0];
+for (let i = 1; i < COURSE_COORDS.length; i++) {
+  const [x1, y1] = COURSE_COORDS[i - 1];
+  const [x2, y2] = COURSE_COORDS[i];
+  const dLng = (x2 - x1) * Math.cos((y1 + y2) / 2 * Math.PI / 180) * 69.172;
+  const dLat = (y2 - y1) * 69.172;
+  coordDistances.push(coordDistances[i - 1] + Math.sqrt(dLng * dLng + dLat * dLat));
+}
+// Normalize to single loop miles
+const rawTotal = coordDistances[coordDistances.length - 1];
+for (let i = 0; i < coordDistances.length; i++) {
+  coordDistances[i] = (coordDistances[i] / rawTotal) * LOOP_MILES;
+}
+
+// Build elevation profile indexed by distance (in feet) for one loop
+const eleProfile = ELEVATIONS.map((e, i) => ({
+  d: (i / (ELEVATIONS.length - 1)) * LOOP_MILES,
+  e: e * 3.28084 // meters to feet
+}));
+
+// Wrap distance to single-loop range for coordinate/elevation lookups
+function loopDist(dist) {
+  return dist % LOOP_MILES;
+}
+
+function getEleAtDist(dist) {
+  const d = loopDist(dist);
+  for (let i = 1; i < eleProfile.length; i++) {
+    if (eleProfile[i].d >= d) {
+      const p0 = eleProfile[i - 1], p1 = eleProfile[i];
+      const t = (d - p0.d) / (p1.d - p0.d);
+      return p0.e + (p1.e - p0.e) * t;
+    }
+  }
+  return eleProfile[eleProfile.length - 1].e;
+}
+
+function getGradeAtDist(dist) {
+  const delta = 0.05;
+  const e1 = getEleAtDist(Math.max(0, dist - delta));
+  const e2 = getEleAtDist(Math.min(TOTAL_MILES, dist + delta));
+  const dDist = delta * 2 * 5280;
+  return dDist > 0 ? ((e2 - e1) / dDist) * 100 : 0;
+}
+
+function getGainAtDist(dist) {
+  return (dist / TOTAL_MILES) * TOTAL_GAIN;
+}
+
+function getCoordAtDist(dist) {
+  const d = loopDist(dist);
+  for (let i = 1; i < coordDistances.length; i++) {
+    if (coordDistances[i] >= d) {
+      const t = (d - coordDistances[i - 1]) / (coordDistances[i] - coordDistances[i - 1]);
+      const c0 = COURSE_COORDS[i - 1], c1 = COURSE_COORDS[i];
+      return [c0[0] + (c1[0] - c0[0]) * t, c0[1] + (c1[1] - c0[1]) * t];
+    }
+  }
+  return COURSE_COORDS[COURSE_COORDS.length - 1];
+}
+
+function initSim() {
+  if (simInitialized) return;
+  simInitialized = true;
+  updateGoalPace();
+
+  // Scrubber interaction
+  const track = document.getElementById('scrubTrack');
+  let scrubbing = false;
+  const scrubTo = e => {
+    const rect = track.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    simProgress = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    renderSim();
+  };
+  track.addEventListener('mousedown', e => { scrubbing = true; simPlaying = false; document.getElementById('playBtn').innerHTML = '&#9654;'; scrubTo(e); });
+  window.addEventListener('mousemove', e => { if (scrubbing) scrubTo(e); });
+  window.addEventListener('mouseup', () => scrubbing = false);
+  track.addEventListener('touchstart', e => { scrubbing = true; simPlaying = false; document.getElementById('playBtn').innerHTML = '&#9654;'; scrubTo(e); }, { passive: true });
+  window.addEventListener('touchmove', e => { if (scrubbing) scrubTo(e); }, { passive: true });
+  window.addEventListener('touchend', () => scrubbing = false);
+}
+
+function updateGoalTime() {
+  const h = parseInt(document.getElementById('goalHrs').value) || 0;
+  const m = parseInt(document.getElementById('goalMins').value) || 0;
+  simFinishHours = h + m / 60;
+  if (simFinishHours < 0.1) simFinishHours = 0.1;
+  updateGoalPace();
+  renderSim();
+}
+
+function updateGoalPace() {
+  const totalMins = simFinishHours * 60;
+  const paceMin = totalMins / TOTAL_MILES;
+  const pm = Math.floor(paceMin);
+  const ps = Math.round((paceMin - pm) * 60);
+  document.getElementById('goalPace').innerHTML = 'Avg pace: <strong>' + pm + ':' + String(ps).padStart(2, '0') + ' /mi</strong>';
+}
+
+function togglePlay() {
+  simPlaying = !simPlaying;
+  document.getElementById('playBtn').innerHTML = simPlaying ? '&#9208;' : '&#9654;';
+  if (simPlaying) {
+    if (simProgress >= 0.999) simProgress = 0;
+    simLastTick = performance.now();
+    simTick();
+  }
+}
+
+function setSpeed(s, btn) {
+  simSpeed = s;
+  document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function simTick() {
+  if (!simPlaying) return;
+  const now = performance.now();
+  const dt = (now - simLastTick) / 1000;
+  simLastTick = now;
+  simProgress = Math.min(1, simProgress + (1 / 30) * simSpeed * dt);
+  renderSim();
+  if (simProgress >= 1) {
+    simPlaying = false;
+    document.getElementById('playBtn').innerHTML = '&#9654;';
+    return;
+  }
+  requestAnimationFrame(simTick);
+}
+
+function renderSim() {
+  const dist = simProgress * TOTAL_MILES;
+  const ele = getEleAtDist(dist);
+  const grade = getGradeAtDist(dist);
+  const gain = getGainAtDist(dist);
+
+  // Scrubber
+  document.getElementById('scrubFill').style.width = (simProgress * 100) + '%';
+  document.getElementById('scrubHandle').style.left = (simProgress * 100) + '%';
+
+  // Runner info
+  document.getElementById('runnerEle').innerHTML = Math.round(ele).toLocaleString() + '<span class="unit">ft</span>';
+  const gradeDir = grade > 2 ? 'Climbing' : grade < -2 ? 'Descending' : 'Rolling';
+  const lapInfo = raceLaps > 1 ? ' \u00b7 Lap ' + (Math.floor(dist / LOOP_MILES) + 1) : '';
+  document.getElementById('runnerMeta').textContent = 'Mile ' + dist.toFixed(1) + ' \u00b7 ' + gradeDir + lapInfo;
+
+  // Clock
+  const elapsed = (dist / TOTAL_MILES) * simFinishHours;
+  const tod = RACE_START_HOUR + elapsed;
+  const hrs = Math.floor(tod) % 24;
+  const mins = Math.floor((tod % 1) * 60);
+  const ampm = hrs >= 12 ? 'PM' : 'AM';
+  const dispHrs = hrs > 12 ? hrs - 12 : (hrs === 0 ? 12 : hrs);
+  document.getElementById('clockTime').textContent = dispHrs + ':' + String(mins).padStart(2, '0') + ' ' + ampm;
+
+  const finishTod = RACE_START_HOUR + simFinishHours;
+  const finishHrs = Math.floor(finishTod) % 24;
+  const finishMins = Math.round((finishTod % 1) * 60);
+  const finishAmpm = finishHrs >= 12 ? 'PM' : 'AM';
+  const finishDispHrs = finishHrs > 12 ? finishHrs - 12 : (finishHrs === 0 ? 12 : finishHrs);
+  document.getElementById('finishTime').textContent = finishDispHrs + ':' + String(finishMins).padStart(2, '0') + ' ' + finishAmpm;
+
+  // Stats
+  document.getElementById('statDist').textContent = dist.toFixed(1);
+  document.getElementById('statEle').textContent = Math.round(ele).toLocaleString();
+  document.getElementById('statGain').textContent = Math.round(gain).toLocaleString();
+  document.getElementById('statGrade').textContent = (grade > 0 ? '+' : '') + grade.toFixed(0) + '%';
+  document.getElementById('statPct').textContent = Math.round(simProgress * 100) + '%';
+
+  // Pace
+  const totalMins = simFinishHours * 60;
+  const paceMin = totalMins / TOTAL_MILES;
+  const pm = Math.floor(paceMin);
+  const ps = Math.round((paceMin - pm) * 60);
+  document.getElementById('statPace').textContent = pm + ':' + String(ps).padStart(2, '0');
+
+  // Draw canvases
+  renderCourseMap(dist);
+  renderSimProfile(dist, ele);
+}
+
+// ═══════════════════════════════════════════════════════════
+// COURSE MAP CANVAS - bird's-eye view of the loop with runner dot
+// ═══════════════════════════════════════════════════════════
+function renderCourseMap(currentDist) {
+  const canvas = document.getElementById('courseMapCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+
+  // Background
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, '#1a2030');
+  bgGrad.addColorStop(1, '#252540');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Compute bounding box of course
+  let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  for (const [lng, lat] of COURSE_COORDS) {
+    if (lng < minLng) minLng = lng;
+    if (lng > maxLng) maxLng = lng;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  }
+  const padding = 30;
+  const drawW = W - padding * 2;
+  const drawH = H - padding * 2;
+  const lngRange = maxLng - minLng;
+  const latRange = maxLat - minLat;
+  const scale = Math.min(drawW / lngRange, drawH / latRange);
+  const offsetX = padding + (drawW - lngRange * scale) / 2;
+  const offsetY = padding + (drawH - latRange * scale) / 2;
+
+  const toX = lng => offsetX + (lng - minLng) * scale;
+  const toY = lat => offsetY + (maxLat - lat) * scale; // flip Y
+
+  // Draw completed portion (bright) — use loopDist for position on the single-loop map
+  const ld = loopDist(currentDist);
+  const runnerCoord = getCoordAtDist(currentDist);
+  let runnerIdx = 0;
+  for (let i = 1; i < coordDistances.length; i++) {
+    if (coordDistances[i] >= ld) { runnerIdx = i; break; }
+  }
+
+  // Draw trail shadow (full course, dim)
+  ctx.beginPath();
+  for (let i = 0; i < COURSE_COORDS.length; i++) {
+    const x = toX(COURSE_COORDS[i][0]);
+    const y = toY(COURSE_COORDS[i][1]);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Draw remaining portion (dim orange)
+  ctx.beginPath();
+  for (let i = Math.max(0, runnerIdx - 1); i < COURSE_COORDS.length; i++) {
+    const x = toX(COURSE_COORDS[i][0]);
+    const y = toY(COURSE_COORDS[i][1]);
+    if (i === Math.max(0, runnerIdx - 1)) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = 'rgba(255,107,53,0.5)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Draw completed portion (bright orange)
+  if (runnerIdx > 0) {
+    ctx.beginPath();
+    for (let i = 0; i <= Math.min(runnerIdx, COURSE_COORDS.length - 1); i++) {
+      const x = toX(COURSE_COORDS[i][0]);
+      const y = toY(COURSE_COORDS[i][1]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    // Also draw to exact runner position
+    const rx = toX(runnerCoord[0]);
+    const ry = toY(runnerCoord[1]);
+    ctx.lineTo(rx, ry);
+    ctx.strokeStyle = '#FF6B35';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+
+  // Start marker
+  const sx = toX(COURSE_COORDS[0][0]);
+  const sy = toY(COURSE_COORDS[0][1]);
+  ctx.beginPath();
+  ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = '#FF6B35';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = '#FF6B35';
+  ctx.font = 'bold 8px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('S', sx, sy + 0.5);
+
+  // Runner dot
+  const rx = toX(runnerCoord[0]);
+  const ry = toY(runnerCoord[1]);
+
+  // Glow
+  ctx.beginPath();
+  ctx.arc(rx, ry, 14, 0, Math.PI * 2);
+  const glow = ctx.createRadialGradient(rx, ry, 4, rx, ry, 14);
+  glow.addColorStop(0, 'rgba(255,107,53,0.4)');
+  glow.addColorStop(1, 'rgba(255,107,53,0)');
+  ctx.fillStyle = glow;
+  ctx.fill();
+
+  // Dot
+  ctx.beginPath();
+  ctx.arc(rx, ry, 7, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = '#FF6B35';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Mile markers every 5 miles
+  for (let m = 5; m < TOTAL_MILES; m += 5) {
+    const mc = getCoordAtDist(m);
+    const mx = toX(mc[0]);
+    const my = toY(mc[1]);
+    ctx.beginPath();
+    ctx.arc(mx, my, 10, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(37,37,64,0.85)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '600 8px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(m, mx, my);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// SIMULATOR ELEVATION PROFILE - scrolling terrain with runner
+// ═══════════════════════════════════════════════════════════
+function renderSimProfile(currentDist, currentEle) {
+  const canvas = document.getElementById('simProfileCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+
+  // Windowed view centered on runner
+  const windowMiles = Math.min(TOTAL_MILES, Math.max(6, TOTAL_MILES * 0.4));
+  let windowStart = Math.max(0, currentDist - windowMiles * 0.35);
+  const windowEnd = Math.min(TOTAL_MILES, windowStart + windowMiles);
+  if (windowEnd - windowStart < windowMiles) windowStart = Math.max(0, windowEnd - windowMiles);
+
+  // Build full-race elevation profile (supports multi-lap)
+  const fullProfile = [];
+  for (let lap = 0; lap < raceLaps; lap++) {
+    for (let i = 0; i < eleProfile.length; i++) {
+      fullProfile.push({ d: eleProfile[i].d + lap * LOOP_MILES, e: eleProfile[i].e });
+    }
+  }
+
+  // Sample points in view
+  const pts = [];
+  for (let i = 0; i < fullProfile.length; i++) {
+    if (fullProfile[i].d >= windowStart && fullProfile[i].d <= windowStart + windowMiles) {
+      pts.push(fullProfile[i]);
+    }
+  }
+  if (pts.length < 2) return;
+
+  const eles = pts.map(p => p.e);
+  const eMin = Math.min(...eles) - 30;
+  const eMax = Math.max(...eles) + 50;
+  const mt = 30, mb = 0;
+
+  const xScale = d => ((d - windowStart) / windowMiles) * W;
+  const yScale = e => mt + (H - mt - mb) - ((e - eMin) / (eMax - eMin)) * (H - mt - mb);
+
+  // Sky gradient
+  const elapsed = (currentDist / TOTAL_MILES) * simFinishHours;
+  const tod = RACE_START_HOUR + elapsed;
+  let skyTop, skyBot;
+  if (tod < 6) { skyTop = '#1a2030'; skyBot = '#252540'; }
+  else if (tod < 8) { skyTop = '#2a3050'; skyBot = '#4a4070'; }
+  else if (tod < 17) { skyTop = '#3a4560'; skyBot = '#5a6580'; }
+  else if (tod < 20) { skyTop = '#3a3055'; skyBot = '#4a4070'; }
+  else { skyTop = '#1a2030'; skyBot = '#252540'; }
+
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+  skyGrad.addColorStop(0, skyTop);
+  skyGrad.addColorStop(1, skyBot);
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Terrain fill
+  ctx.beginPath();
+  ctx.moveTo(xScale(pts[0].d), yScale(pts[0].e));
+  for (const p of pts) ctx.lineTo(xScale(p.d), yScale(p.e));
+  ctx.lineTo(xScale(pts[pts.length - 1].d), H);
+  ctx.lineTo(xScale(pts[0].d), H);
+  ctx.closePath();
+  const tGrad = ctx.createLinearGradient(0, mt, 0, H);
+  tGrad.addColorStop(0, 'rgba(255,107,53,0.3)');
+  tGrad.addColorStop(1, 'rgba(255,107,53,0.05)');
+  ctx.fillStyle = tGrad;
+  ctx.fill();
+
+  // Terrain line
+  ctx.beginPath();
+  ctx.moveTo(xScale(pts[0].d), yScale(pts[0].e));
+  for (const p of pts) ctx.lineTo(xScale(p.d), yScale(p.e));
+  ctx.strokeStyle = '#FF6B35';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Dim behind runner
+  if (currentDist > windowStart) {
+    ctx.fillStyle = 'rgba(26,32,48,0.4)';
+    ctx.fillRect(0, 0, xScale(currentDist), H);
+  }
+
+  // Runner dot
+  const rx = xScale(currentDist);
+  const ry = yScale(currentEle);
+
+  // Glow
+  ctx.beginPath();
+  ctx.arc(rx, ry, 12, 0, Math.PI * 2);
+  const glow = ctx.createRadialGradient(rx, ry, 3, rx, ry, 12);
+  glow.addColorStop(0, 'rgba(255,107,53,0.5)');
+  glow.addColorStop(1, 'rgba(255,107,53,0)');
+  ctx.fillStyle = glow;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(rx, ry, 7, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = '#FF6B35';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Mile markers in view
+  for (let m = Math.ceil(windowStart); m <= Math.floor(windowStart + windowMiles); m++) {
+    if (m <= 0 || m >= TOTAL_MILES) continue;
+    const mx = xScale(m);
+    ctx.beginPath();
+    ctx.moveTo(mx, mt);
+    ctx.lineTo(mx, H);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '9px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(m + ' mi', mx, mt - 8);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+initMap();
+mapInitialized = true;
+window.addEventListener('load', drawElevationProfile);
+window.addEventListener('resize', () => {
+  drawElevationProfile();
+  if (currentView === 'sim') renderSim();
+});
+</script>
+</body>
+</html>
+>
+</html>
