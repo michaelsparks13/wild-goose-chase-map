@@ -4,27 +4,27 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#1a1a2e">
+<meta name="theme-color" content="#111111">
 <title>Sleeping Giant Trail Runs 25K - Course Map</title>
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Teko:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --primary: #FF6B35;
-  --primary-dark: #E55A25;
-  --accent: #CC4E1A;
-  --bg: #1a1a2e;
-  --bg-card: #252540;
-  --bg-alt: #16162a;
+  --primary: #7ed321;
+  --primary-dark: #6bbf1a;
+  --accent: #5aa215;
+  --bg: #111111;
+  --bg-card: #1a1a1a;
+  --bg-alt: #0d0d0d;
   --text: #ffffff;
-  --text-secondary: #a0a0b0;
-  --text-muted: #666680;
-  --border: #333355;
-  --course: #FF6B35;
-  --shadow: 0 4px 20px rgba(0,0,0,0.3);
+  --text-secondary: #a0a0a0;
+  --text-muted: #636363;
+  --border: #2a2a2a;
+  --course: #7ed321;
+  --shadow: 0 4px 20px rgba(0,0,0,0.4);
   --radius: 12px;
 }
 
@@ -50,10 +50,13 @@ body {
   z-index: 100;
 }
 .header-left h1 {
-  font-size: 1.1rem;
+  font-family: 'Teko', sans-serif;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  line-height: 1.1;
 }
 .header-left .subtitle {
   font-size: 0.7rem;
@@ -66,11 +69,12 @@ body {
   font-weight: 600;
 }
 .race-badge {
+  font-family: 'Teko', sans-serif;
   background: var(--primary);
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.7rem;
+  color: #111;
+  padding: 6px 14px;
+  border-radius: 18px;
+  font-size: 0.85rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -104,8 +108,9 @@ body {
   margin-bottom: 2px;
 }
 .info-badge .value {
-  font-size: 1rem;
-  font-weight: 700;
+  font-family: 'Teko', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 600;
   color: var(--text);
 }
 
@@ -153,7 +158,8 @@ body {
   border: 1px solid var(--border);
 }
 .stat-card .value {
-  font-size: 1.4rem;
+  font-family: 'Teko', sans-serif;
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--primary);
 }
@@ -292,7 +298,7 @@ body {
 .sim-split { display: flex; flex-direction: column; }
 
 /* Course map canvas */
-.course-map-wrap { position: relative; background: #1a2030; border-bottom: 1px solid var(--border); }
+.course-map-wrap { position: relative; background: #111111; border-bottom: 1px solid var(--border); }
 #courseMapCanvas { width: 100%; height: 260px; display: block; }
 .runner-info-overlay {
   position: absolute; top: 12px; left: 12px; pointer-events: none;
@@ -305,7 +311,7 @@ body {
 .runner-meta { font-size: 0.7rem; color: rgba(255,255,255,0.7); margin-top: 2px; }
 
 /* Sim elevation profile */
-.sim-profile-wrap { position: relative; background: #1a2030; }
+.sim-profile-wrap { position: relative; background: #111111; }
 #simProfileCanvas { width: 100%; height: 140px; display: block; }
 
 /* Scrubber */
@@ -742,7 +748,7 @@ function initMap() {
       type: 'line',
       source: 'course',
       paint: {
-        'line-color': '#FF6B35',
+        'line-color': '#7ed321',
         'line-width': 4
       }
     });
@@ -750,10 +756,10 @@ function initMap() {
     // Add start/finish marker
     const startEl = document.createElement('div');
     startEl.className = 'start-marker';
-    startEl.innerHTML = '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#FF6B35" stroke="#fff" stroke-width="2"/><text x="16" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">S</text></svg>';
+    startEl.innerHTML = '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#7ed321" stroke="#fff" stroke-width="2"/><text x="16" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">S</text></svg>';
     new mapboxgl.Marker({ element: startEl })
       .setLngLat(START_COORDS)
-      .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong style="color:#FF6B35">Start / Finish</strong><br><span style="color:#a0a0b0">Sleeping Giant State Park<br>200 Mt Carmel Ave, Hamden, CT</span>'))
+      .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong style="color:#7ed321">Start / Finish</strong><br><span style="color:#a0a0a0">Sleeping Giant State Park<br>200 Mt Carmel Ave, Hamden, CT</span>'))
       .addTo(map);
 
     // Fit to course bounds
@@ -893,7 +899,7 @@ function drawElevationProfile() {
   const minEle = 20;
 
   // Draw grid
-  ctx.strokeStyle = '#333355';
+  ctx.strokeStyle = '#2a2a2a';
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const y = padding.top + (chartH / 4) * i;
@@ -915,8 +921,8 @@ function drawElevationProfile() {
   ctx.lineTo(padding.left + chartW, padding.top + chartH);
   ctx.closePath();
   const gradient = ctx.createLinearGradient(0, padding.top, 0, padding.top + chartH);
-  gradient.addColorStop(0, 'rgba(255, 107, 53, 0.4)');
-  gradient.addColorStop(1, 'rgba(255, 107, 53, 0.05)');
+  gradient.addColorStop(0, 'rgba(126, 211, 33, 0.4)');
+  gradient.addColorStop(1, 'rgba(126, 211, 33, 0.05)');
   ctx.fillStyle = gradient;
   ctx.fill();
 
@@ -928,12 +934,12 @@ function drawElevationProfile() {
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
-  ctx.strokeStyle = '#FF6B35';
+  ctx.strokeStyle = '#7ed321';
   ctx.lineWidth = 2;
   ctx.stroke();
 
   // Draw labels
-  ctx.fillStyle = '#666680';
+  ctx.fillStyle = '#636363';
   ctx.font = '10px Inter, sans-serif';
   ctx.textAlign = 'center';
   for (let m = 0; m <= 15; m += 3) {
@@ -1209,8 +1215,8 @@ function renderCourseMap(currentDist) {
 
   // Background
   const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-  bgGrad.addColorStop(0, '#1a2030');
-  bgGrad.addColorStop(1, '#252540');
+  bgGrad.addColorStop(0, '#111111');
+  bgGrad.addColorStop(1, '#1a1a1a');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
@@ -1281,7 +1287,7 @@ function renderCourseMap(currentDist) {
     const rx = toX(runnerCoord[0]);
     const ry = toY(runnerCoord[1]);
     ctx.lineTo(rx, ry);
-    ctx.strokeStyle = '#FF6B35';
+    ctx.strokeStyle = '#7ed321';
     ctx.lineWidth = 3;
     ctx.stroke();
   }
@@ -1293,10 +1299,10 @@ function renderCourseMap(currentDist) {
   ctx.arc(sx, sy, 6, 0, Math.PI * 2);
   ctx.fillStyle = '#fff';
   ctx.fill();
-  ctx.strokeStyle = '#FF6B35';
+  ctx.strokeStyle = '#7ed321';
   ctx.lineWidth = 2;
   ctx.stroke();
-  ctx.fillStyle = '#FF6B35';
+  ctx.fillStyle = '#7ed321';
   ctx.font = 'bold 8px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -1320,7 +1326,7 @@ function renderCourseMap(currentDist) {
   ctx.arc(rx, ry, 7, 0, Math.PI * 2);
   ctx.fillStyle = '#fff';
   ctx.fill();
-  ctx.strokeStyle = '#FF6B35';
+  ctx.strokeStyle = '#7ed321';
   ctx.lineWidth = 3;
   ctx.stroke();
 
@@ -1393,11 +1399,11 @@ function renderSimProfile(currentDist, currentEle) {
   const elapsed = (currentDist / TOTAL_MILES) * simFinishHours;
   const tod = RACE_START_HOUR + elapsed;
   let skyTop, skyBot;
-  if (tod < 6) { skyTop = '#1a2030'; skyBot = '#252540'; }
+  if (tod < 6) { skyTop = '#111111'; skyBot = '#1a1a1a'; }
   else if (tod < 8) { skyTop = '#2a3050'; skyBot = '#4a4070'; }
   else if (tod < 17) { skyTop = '#3a4560'; skyBot = '#5a6580'; }
   else if (tod < 20) { skyTop = '#3a3055'; skyBot = '#4a4070'; }
-  else { skyTop = '#1a2030'; skyBot = '#252540'; }
+  else { skyTop = '#111111'; skyBot = '#1a1a1a'; }
 
   const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
   skyGrad.addColorStop(0, skyTop);
@@ -1422,7 +1428,7 @@ function renderSimProfile(currentDist, currentEle) {
   ctx.beginPath();
   ctx.moveTo(xScale(pts[0].d), yScale(pts[0].e));
   for (const p of pts) ctx.lineTo(xScale(p.d), yScale(p.e));
-  ctx.strokeStyle = '#FF6B35';
+  ctx.strokeStyle = '#7ed321';
   ctx.lineWidth = 2.5;
   ctx.stroke();
 
@@ -1449,7 +1455,7 @@ function renderSimProfile(currentDist, currentEle) {
   ctx.arc(rx, ry, 7, 0, Math.PI * 2);
   ctx.fillStyle = '#fff';
   ctx.fill();
-  ctx.strokeStyle = '#FF6B35';
+  ctx.strokeStyle = '#7ed321';
   ctx.lineWidth = 3;
   ctx.stroke();
 

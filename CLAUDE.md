@@ -236,6 +236,19 @@ map.addLayer(trailLayer, 'course-outline'); // Add trails below course outlines
 
 ## Styling Guidelines
 
+### Race Organizer Branding (Required)
+Every race map MUST match the visual identity of the race organizer's website. Before building or styling a map:
+1. Visit the race organizer's website and extract their branding:
+   - Primary and accent colors
+   - Fonts/typography (heading font, body font)
+   - Overall aesthetic (dark/light, modern/rustic, etc.)
+2. Update the map's CSS variables (`--primary`, `--bg`, `--bg-card`, etc.) to match
+3. Import any custom fonts (e.g., Google Fonts) used by the organizer
+4. Replace ALL hardcoded color values — including in canvas drawing code, SVG markers, and popup HTML
+5. The map should look like a natural extension of the organizer's website
+
+**Example:** Steep Endurance uses green `#7ed321`, Teko headings, dark `#111111` backgrounds. Their Sleeping Giant map reflects this.
+
 ### Trail Colors
 - Always match official park blaze colors when available
 - Use the park's published legend as reference
@@ -334,7 +347,13 @@ When given a race website URL, extract the following information:
    - Time limit (if any)
    - Organizer/producer name and website
 
-2. **Course Data** (search in this order)
+2. **Organizer Branding** (visit their website and extract)
+   - Color scheme (primary, accent, background colors)
+   - Fonts/typography (heading and body fonts, weights)
+   - Visual style (dark/light theme, design aesthetic)
+   - The map UI must look like a natural extension of the organizer's website
+
+3. **Course Data** (search in this order)
    - GPX file (best - provides exact coordinates with elevation)
    - Strava route or segment
    - MapMyRun / RideWithGPS route
@@ -441,10 +460,9 @@ Always ask the user for:
    - Key turn locations
    - Google Street View URLs for each
 
-4. **Branding Preferences**
-   - Primary color scheme
+4. **Branding** (auto-extracted from organizer website — only ask user if site is unavailable)
    - Race logo (if available)
-   - Any specific styling requests
+   - Any specific styling overrides
 
 ### Step 7: Testing & Delivery
 
