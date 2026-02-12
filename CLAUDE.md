@@ -259,8 +259,25 @@ Every race map MUST match the visual identity of the race organizer's website. B
 - Current palette: Blue (#0479FF), Pink (#E834EC)
 - Loops have both fill (outline) and line layers
 
+### Course Line Contrast
+The course line MUST have high contrast against the basemap. If the organizer's primary color blends into the terrain (e.g., green on a green park), use a dark/black course line with the primary color as an outline glow:
+```javascript
+// Outer glow in brand color
+{ 'line-color': '#7ed321', 'line-width': 7, 'line-opacity': 0.45 }
+// Inner line in dark color
+{ 'line-color': '#111111', 'line-width': 4 }
+```
+
+### Trail Labels at All Zoom Levels
+Trail name labels must remain visible at the highest zoom levels. Extend text-size and line-width interpolation to zoom 20:
+```javascript
+'text-size': ['interpolate', ['linear'], ['zoom'], 13, 9, 16, 13, 20, 16]
+'line-width': ['interpolate', ['linear'], ['zoom'], 12, 3, 15, 5, 20, 8]
+```
+Do NOT set a `maxzoom` on trail label or trail line layers.
+
 ### Line Widths
-- Trail lines: 1.5-3px (zoom interpolated)
+- Trail lines: 3-8px (zoom interpolated, must scale to zoom 20)
 - Loop lines: ~3px base
 - Shared segment offsets: 2.5px width, 1.5px offset
 

@@ -14,6 +14,8 @@ If yes, note where: [e.g., "Download button on race page", "Strava route link", 
 
 IMPORTANT: Visit the race organizer's website and match the map's UI to their
 branding — colors, fonts, and visual style. The map should look like a natural
-extension of their site.
+extension of their site. Ensure the course line has high contrast against the
+basemap (use dark line + brand color glow if needed). Trail labels must stay
+visible at all zoom levels.
 
 After build completion, start a local server (npx serve -l 3000) so I can test.
