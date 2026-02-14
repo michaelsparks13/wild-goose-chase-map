@@ -311,18 +311,39 @@ nav .links a:hover { color: var(--text); }
   display: inline-flex;
   align-items: center;
   gap: 12px;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 1.2rem;
   color: var(--accent);
-  text-decoration: none;
+  background: transparent;
   padding: 20px 40px;
   border: 1px solid rgba(255, 107, 53, 0.25);
   border-radius: 12px;
+  cursor: pointer;
   transition: all 0.25s;
+  position: relative;
 }
 .contact-email:hover {
   background: var(--accent-soft);
   border-color: var(--accent);
   transform: translateY(-2px);
+}
+.copy-hint {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.contact-email.copied .email-text::after {
+  content: ' — Copied!';
+  color: var(--accent);
+}
+.contact-email.copied .copy-hint {
+  display: none;
 }
 
 /* ── FOOTER ── */
@@ -462,9 +483,11 @@ footer p {
     <div class="label reveal">Contact</div>
     <h2 class="reveal">Let's map your race</h2>
     <p class="reveal">Have an upcoming race that needs an interactive map? Reach out and we'll build something your runners will love.</p>
-    <a href="mailto:michael@falsesummitstudio.com" class="contact-email reveal">
-      <span>&#9993;</span> michael@falsesummitstudio.com
-    </a>
+    <button onclick="copyEmail(this)" class="contact-email reveal">
+      <span class="copy-icon">&#9993;</span>
+      <span class="email-text">michael@falsesummitstudio.com</span>
+      <span class="copy-hint">Click to copy</span>
+    </button>
   </div>
 </section>
 
@@ -483,6 +506,12 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+function copyEmail(btn) {
+  navigator.clipboard.writeText('michael@falsesummitstudio.com');
+  btn.classList.add('copied');
+  setTimeout(() => btn.classList.remove('copied'), 2000);
+}
 </script>
 </body>
 </html>
