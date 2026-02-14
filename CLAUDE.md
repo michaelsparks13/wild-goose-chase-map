@@ -306,6 +306,28 @@ blueCoords.forEach((coord, i) => {
 });
 ```
 
+### Adding Mile Markers
+Every race map should include mile markers on the interactive map (not needed on the simulator). Use Mapbox-native circle + symbol layers for performance and zoom-based visibility control. No toggle button — mile markers follow the Course toggle.
+
+**Implementation pattern:**
+1. Generate a GeoJSON FeatureCollection using `getCoordAtDist(m)` for miles 1 through N
+2. Assign `priority: 1` to every-5-mile markers, `priority: 2` to the rest
+3. Add a `circle` layer (dark fill, brand-color stroke) and `symbol` layer (white number text)
+4. Use `['step', ['zoom'], ...]` expressions so only priority-1 markers show at default zoom; all show when zoomed in past 13.5
+5. Tie visibility to the course toggle function
+
+```javascript
+// Generate mile marker GeoJSON
+const MILE_MARKER_GEOJSON = { type: 'FeatureCollection', features: [] };
+for (let m = 1; m <= totalMiles; m++) {
+  MILE_MARKER_GEOJSON.features.push({
+    type: 'Feature',
+    properties: { mile: m, label: String(m), priority: (m % 5 === 0) ? 1 : 2 },
+    geometry: { type: 'Point', coordinates: getCoordAtDist(m) }
+  });
+}
+```
+
 ### Adding Turn Markers with Street View
 Turn markers show key navigation points with embedded Google Street View images.
 

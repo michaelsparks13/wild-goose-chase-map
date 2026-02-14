@@ -753,6 +753,47 @@ function initMap() {
       }
     });
 
+    // Mile markers
+    map.addSource('mile-markers', { type: 'geojson', data: MILE_MARKER_GEOJSON });
+    map.addLayer({
+      id: 'mile-markers-circle',
+      type: 'circle',
+      source: 'mile-markers',
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 12, 8, 15, 10, 18, 12],
+        'circle-color': '#1a1a1a',
+        'circle-stroke-color': '#7ed321',
+        'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 12, 1.5, 15, 2],
+        'circle-opacity': ['step', ['zoom'],
+          ['case', ['==', ['get', 'priority'], 1], 0.9, 0],
+          13.5, 0.9
+        ],
+        'circle-stroke-opacity': ['step', ['zoom'],
+          ['case', ['==', ['get', 'priority'], 1], 0.9, 0],
+          13.5, 0.9
+        ]
+      }
+    });
+    map.addLayer({
+      id: 'mile-markers-label',
+      type: 'symbol',
+      source: 'mile-markers',
+      layout: {
+        'text-field': ['get', 'label'],
+        'text-font': ['DIN Pro Bold', 'Arial Unicode MS Bold'],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 12, 9, 15, 11, 18, 13],
+        'text-allow-overlap': true,
+        'text-ignore-placement': true
+      },
+      paint: {
+        'text-color': '#ffffff',
+        'text-opacity': ['step', ['zoom'],
+          ['case', ['==', ['get', 'priority'], 1], 1, 0],
+          13.5, 1
+        ]
+      }
+    });
+
     // Add start/finish marker
     const startEl = document.createElement('div');
     startEl.className = 'start-marker';
@@ -772,9 +813,14 @@ function initMap() {
 function toggleCourse() {
   courseVisible = !courseVisible;
   document.getElementById('courseBtn').classList.toggle('active', courseVisible);
+  const vis = courseVisible ? 'visible' : 'none';
   if (map.getLayer('course-line')) {
-    map.setLayoutProperty('course-line', 'visibility', courseVisible ? 'visible' : 'none');
-    map.setLayoutProperty('course-outline', 'visibility', courseVisible ? 'visible' : 'none');
+    map.setLayoutProperty('course-line', 'visibility', vis);
+    map.setLayoutProperty('course-outline', 'visibility', vis);
+  }
+  if (map.getLayer('mile-markers-circle')) {
+    map.setLayoutProperty('mile-markers-circle', 'visibility', vis);
+    map.setLayoutProperty('mile-markers-label', 'visibility', vis);
   }
 }
 
@@ -1076,6 +1122,16 @@ function getCoordAtDist(dist) {
     }
   }
   return COURSE_COORDS[COURSE_COORDS.length - 1];
+}
+
+// Generate mile marker GeoJSON from course coordinates
+const MILE_MARKER_GEOJSON = { type: 'FeatureCollection', features: [] };
+for (let m = 1; m <= 15; m++) {
+  MILE_MARKER_GEOJSON.features.push({
+    type: 'Feature',
+    properties: { mile: m, label: String(m), priority: (m % 5 === 0) ? 1 : 2 },
+    geometry: { type: 'Point', coordinates: getCoordAtDist(m) }
+  });
 }
 
 function initSim() {
