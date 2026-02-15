@@ -652,7 +652,21 @@ function initMap() {
         attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
       }
     },
-    layers: basemaps.layers('protomaps', basemaps.namedFlavor('light'), { lang: 'en' })
+    layers: basemaps.layers('protomaps', {
+      ...basemaps.namedFlavor('light'),
+      background: '#c5dcb4',
+      earth: '#c5dcb4',
+      park_a: '#a5cc8e',
+      park_b: '#a5cc8e',
+      wood_a: '#8ecc7a',
+      wood_b: '#8ecc7a',
+      scrub_a: '#a3d487',
+      scrub_b: '#a3d487',
+      water: '#80deea',
+      sand: '#d6e28d',
+      beach: '#d6e28d',
+      glacier: '#edf3f8'
+    }, { lang: 'en' })
   };
 
   map = new maplibregl.Map({
