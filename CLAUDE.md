@@ -557,7 +557,7 @@ Always ask the user for:
 - Mile markers important
 - Aid stations every 2-3 miles typically
 - Simple out-and-back or loop
-- Example: Sleepy Hollow Half Marathon
+- Example: road half marathon or 10K
 
 ### Trail Ultra (Multi-Loop)
 - Multiple colored loops
@@ -653,9 +653,6 @@ Use `['Noto Sans Medium']` for all text layers. Glyphs are hosted by Protomaps.
 │   ├── wild-goose/
 │   │   ├── index.html           # → falsesummitstudio.com/maps/wild-goose/
 │   │   └── data/
-│   ├── sleepy-hollow/
-│   │   ├── index.html           # → falsesummitstudio.com/maps/sleepy-hollow/
-│   │   └── data/
 │   └── [new-race]/              # Future maps go here
 └── CLAUDE.md
 ```
@@ -665,6 +662,5 @@ Use `['Noto Sans Medium']` for all text layers. Glyphs are hosted by Protomaps.
 | Race | Location | Type | URL Path |
 |------|----------|------|----------|
 | Wild Goose Trail Festival | Wawayanda State Park, NJ | Multi-loop trail | `/maps/wild-goose/` |
-| Sleepy Hollow Half Marathon | Sleepy Hollow, NY | Road/trail hybrid | `/maps/sleepy-hollow/` |
 | Sleeping Giant Trail Runs 25K | Sleeping Giant State Park, CT | Single-loop trail | `/maps/sleeping-giant/` |
 | Escarpment Trail Run 30K | Catskill Mountains, NY | Point-to-point trail | `/maps/escarpment/` |

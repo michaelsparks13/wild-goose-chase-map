@@ -763,9 +763,15 @@ function initMap() {
     style: BASEMAP_STYLE,
     center: [-72.885, 41.432],
     zoom: 13,
-    pitch: 0
+    pitch: 0,
+    attributionControl: false
   });
 
+  map.addControl(new maplibregl.AttributionControl({ compact: true }));
+  map.once('load', () => {
+    const attrib = document.querySelector('.maplibregl-ctrl-attrib');
+    if (attrib) { attrib.removeAttribute('open'); attrib.classList.remove('maplibregl-compact-show'); }
+  });
   map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
 
   map.on('load', () => {

@@ -689,7 +689,14 @@ function initMap() {
     zoom: 12.5,
     pitch: 25,
     bearing: -10,
-    antialias: true
+    antialias: true,
+    attributionControl: false
+  });
+
+  map.addControl(new maplibregl.AttributionControl({ compact: true }));
+  map.once('load', () => {
+    const attrib = document.querySelector('.maplibregl-ctrl-attrib');
+    if (attrib) { attrib.removeAttribute('open'); attrib.classList.remove('maplibregl-compact-show'); }
   });
 
   map.addControl(new maplibregl.NavigationControl(), 'top-right');

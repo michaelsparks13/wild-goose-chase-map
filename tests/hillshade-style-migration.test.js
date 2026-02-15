@@ -4,7 +4,6 @@ import { resolve } from 'path';
 
 const maps = [
   { name: 'sleeping-giant', path: '../maps/sleeping-giant/index.html' },
-  { name: 'sleepy-hollow', path: '../maps/sleepy-hollow/index.html' },
   { name: 'shawangunk-ridge', path: '../maps/shawangunk-ridge/index.html' },
   { name: 'wild-goose', path: '../maps/wild-goose/index.html' },
 ];
