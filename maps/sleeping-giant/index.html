@@ -577,9 +577,14 @@ const BASEMAP_STYLE = {
       type: 'vector',
       url: PMTILES_URL,
       attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
+    },
+    'hillshade-dem': {
+      type: 'raster-dem',
+      tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+      tileSize: 256, maxzoom: 15, encoding: 'terrarium'
     }
   },
-  layers: basemaps.layers('protomaps', {
+  layers: [...basemaps.layers('protomaps', {
     ...basemaps.namedFlavor('light'),
     background: '#c5dcb4',
     earth: '#c5dcb4',
@@ -593,7 +598,15 @@ const BASEMAP_STYLE = {
     sand: '#d6e28d',
     beach: '#d6e28d',
     glacier: '#edf3f8'
-  }, { lang: 'en' })
+  }, { lang: 'en' }), {
+    id: 'hillshade', type: 'hillshade', source: 'hillshade-dem',
+    paint: {
+      'hillshade-exaggeration': 0.3,
+      'hillshade-shadow-color': '#5a5a5a',
+      'hillshade-highlight-color': '#ffffff',
+      'hillshade-accent-color': '#4a8f29'
+    }
+  }]
 };
 
 const START_COORDS = [-72.90161, 41.4217];
@@ -756,22 +769,6 @@ function initMap() {
   map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
 
   map.on('load', () => {
-    // Add hillshade for terrain shading
-    map.addSource('hillshade-dem', {
-      type: 'raster-dem',
-      tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-      tileSize: 256, maxzoom: 15, encoding: 'terrarium'
-    });
-    map.addLayer({
-      id: 'hillshade', type: 'hillshade', source: 'hillshade-dem',
-      paint: {
-        'hillshade-exaggeration': 0.3,
-        'hillshade-shadow-color': '#5a5a5a',
-        'hillshade-highlight-color': '#ffffff',
-        'hillshade-accent-color': '#4a8f29'
-      }
-    });
-
     // Add course line
     map.addSource('course', { type: 'geojson', data: COURSE });
     map.addLayer({
