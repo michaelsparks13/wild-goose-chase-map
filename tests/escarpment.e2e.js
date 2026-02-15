@@ -21,6 +21,7 @@ test.describe('Escarpment map', () => {
   test('toggle buttons are present with correct labels', async ({ page }) => {
     await expect(page.locator('#courseBtn')).toHaveText('Course');
     await expect(page.locator('#trailBtn')).toHaveText('Park Trails');
+    await expect(page.locator('#aidBtn')).toHaveText('Aid Stations');
     await expect(page.locator('#terrainBtn')).toHaveText('3D');
   });
 
@@ -62,5 +63,14 @@ test.describe('Escarpment map', () => {
     const bgColor = await body.evaluate(el => getComputedStyle(el).backgroundColor);
     // Should be white or near-white
     expect(bgColor).toMatch(/rgb\(255,\s*255,\s*255\)/);
+  });
+
+  test('aid stations button starts inactive and toggles', async ({ page }) => {
+    const aidBtn = page.locator('#aidBtn');
+    await expect(aidBtn).not.toHaveClass(/active/);
+    await aidBtn.click();
+    await expect(aidBtn).toHaveClass(/active/);
+    await aidBtn.click();
+    await expect(aidBtn).not.toHaveClass(/active/);
   });
 });

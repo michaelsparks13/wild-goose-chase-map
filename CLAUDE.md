@@ -328,6 +328,53 @@ for (let m = 1; m <= totalMiles; m++) {
 }
 ```
 
+### Adding Aid Stations
+Many race websites list aid station locations with mile markers. **Always check the race website for an aid station table or list before asking the user.** Look for pages labeled "Course", "The Trail", "Race Info", or similar.
+
+**Data to extract from the race website:**
+- Station name/location
+- Approximate mile marker distance
+- Services available (water, electrolyte, snacks, medical, etc.)
+
+**Implementation pattern:**
+1. Define an `AID_STATIONS` array with `name`, `mile`, and optional `services`
+2. Use `getCoordAtDist(mile)` to compute coordinates from the course line
+3. Render as Mapbox markers with a distinct icon (e.g., "+" or water drop)
+4. Add a toggle button labeled "Aid Stations" alongside Course/Park Trails/3D
+5. Show popup on click with station name, mile, and services
+6. Aid stations are hidden by default (toggle starts inactive)
+
+```javascript
+const AID_STATIONS = [
+  { name: 'Station Name', mile: 3.5, services: 'Water, Tailwind, snacks' },
+  // ... more stations
+];
+
+// Generate markers from course coordinates
+const aidMarkers = [];
+AID_STATIONS.forEach((station, i) => {
+  const coords = getCoordAtDist(station.mile);
+  const el = document.createElement('div');
+  el.className = 'aid-marker';
+  el.innerHTML = '<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="var(--primary)" stroke="#fff" stroke-width="2"/><text x="14" y="18" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff">+</text></svg>';
+  const marker = new mapboxgl.Marker({ element: el })
+    .setLngLat(coords)
+    .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML(
+      '<strong>' + station.name + '</strong><br>' +
+      '<span style="color:var(--text-muted)">Mile ' + station.mile + '</span>' +
+      (station.services ? '<br><span style="font-size:0.8rem">' + station.services + '</span>' : '')
+    ));
+  aidMarkers.push(marker);
+});
+
+// Toggle function
+function toggleAidStations() {
+  aidVisible = !aidVisible;
+  document.getElementById('aidBtn').classList.toggle('active', aidVisible);
+  aidMarkers.forEach(m => { if (aidVisible) m.addTo(map); else m.remove(); });
+}
+```
+
 ### Adding Turn Markers with Street View
 Turn markers show key navigation points with embedded Google Street View images.
 

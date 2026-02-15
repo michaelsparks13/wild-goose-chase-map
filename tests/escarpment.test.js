@@ -103,4 +103,26 @@ describe('Escarpment map fixes', () => {
     );
     expect(trailSection).toContain("'line-cap': 'butt'");
   });
+
+  it('has 7 aid stations defined', () => {
+    expect(html).toContain('const AID_STATIONS =');
+    const stations = ['Windham Peak', 'Acra', 'Base of Blackhead', 'Top of Blackhead',
+      "Dutcher's Notch", 'Stoppel Point', 'North Point'];
+    stations.forEach(name => {
+      expect(html).toContain(name);
+    });
+  });
+
+  it('has Aid Stations toggle button', () => {
+    expect(html).toContain('id="aidBtn"');
+    expect(html).toContain('>Aid Stations</button>');
+  });
+
+  it('has toggleAidStations function', () => {
+    expect(html).toContain('function toggleAidStations()');
+  });
+
+  it('wires aidBtn to toggleAidStations', () => {
+    expect(html).toContain("getElementById('aidBtn').onclick = toggleAidStations");
+  });
 });

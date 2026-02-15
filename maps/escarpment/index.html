@@ -247,12 +247,12 @@ body {
 .mapboxgl-ctrl-attrib { font-size: 9px !important; }
 .mapboxgl-ctrl-group { border-radius: 8px !important; overflow: hidden; }
 
-.start-marker {
+.start-marker, .aid-marker {
   width: 32px;
   height: 32px;
   cursor: pointer;
 }
-.start-marker svg {
+.start-marker svg, .aid-marker svg {
   width: 100%;
   height: 100%;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
@@ -430,6 +430,7 @@ body {
   <div class="toggle-btns">
     <button class="toggle-btn active" id="courseBtn">Course</button>
     <button class="toggle-btn" id="trailBtn">Park Trails</button>
+    <button class="toggle-btn" id="aidBtn">Aid Stations</button>
     <button class="toggle-btn" id="terrainBtn">3D</button>
   </div>
 </div>
@@ -654,6 +655,18 @@ let map;
 let courseVisible = true;
 let terrain3D = false;
 let trailsOn = false;
+let aidVisible = false;
+const aidMarkers = [];
+
+const AID_STATIONS = [
+  { name: 'Windham Peak', mile: 3.5, services: 'Water, Tailwind, snacks' },
+  { name: 'Acra', mile: 6.2, services: 'Water, Tailwind, snacks' },
+  { name: 'Base of Blackhead', mile: 8.7, services: 'Water, Tailwind, snacks' },
+  { name: 'Top of Blackhead', mile: 9.6, services: 'Water, Tailwind, snacks' },
+  { name: "Dutcher's Notch", mile: 12.2, services: 'Water, Tailwind, snacks' },
+  { name: 'Stoppel Point', mile: 14.4, services: 'Water, Tailwind, snacks' },
+  { name: 'North Point', mile: 16.2, services: 'Water, Tailwind, snacks' }
+];
 
 function initMap() {
   map = new mapboxgl.Map({
@@ -766,6 +779,22 @@ function initMap() {
       filter: ['step', ['zoom'], ['==', ['get', 'priority'], 1], 13.5, true]
     });
 
+    // Aid station markers (hidden by default)
+    AID_STATIONS.forEach(station => {
+      const coords = getCoordAtDist(station.mile);
+      const el = document.createElement('div');
+      el.className = 'aid-marker';
+      el.innerHTML = '<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="#2E7D32" stroke="#fff" stroke-width="2"/><text x="14" y="18" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff">+</text></svg>';
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat(coords)
+        .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML(
+          '<strong style="color:#2E7D32">' + station.name + '</strong>' +
+          '<br><span style="color:#888">Mile ' + station.mile + '</span>' +
+          '<br><span style="font-size:0.8rem;color:#555">' + station.services + '</span>'
+        ));
+      aidMarkers.push(marker);
+    });
+
     // Fit to course bounds
     const bounds = new mapboxgl.LngLatBounds();
     COURSE_COORDS.forEach(coord => bounds.extend(coord));
@@ -869,6 +898,12 @@ function addTrailLayers() {
   }
 }
 
+function toggleAidStations() {
+  aidVisible = !aidVisible;
+  document.getElementById('aidBtn').classList.toggle('active', aidVisible);
+  aidMarkers.forEach(m => { if (aidVisible) m.addTo(map); else m.remove(); });
+}
+
 function drawElevationProfile() {
   const canvas = document.getElementById('profileCanvas');
   const ctx = canvas.getContext('2d');
@@ -949,6 +984,7 @@ function drawElevationProfile() {
 
 document.getElementById('courseBtn').onclick = toggleCourse;
 document.getElementById('trailBtn').onclick = toggleTrails;
+document.getElementById('aidBtn').onclick = toggleAidStations;
 document.getElementById('terrainBtn').onclick = toggle3D;
 
 // ═══════════════════════════════════════════════════════════
