@@ -638,3 +638,4 @@ map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
 | Wild Goose Trail Festival | Wawayanda State Park, NJ | Multi-loop trail | `/maps/wild-goose/` |
 | Sleepy Hollow Half Marathon | Sleepy Hollow, NY | Road/trail hybrid | `/maps/sleepy-hollow/` |
 | Sleeping Giant Trail Runs 25K | Sleeping Giant State Park, CT | Single-loop trail | `/maps/sleeping-giant/` |
+| Escarpment Trail Run 30K | Catskill Mountains, NY | Point-to-point trail | `/maps/escarpment/` |
