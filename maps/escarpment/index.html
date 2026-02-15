@@ -23,7 +23,7 @@
   --text-secondary: #555555;
   --text-muted: #888888;
   --border: #dddddd;
-  --course: #2E7D32;
+  --course: #111111;
   --shadow: 0 2px 8px rgba(0,0,0,0.08);
   --radius: 12px;
 }
@@ -701,16 +701,16 @@ function initMap() {
       if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
     });
 
-    // Add course line
+    // Add course line (dark line + brand color glow for contrast on green basemap)
     map.addSource('course', { type: 'geojson', data: COURSE });
     map.addLayer({
       id: 'course-outline',
       type: 'line',
       source: 'course',
       paint: {
-        'line-color': '#000',
+        'line-color': '#2E7D32',
         'line-width': 7,
-        'line-opacity': 0.3
+        'line-opacity': 0.45
       }
     });
     map.addLayer({
@@ -718,7 +718,7 @@ function initMap() {
       type: 'line',
       source: 'course',
       paint: {
-        'line-color': '#2E7D32',
+        'line-color': '#111111',
         'line-width': 4
       }
     });
