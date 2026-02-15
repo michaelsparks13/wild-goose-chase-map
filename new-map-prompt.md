@@ -18,7 +18,7 @@ extension of their site. Ensure the course line has high contrast against the
 basemap — if the brand color is green or similar to terrain, use a dark/black
 course line with the brand color as an outer glow (see "Course Line Contrast"
 in CLAUDE.md). Trail labels must stay visible at all zoom levels. Add mile
-markers to the interactive map using Mapbox-native layers (see "Adding Mile
+markers to the interactive map using MapLibre-native layers (see "Adding Mile
 Markers" in CLAUDE.md). Check the race website for aid station info and add
 them if available (see "Adding Aid Stations" in CLAUDE.md).
 

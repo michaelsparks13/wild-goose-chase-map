@@ -6,8 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#ffffff">
 <title>Wild Goose Trail Festival — Course Map</title>
-<script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/pmtiles@4.4.0/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/@protomaps/basemaps@5.7.0/dist/basemaps.js" crossorigin="anonymous"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -212,28 +214,28 @@ body {
 }
 .footer a { color: var(--green); text-decoration: none; font-weight: 600; }
 
-/* ═══ MAPBOX ═══ */
+/* ═══ MAP ═══ */
 .hq-marker { width: 28px; height: 28px; cursor: pointer; }
 .hq-marker svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); }
 .turn-marker { width: 24px; height: 24px; cursor: pointer; }
 .turn-marker svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
 .streetview-popup { max-width: 320px !important; }
-.streetview-popup .mapboxgl-popup-content { padding: 0 !important; overflow: hidden; }
+.streetview-popup .maplibregl-popup-content { padding: 0 !important; overflow: hidden; }
 .streetview-img { width: 100%; height: 180px; object-fit: cover; display: block; }
 .streetview-caption { padding: 10px 12px; }
 .streetview-caption strong { display: block; margin-bottom: 4px; }
 .streetview-caption a { color: var(--green); text-decoration: none; font-size: 0.75rem; }
 .streetview-caption a:hover { text-decoration: underline; }
-.mapboxgl-popup-content {
+.maplibregl-popup-content {
   background: var(--bg) !important; color: var(--text) !important;
   border-radius: var(--radius) !important; padding: 10px 12px !important;
   box-shadow: var(--shadow) !important; font-family: inherit !important; font-size: 0.8rem !important;
 }
-.mapboxgl-popup-tip { border-top-color: var(--bg) !important; }
-.mapboxgl-popup-close-button { color: var(--text-muted) !important; font-size: 16px !important; }
-.mapboxgl-ctrl-attrib { font-size: 9px !important; }
-.mapboxgl-ctrl-group { border-radius: 8px !important; overflow: hidden; }
-.mapboxgl-ctrl-group button { width: 32px !important; height: 32px !important; }
+.maplibregl-popup-tip { border-top-color: var(--bg) !important; }
+.maplibregl-popup-close-button { color: var(--text-muted) !important; font-size: 16px !important; }
+.maplibregl-ctrl-attrib { font-size: 9px !important; }
+.maplibregl-ctrl-group { border-radius: 8px !important; overflow: hidden; }
+.maplibregl-ctrl-group button { width: 32px !important; height: 32px !important; }
 
 /* ═══════════════════════════════════════════════════════════
    SIMULATOR VIEW
@@ -634,11 +636,28 @@ function switchView(view) {
 let map;
 
 function initMap() {
-  mapboxgl.accessToken = 'pk.eyJ1IjoibWljaGFlbHNwYXJrczEzIiwiYSI6ImNtbGp6cHNsNzA1OXEzam9iNWxkZnh6Y3AifQ.Z6IZuPPqMVcYTj1zP8AXYg';
-  
-  map = new mapboxgl.Map({
+  const protocol = new pmtiles.Protocol();
+  maplibregl.addProtocol('pmtiles', protocol.tile);
+
+  const PMTILES_URL = 'pmtiles://https://tiles.falsesummitstudio.com/basemap.pmtiles';
+
+  const BASEMAP_STYLE = {
+    version: 8,
+    glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+    sprite: 'https://protomaps.github.io/basemaps-assets/sprites/v4/light',
+    sources: {
+      protomaps: {
+        type: 'vector',
+        url: PMTILES_URL,
+        attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
+      }
+    },
+    layers: basemaps.layers('protomaps', basemaps.namedFlavor('light'), { lang: 'en' })
+  };
+
+  map = new maplibregl.Map({
     container: 'map',
-    style: 'mapbox://styles/mapbox/outdoors-v12',
+    style: BASEMAP_STYLE,
     center: [-74.432, 41.183],
     zoom: 12.5,
     pitch: 25,
@@ -646,12 +665,37 @@ function initMap() {
     antialias: true
   });
 
-  map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+  map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
   map.on('load', () => {
-    map.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
-    map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.3 });
-    map.addLayer({ id: 'sky', type: 'sky', paint: { 'sky-type': 'atmosphere', 'sky-atmosphere-sun': [0.0, 90.0], 'sky-atmosphere-sun-intensity': 15 } });
+    // Add terrain and hillshade
+    map.addSource('terrain-dem', {
+      type: 'raster-dem',
+      tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+      tileSize: 256, maxzoom: 15, encoding: 'terrarium'
+    });
+    map.setTerrain({ source: 'terrain-dem', exaggeration: 1.3 });
+    map.addSource('hillshade-dem', {
+      type: 'raster-dem',
+      tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+      tileSize: 256, maxzoom: 15, encoding: 'terrarium'
+    });
+    map.addLayer({
+      id: 'hillshade', type: 'hillshade', source: 'hillshade-dem',
+      paint: {
+        'hillshade-exaggeration': 0.3,
+        'hillshade-shadow-color': '#5a5a5a',
+        'hillshade-highlight-color': '#ffffff',
+        'hillshade-accent-color': '#4a8f29'
+      }
+    });
+    map.setSky({
+      'sky-color': '#88C6FC',
+      'horizon-color': '#ffffff',
+      'sky-horizon-blend': 0.8,
+      'fog-color': '#ffffff',
+      'fog-ground-blend': 0.5
+    });
 
     // Add loops in order: pink first, then blue, then checkered
     const loopOrder = ['pink', 'blue', 'checkered'];
@@ -667,7 +711,7 @@ function initMap() {
       }
       map.on('click', id, e => {
         const popupColor = loop.pattern === 'checkered' ? '#333' : loop.color;
-        new mapboxgl.Popup({ offset: 12 }).setLngLat(e.lngLat).setHTML('<strong style="color:' + popupColor + '">' + loop.label + ' Loop</strong><br><span style="color:#666">' + loop.miles + ' mi · ' + loop.gain + "' gain</span>").addTo(map);
+        new maplibregl.Popup({ offset: 12 }).setLngLat(e.lngLat).setHTML('<strong style="color:' + popupColor + '">' + loop.label + ' Loop</strong><br><span style="color:#666">' + loop.miles + ' mi · ' + loop.gain + "' gain</span>").addTo(map);
       });
       map.on('mouseenter', id, () => map.getCanvas().style.cursor = 'pointer');
       map.on('mouseleave', id, () => map.getCanvas().style.cursor = '');
@@ -690,7 +734,7 @@ function initMap() {
     const el = document.createElement('div');
     el.className = 'hq-marker';
     el.innerHTML = '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#FFD700" stroke="#1a1a1a" stroke-width="2"/><text x="16" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a1a1a">S</text></svg>';
-    new mapboxgl.Marker({ element: el }).setLngLat(HQ).setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong style="color:#5CA921">SQUATCH HQ</strong><br><span style="color:#666">Start/Finish · Aid Station</span>')).addTo(map);
+    new maplibregl.Marker({ element: el }).setLngLat(HQ).setPopup(new maplibregl.Popup({ offset: 15 }).setHTML('<strong style="color:#5CA921">SQUATCH HQ</strong><br><span style="color:#666">Start/Finish · Aid Station</span>')).addTo(map);
 
     // Course turn markers with Street View
     const TURNS = [
@@ -714,9 +758,9 @@ function initMap() {
 
       const popupHtml = '<img class="streetview-img" src="' + streetViewUrl + '" alt="Street View"><div class="streetview-caption"><strong>' + turn.name + '</strong><a href="' + mapsUrl + '" target="_blank">Open in Google Maps →</a></div>';
 
-      const marker = new mapboxgl.Marker({ element: markerEl })
+      const marker = new maplibregl.Marker({ element: markerEl })
         .setLngLat(turn.coords)
-        .setPopup(new mapboxgl.Popup({ offset: 15, className: 'streetview-popup', maxWidth: '320px' }).setHTML(popupHtml))
+        .setPopup(new maplibregl.Popup({ offset: 15, className: 'streetview-popup', maxWidth: '320px' }).setHTML(popupHtml))
         .addTo(map);
       turnMarkers.push({ marker, element: markerEl });
     });
@@ -932,7 +976,7 @@ function toggleTrails() {
           'symbol-placement': 'line',
           'text-field': ['get', 'name'],
           'text-size': ['interpolate', ['linear'], ['zoom'], 13, 9, 16, 12],
-          'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
+          'text-font': ['Noto Sans Medium'],
           'text-max-angle': 30,
           'text-padding': 10
         },

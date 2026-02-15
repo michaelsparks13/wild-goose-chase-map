@@ -11,7 +11,9 @@
 **Service:** Custom interactive maps for endurance events (trail races, road races, ultras)
 
 ## Tech Stack
-- **Mapbox GL JS** - Map rendering and interactivity
+- **MapLibre GL JS** - Map rendering and interactivity (open-source, no API key)
+- **PMTiles** - Self-hosted vector tiles via Cloudflare R2 (no third-party tile service)
+- **Protomaps Basemaps** - Client-side basemap style generation
 - **Vanilla HTML/CSS/JS** - No framework, single `index.html` per map
 - **GeoJSON** - Course routes, trails, and point data
 - **Canvas API** - Elevation profile rendering
@@ -101,7 +103,7 @@ Every race map MUST include a toggleable trail overlay showing the actual park/a
 2. Each GeoJSON feature needs `name` (trail name) and `blaze` (color string or null for roads)
 3. Add a **"Park Trails"** toggle button alongside Course and 3D buttons (always use the label "Park Trails", not "Trails")
 4. Inline trail data directly as a JS variable (do NOT use `fetch()` — see Data Loading Rules)
-5. Render trail lines colored by blaze using a Mapbox `match` expression
+5. Render trail lines colored by blaze using a MapLibre `match` expression
 6. Add trail name labels along each line (`symbol-placement: 'line'`)
 7. Trail lines render **ON TOP** of the course line as **dashed lines** — this lets the solid course show through while the colored dashes indicate which trail you're on. Do NOT use `beforeId` — trails go above the course.
 
@@ -130,36 +132,17 @@ map.addLayer({
 }); // no beforeId — renders on top of course
 ```
 
-### Basemap Cleanup (Required)
-On map load, **always** hide the following basemap elements to avoid visual clutter:
+### Basemap Cleanup
+The Protomaps `light` basemap style does not include POI icons or trail/path rendering
+that conflicts with our custom overlays, so no cleanup code is needed. The only trails
+visible are your own course and park trail overlay layers.
 
-1. **POI icons** — Hide all `poi-*` symbol layers (info markers, trailheads, etc.)
-2. **Basemap trail/path lines** — Hide all built-in trail rendering from `outdoors-v12`
-
+If you add layers to the basemap style in the future and need to hide some by default:
 ```javascript
-map.on('load', () => {
-  // Hide basemap POI icons
-  map.getStyle().layers.forEach(layer => {
-    if (layer.type === 'symbol' && layer.id.startsWith('poi-')) {
-      map.setLayoutProperty(layer.id, 'visibility', 'none');
-    }
-  });
-
-  // Hide basemap trail/path layers permanently
-  const BASEMAP_TRAIL_LAYERS = [
-    'road-path-bg', 'road-path-trail', 'road-path-cycleway-piste', 'road-path',
-    'road-steps-bg', 'road-steps', 'road-pedestrian',
-    'tunnel-path-trail', 'tunnel-path-cycleway-piste', 'tunnel-path',
-    'tunnel-steps', 'tunnel-pedestrian',
-    'bridge-path-bg', 'bridge-path-trail', 'bridge-path-cycleway-piste', 'bridge-path',
-    'bridge-steps-bg', 'bridge-steps', 'bridge-pedestrian',
-    'path-pedestrian-label'
-  ];
-  BASEMAP_TRAIL_LAYERS.forEach(id => {
-    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
-  });
-
-  // ... add course layers, etc.
+map.getStyle().layers.forEach(layer => {
+  if (layer.id.startsWith('prefix-to-hide-')) {
+    map.setLayoutProperty(layer.id, 'visibility', 'none');
+  }
 });
 ```
 
@@ -293,7 +276,7 @@ Do NOT set a `maxzoom` on trail label or trail line layers.
 1. Edit `course-trails.geojson` - update `blaze` property for each feature
 2. If adding new color, update both:
    - `BLAZE_COLORS` object
-   - Mapbox layer paint expression `['match', ['get', 'blaze'], ...]`
+   - MapLibre layer paint expression `['match', ['get', 'blaze'], ...]`
 
 ### Finding Shared Segment Indices
 Use coordinate comparison to find where loops overlap:
@@ -307,7 +290,7 @@ blueCoords.forEach((coord, i) => {
 ```
 
 ### Adding Mile Markers
-Every race map should include mile markers on the interactive map (not needed on the simulator). Use Mapbox-native circle + symbol layers for performance and zoom-based visibility control. No toggle button — mile markers follow the Course toggle.
+Every race map should include mile markers on the interactive map (not needed on the simulator). Use MapLibre-native circle + symbol layers for performance and zoom-based visibility control. No toggle button — mile markers follow the Course toggle.
 
 **Implementation pattern:**
 1. Generate a GeoJSON FeatureCollection using `getCoordAtDist(m)` for miles 1 through N
@@ -339,7 +322,7 @@ Many race websites list aid station locations with mile markers. **Always check 
 **Implementation pattern:**
 1. Define an `AID_STATIONS` array with `name`, `mile`, and optional `services`
 2. Use `getCoordAtDist(mile)` to compute coordinates from the course line
-3. Render as Mapbox markers with a distinct icon (e.g., "+" or water drop)
+3. Render as MapLibre markers with a distinct icon (e.g., "+" or water drop)
 4. Add a toggle button labeled "Aid Stations" alongside Course/Park Trails/3D
 5. Show popup on click with station name, mile, and services
 6. Aid stations are hidden by default (toggle starts inactive)
@@ -357,9 +340,9 @@ AID_STATIONS.forEach((station, i) => {
   const el = document.createElement('div');
   el.className = 'aid-marker';
   el.innerHTML = '<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="var(--primary)" stroke="#fff" stroke-width="2"/><text x="14" y="18" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff">+</text></svg>';
-  const marker = new mapboxgl.Marker({ element: el })
+  const marker = new maplibregl.Marker({ element: el })
     .setLngLat(coords)
-    .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML(
+    .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML(
       '<strong>' + station.name + '</strong><br>' +
       '<span style="color:var(--text-muted)">Mile ' + station.mile + '</span>' +
       (station.services ? '<br><span style="font-size:0.8rem">' + station.services + '</span>' : '')
@@ -390,7 +373,7 @@ The Street View URL contains the panorama ID (e.g., `Nr-Rvka4ohEaY8AjwC0gsQ`) an
 const TURNS = [
   {
     name: 'Turn onto Warwick Turnpike',
-    coords: [-74.392108, 41.196365],  // [lng, lat] for Mapbox
+    coords: [-74.392108, 41.196365],  // [lng, lat] for MapLibre
     pano: 'Nr-Rvka4ohEaY8AjwC0gsQ',   // Google panorama ID
     heading: 317,                      // Camera heading (degrees)
     pitch: 17                          // Camera pitch (degrees)
@@ -592,25 +575,71 @@ Always ask the user for:
 
 ---
 
-## Mapbox Configuration
+## MapLibre + PMTiles Configuration
 
-**Access Token:** Use the project token or request user's token for production.
-
-**Recommended Styles:**
-- `mapbox://styles/mapbox/outdoors-v12` - Best for trail/road races
-- `mapbox://styles/mapbox/satellite-streets-v12` - Good for aerial view
-- `mapbox://styles/mapbox/dark-v11` - Dark theme option
-
-**3D Terrain:**
-```javascript
-map.addSource('mapbox-dem', {
-  type: 'raster-dem',
-  url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-  tileSize: 512,
-  maxzoom: 14
-});
-map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+**Libraries (CDN):**
+```html
+<script src="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/pmtiles@4.4.0/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/@protomaps/basemaps@5.7.0/dist/basemaps.js" crossorigin="anonymous"></script>
 ```
+
+**PMTiles Protocol + Basemap Style:**
+```javascript
+const protocol = new pmtiles.Protocol();
+maplibregl.addProtocol('pmtiles', protocol.tile);
+
+const PMTILES_URL = 'pmtiles://https://tiles.falsesummitstudio.com/basemap.pmtiles';
+
+const BASEMAP_STYLE = {
+  version: 8,
+  glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+  sprite: 'https://protomaps.github.io/basemaps-assets/sprites/v4/light',
+  sources: {
+    protomaps: {
+      type: 'vector',
+      url: PMTILES_URL,
+      attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
+    }
+  },
+  layers: basemaps.layers('protomaps', basemaps.namedFlavor('light'), { lang: 'en' })
+};
+```
+
+**No access token required.** Tiles are self-hosted on Cloudflare R2.
+
+**3D Terrain (AWS Terrain Tiles — free, public):**
+```javascript
+map.addSource('terrain-dem', {
+  type: 'raster-dem',
+  tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+  tileSize: 256, maxzoom: 15, encoding: 'terrarium'
+});
+map.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
+```
+**Important:** AWS tiles use `tileSize: 256` (not 512) and `encoding: 'terrarium'` (not mapbox).
+
+**Hillshade (compensates for no contour lines in Protomaps theme):**
+```javascript
+map.addSource('hillshade-dem', {
+  type: 'raster-dem',
+  tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+  tileSize: 256, maxzoom: 15, encoding: 'terrarium'
+});
+map.addLayer({
+  id: 'hillshade', type: 'hillshade', source: 'hillshade-dem',
+  paint: {
+    'hillshade-exaggeration': 0.3,
+    'hillshade-shadow-color': '#5a5a5a',
+    'hillshade-highlight-color': '#ffffff',
+    'hillshade-accent-color': '#4a8f29'
+  }
+});
+```
+
+**Font Stacks:**
+Use `['Noto Sans Medium']` for all text layers. Glyphs are hosted by Protomaps.
 
 ---
 

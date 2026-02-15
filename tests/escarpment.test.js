@@ -58,13 +58,18 @@ describe('Escarpment map fixes', () => {
     expect(labelSection).not.toContain('minzoom');
   });
 
-  it('has basemap cleanup for POI icons', () => {
-    expect(html).toContain("layer.id.startsWith('poi-')");
+  it('uses MapLibre GL JS (not Mapbox)', () => {
+    expect(html).toContain('maplibregl');
+    expect(html).not.toContain('mapboxgl');
   });
 
-  it('has basemap cleanup for trail/path layers', () => {
-    expect(html).toContain('BASEMAP_TRAIL_LAYERS');
-    expect(html).toContain('road-path-trail');
+  it('registers PMTiles protocol', () => {
+    expect(html).toContain('pmtiles.Protocol');
+    expect(html).toContain("maplibregl.addProtocol('pmtiles'");
+  });
+
+  it('uses terrarium encoding for terrain', () => {
+    expect(html).toContain("encoding: 'terrarium'");
   });
 
   it('does not have course click popup', () => {

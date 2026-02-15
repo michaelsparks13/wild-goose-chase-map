@@ -6,8 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1a2e">
 <title>Sleepy Hollow Half Marathon 2026 - Course Map</title>
-<script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/pmtiles@4.4.0/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/@protomaps/basemaps@5.7.0/dist/basemaps.js" crossorigin="anonymous"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -290,8 +292,8 @@ body {
 }
 .footer a { color: var(--primary); text-decoration: none; }
 
-/* Mapbox customization */
-.mapboxgl-popup-content {
+/* Map customization */
+.maplibregl-popup-content {
   background: var(--bg-card) !important;
   color: var(--text) !important;
   border-radius: var(--radius) !important;
@@ -301,10 +303,10 @@ body {
   font-size: 0.85rem !important;
   border: 1px solid var(--border) !important;
 }
-.mapboxgl-popup-tip { border-top-color: var(--bg-card) !important; }
-.mapboxgl-popup-close-button { color: var(--text-muted) !important; font-size: 18px !important; }
-.mapboxgl-ctrl-attrib { font-size: 9px !important; }
-.mapboxgl-ctrl-group { border-radius: 8px !important; overflow: hidden; }
+.maplibregl-popup-tip { border-top-color: var(--bg-card) !important; }
+.maplibregl-popup-close-button { color: var(--text-muted) !important; font-size: 18px !important; }
+.maplibregl-ctrl-attrib { font-size: 9px !important; }
+.maplibregl-ctrl-group { border-radius: 8px !important; overflow: hidden; }
 
 .start-marker, .landmark-marker {
   width: 32px;
@@ -342,7 +344,7 @@ body {
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
 }
 .streetview-popup { max-width: 320px !important; }
-.streetview-popup .mapboxgl-popup-content { padding: 0 !important; overflow: hidden; border-radius: var(--radius) !important; }
+.streetview-popup .maplibregl-popup-content { padding: 0 !important; overflow: hidden; border-radius: var(--radius) !important; }
 .streetview-img { width: 100%; height: 160px; object-fit: cover; display: block; }
 .streetview-caption { padding: 12px; background: var(--bg-card); }
 .streetview-caption strong { display: block; color: var(--text); margin-bottom: 4px; }
@@ -431,11 +433,28 @@ body {
 
 <footer class="footer">
   Sleepy Hollow Half Marathon &bull; Produced by <a href="http://www.rivertownrunners.org" target="_blank">Rivertown Runners</a>
-  <br>Interactive map powered by Mapbox
+  <br>Interactive map powered by MapLibre
 </footer>
 
 <script>
-mapboxgl.accessToken = 'pk.eyJ1IjoibWljaGFlbHNwYXJrczEzIiwiYSI6ImNtbGp6cHNsNzA1OXEzam9iNWxkZnh6Y3AifQ.Z6IZuPPqMVcYTj1zP8AXYg';
+const protocol = new pmtiles.Protocol();
+maplibregl.addProtocol('pmtiles', protocol.tile);
+
+const PMTILES_URL = 'pmtiles://https://tiles.falsesummitstudio.com/basemap.pmtiles';
+
+const BASEMAP_STYLE = {
+  version: 8,
+  glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+  sprite: 'https://protomaps.github.io/basemaps-assets/sprites/v4/light',
+  sources: {
+    protomaps: {
+      type: 'vector',
+      url: PMTILES_URL,
+      attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
+    }
+  },
+  layers: basemaps.layers('protomaps', basemaps.namedFlavor('light'), { lang: 'en' })
+};
 
 const START_COORDS = [-73.8587, 41.0854];
 
@@ -581,17 +600,33 @@ let landmarksVisible = false;
 let terrain3D = false;
 
 function initMap() {
-  map = new mapboxgl.Map({
+  map = new maplibregl.Map({
     container: 'map',
-    style: 'mapbox://styles/mapbox/outdoors-v12',
+    style: BASEMAP_STYLE,
     center: [-73.855, 41.105],
     zoom: 12,
     pitch: 0
   });
 
-  map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+  map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
 
   map.on('load', () => {
+    // Add hillshade for terrain shading
+    map.addSource('hillshade-dem', {
+      type: 'raster-dem',
+      tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+      tileSize: 256, maxzoom: 15, encoding: 'terrarium'
+    });
+    map.addLayer({
+      id: 'hillshade', type: 'hillshade', source: 'hillshade-dem',
+      paint: {
+        'hillshade-exaggeration': 0.3,
+        'hillshade-shadow-color': '#5a5a5a',
+        'hillshade-highlight-color': '#ffffff',
+        'hillshade-accent-color': '#4a8f29'
+      }
+    });
+
     // Add course line
     map.addSource('course', { type: 'geojson', data: COURSE });
     map.addLayer({
@@ -618,9 +653,9 @@ function initMap() {
     const startEl = document.createElement('div');
     startEl.className = 'start-marker';
     startEl.innerHTML = '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#FF6B35" stroke="#fff" stroke-width="2"/><text x="16" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">S</text></svg>';
-    new mapboxgl.Marker({ element: startEl })
+    new maplibregl.Marker({ element: startEl })
       .setLngLat(START_COORDS)
-      .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong style="color:#FF6B35">Start / Finish</strong><br><span style="color:#a0a0b0">Beekman Avenue</span>'))
+      .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML('<strong style="color:#FF6B35">Start / Finish</strong><br><span style="color:#a0a0b0">Beekman Avenue</span>'))
       .addTo(map);
 
     // Create landmark markers (initially hidden)
@@ -628,9 +663,9 @@ function initMap() {
       const el = document.createElement('div');
       el.className = 'landmark-marker';
       el.innerHTML = '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="10" fill="#8B4513" stroke="#fff" stroke-width="2"/><text x="16" y="20" text-anchor="middle" font-size="10" fill="#fff">' + (lm.icon.length > 2 ? '•' : lm.icon) + '</text></svg>';
-      const marker = new mapboxgl.Marker({ element: el })
+      const marker = new maplibregl.Marker({ element: el })
         .setLngLat(lm.coords)
-        .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong style="color:#FF6B35">' + lm.name + '</strong><br><span style="color:#a0a0b0">' + lm.desc + '</span>'));
+        .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML('<strong style="color:#FF6B35">' + lm.name + '</strong><br><span style="color:#a0a0b0">' + lm.desc + '</span>'));
       landmarkMarkers.push(marker);
     });
 
@@ -639,9 +674,9 @@ function initMap() {
       const el = document.createElement('div');
       el.className = 'mile-marker';
       el.textContent = mm.mile;
-      const marker = new mapboxgl.Marker({ element: el })
+      const marker = new maplibregl.Marker({ element: el })
         .setLngLat(mm.coords)
-        .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong style="color:#FF6B35">Mile ' + mm.mile + '</strong>'));
+        .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML('<strong style="color:#FF6B35">Mile ' + mm.mile + '</strong>'));
       mileMarkers.push(marker);
     });
 
@@ -653,9 +688,9 @@ function initMap() {
       el.innerHTML = '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#FF6B35" stroke="#fff" stroke-width="2"/><path d="M12 16l6-4v8z" fill="#fff"/></svg>';
       const streetViewUrl = 'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=' + turn.pano + '&cb_client=maps_sv.tactile&w=640&h=360&yaw=' + turn.heading + '&pitch=' + turn.pitch;
       const mapsUrl = 'https://www.google.com/maps/@?api=1&map_action=pano&pano=' + turn.pano + '&heading=' + turn.heading + '&pitch=' + turn.pitch;
-      const marker = new mapboxgl.Marker({ element: el })
+      const marker = new maplibregl.Marker({ element: el })
         .setLngLat(turn.coords)
-        .setPopup(new mapboxgl.Popup({ offset: 18, className: 'streetview-popup' }).setHTML(
+        .setPopup(new maplibregl.Popup({ offset: 18, className: 'streetview-popup' }).setHTML(
           '<img class="streetview-img" src="' + streetViewUrl + '" alt="Street View">' +
           '<div class="streetview-caption"><strong>' + turn.name + '</strong><a href="' + mapsUrl + '" target="_blank">Open in Google Maps</a></div>'
         ));
@@ -664,7 +699,7 @@ function initMap() {
 
     // Add course click interaction
     map.on('click', 'course-line', e => {
-      new mapboxgl.Popup({ offset: 12 })
+      new maplibregl.Popup({ offset: 12 })
         .setLngLat(e.lngLat)
         .setHTML('<strong style="color:#FF6B35">Sleepy Hollow Half Marathon</strong><br><span style="color:#a0a0b0">13.1 mi &bull; Mixed road & trail</span>')
         .addTo(map);
@@ -710,10 +745,14 @@ function toggle3D() {
   terrain3D = !terrain3D;
   document.getElementById('terrainBtn').classList.toggle('active', terrain3D);
   if (terrain3D) {
-    if (!map.getSource('mapbox-dem')) {
-      map.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
+    if (!map.getSource('terrain-dem')) {
+      map.addSource('terrain-dem', {
+        type: 'raster-dem',
+        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+        tileSize: 256, maxzoom: 15, encoding: 'terrarium'
+      });
     }
-    map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+    map.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
     map.easeTo({ pitch: 45, duration: 1000 });
   } else {
     map.setTerrain(null);
