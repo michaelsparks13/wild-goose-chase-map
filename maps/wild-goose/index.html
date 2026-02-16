@@ -228,7 +228,16 @@ body {
 /* ═══════════════════════════════════════════════════════════
    SIMULATOR VIEW
 ═══════════════════════════════════════════════════════════ */
-.sim-container { background: var(--bg); }
+.sim-container { background: var(--bg); display: flex; flex-direction: column; }
+.sim-panel { display: contents; } /* On mobile, children flow as if panel doesn't exist */
+/* Mobile order: races, goal-time, visual, scrubber, clock, stats, loop-progress */
+.sim-panel .sim-races { order: 1; }
+.sim-panel .goal-time-bar { order: 2; }
+.sim-visual { order: 3; }
+.sim-panel .scrubber { order: 4; }
+.sim-panel .sim-clock { order: 5; }
+.sim-panel .sim-stats { order: 6; }
+.sim-panel .loop-progress { order: 7; flex: 1; }
 
 /* Course map (bird's-eye view) */
 .course-map-wrap { position: relative; background: #1a2030; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -248,11 +257,10 @@ body {
 .runner-meta { font-size: 0.7rem; color: rgba(255,255,255,0.7); margin-top: 2px; }
 
 .loop-pill {
-  position: absolute; top: 12px; right: 12px;
-  padding: 4px 10px; border-radius: 12px;
-  font-size: 0.65rem; font-weight: 600;
+  display: inline-block; margin-top: 4px;
+  padding: 2px 8px; border-radius: 10px;
+  font-size: 0.6rem; font-weight: 600;
   border: 1px solid; background: rgba(0,0,0,0.3);
-  pointer-events: none;
 }
 
 /* Scrubber */
@@ -415,12 +423,37 @@ body {
 @media (min-width: 1024px) {
   .page-shell { max-width: 960px; margin: 0 auto; min-height: 100vh; background: var(--bg-alt); box-shadow: 0 0 1px rgba(0,0,0,0.1); }
   #profileCanvas { height: 150px; }
-  #courseMapCanvas { height: 380px; }
+
+  /* Simulator: sidebar + full-height course map */
+  .sim-container {
+    flex-direction: row;
+    height: calc(100vh - 52px);
+    overflow: hidden;
+  }
+  .sim-panel {
+    display: flex; flex-direction: column;
+    width: 360px; flex-shrink: 0;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+  .sim-panel .sim-races { flex-wrap: wrap; overflow-x: visible; }
+  .sim-panel .scrubber { border-bottom: 1px solid var(--border); }
+  .sim-panel .sim-clock { padding: 12px 16px; }
+  .sim-panel .sim-clock .clock-time { font-size: 1.4rem; }
+  .sim-panel .sim-clock .clock-label { font-size: 0.55rem; }
+  .sim-panel .sim-stats { grid-template-columns: repeat(3, 1fr); }
+  .sim-visual {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
+  }
+  .sim-visual .course-map-wrap { flex: 1; min-height: 0; }
+  #courseMapCanvas { height: 100%; }
   #simTerrain { height: 60px; }
 }
 
 @media (min-width: 1440px) {
   .page-shell { max-width: 1080px; }
+  .sim-panel { width: 400px; }
 }
 </style>
 </head>
@@ -491,67 +524,71 @@ body {
 ═══════════════════════════════════════════════════════════ -->
 <div id="simView" class="view">
   <div class="sim-container">
-    <div class="sim-races" id="simRaces"></div>
+    <div class="sim-panel">
+      <div class="sim-races" id="simRaces"></div>
 
-    <div class="goal-time-bar">
-      <span class="goal-label">Goal Time</span>
-      <div class="goal-inputs">
-        <input type="number" class="goal-input" id="goalHrs" min="0" max="48" value="2" onchange="updateGoalTime()" onclick="this.select()">
-        <span class="goal-colon">:</span>
-        <input type="number" class="goal-input" id="goalMins" min="0" max="59" value="30" onchange="updateGoalTime()" onclick="this.select()">
+      <div class="goal-time-bar">
+        <span class="goal-label">Goal Time</span>
+        <div class="goal-inputs">
+          <input type="number" class="goal-input" id="goalHrs" min="0" max="48" value="2" onchange="updateGoalTime()" onclick="this.select()">
+          <span class="goal-colon">:</span>
+          <input type="number" class="goal-input" id="goalMins" min="0" max="59" value="30" onchange="updateGoalTime()" onclick="this.select()">
+        </div>
+        <div class="goal-pace" id="goalPace">Avg pace: <strong>10:54 /mi</strong></div>
       </div>
-      <div class="goal-pace" id="goalPace">Avg pace: <strong>10:54 /mi</strong></div>
-    </div>
 
-    <div class="course-map-wrap">
-      <canvas id="courseMapCanvas"></canvas>
-      <div class="runner-info">
-        <div class="runner-ele" id="runnerDist">Mile 0.0</div>
-        <div class="runner-meta" id="runnerMeta">1,200 ft · Starting</div>
-      </div>
-      <div class="loop-pill" id="loopPill" style="color:#E834EC;border-color:#E834EC">Pink</div>
-    </div>
-    <div class="terrain-wrap">
-      <canvas id="simTerrain"></canvas>
-    </div>
-
-    <div class="scrubber">
-      <div class="scrub-row">
-        <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
-        <div class="scrub-track" id="scrubTrack">
-          <div class="scrub-bg">
-            <div class="scrub-segs" id="scrubSegs"></div>
-            <div class="scrub-fill" id="scrubFill"></div>
+      <div class="scrubber">
+        <div class="scrub-row">
+          <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+          <div class="scrub-track" id="scrubTrack">
+            <div class="scrub-bg">
+              <div class="scrub-segs" id="scrubSegs"></div>
+              <div class="scrub-fill" id="scrubFill"></div>
+            </div>
+            <div class="scrub-hq" id="scrubHQ"></div>
+            <div class="scrub-handle" id="scrubHandle"></div>
           </div>
-          <div class="scrub-hq" id="scrubHQ"></div>
-          <div class="scrub-handle" id="scrubHandle"></div>
+          <div class="speed-btns">
+            <button class="speed-btn active" onclick="setSpeed(1,this)">1x</button>
+            <button class="speed-btn" onclick="setSpeed(2,this)">2x</button>
+            <button class="speed-btn" onclick="setSpeed(4,this)">4x</button>
+          </div>
         </div>
-        <div class="speed-btns">
-          <button class="speed-btn active" onclick="setSpeed(1,this)">1x</button>
-          <button class="speed-btn" onclick="setSpeed(2,this)">2x</button>
-          <button class="speed-btn" onclick="setSpeed(4,this)">4x</button>
-        </div>
+      </div>
+
+      <div class="sim-clock">
+        <div class="clock-time" id="clockTime">5:00 AM</div>
+        <div class="clock-label">Current Time (Race starts 5:00 AM)</div>
+        <div class="clock-finish" id="clockFinish" style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary)">Finish: <strong id="finishTime" style="color:var(--green)">7:30 AM</strong></div>
+      </div>
+
+      <div class="sim-stats">
+        <div class="sim-stat"><div class="val" id="statDist">0.0</div><div class="label">Miles</div></div>
+        <div class="sim-stat"><div class="val" id="statEle">0</div><div class="label">Elevation</div></div>
+        <div class="sim-stat"><div class="val" id="statGain">0</div><div class="label">Gain</div></div>
+        <div class="sim-stat"><div class="val" id="statTotalGain">0</div><div class="label">Total Gain</div></div>
+        <div class="sim-stat"><div class="val" id="statGrade">0%</div><div class="label">Grade</div></div>
+        <div class="sim-stat"><div class="val" id="statPct">0%</div><div class="label">Complete</div></div>
+      </div>
+
+      <div class="loop-progress">
+        <h4>Loop Progress</h4>
+        <div id="loopTracker"></div>
       </div>
     </div>
 
-    <div class="sim-clock">
-      <div class="clock-time" id="clockTime">5:00 AM</div>
-      <div class="clock-label">Current Time (Race starts 5:00 AM)</div>
-      <div class="clock-finish" id="clockFinish" style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary)">Finish: <strong id="finishTime" style="color:var(--green)">7:30 AM</strong></div>
-    </div>
-
-    <div class="sim-stats">
-      <div class="sim-stat"><div class="val" id="statDist">0.0</div><div class="label">Miles</div></div>
-      <div class="sim-stat"><div class="val" id="statEle">0</div><div class="label">Elevation</div></div>
-      <div class="sim-stat"><div class="val" id="statGain">0</div><div class="label">Gain</div></div>
-      <div class="sim-stat"><div class="val" id="statTotalGain">0</div><div class="label">Total Gain</div></div>
-      <div class="sim-stat"><div class="val" id="statGrade">0%</div><div class="label">Grade</div></div>
-      <div class="sim-stat"><div class="val" id="statPct">0%</div><div class="label">Complete</div></div>
-    </div>
-
-    <div class="loop-progress">
-      <h4>Loop Progress</h4>
-      <div id="loopTracker"></div>
+    <div class="sim-visual">
+      <div class="course-map-wrap">
+        <canvas id="courseMapCanvas"></canvas>
+        <div class="runner-info">
+          <div class="runner-ele" id="runnerDist">Mile 0.0</div>
+          <div class="runner-meta" id="runnerMeta">1,200 ft · Starting</div>
+          <div class="loop-pill" id="loopPill" style="color:#E834EC;border-color:#E834EC">Pink</div>
+        </div>
+      </div>
+      <div class="terrain-wrap">
+        <canvas id="simTerrain"></canvas>
+      </div>
     </div>
   </div>
 </div>
