@@ -228,7 +228,16 @@ body {
 /* ═══════════════════════════════════════════════════════════
    SIMULATOR VIEW
 ═══════════════════════════════════════════════════════════ */
-.sim-container { background: var(--bg); }
+.sim-container { background: var(--bg); display: flex; flex-direction: column; }
+.sim-panel { display: contents; } /* On mobile, children flow as if panel doesn't exist */
+/* Mobile order: races, goal-time, visual, scrubber, clock, stats, loop-progress */
+.sim-panel .sim-races { order: 1; }
+.sim-panel .goal-time-bar { order: 2; }
+.sim-visual { order: 3; }
+.sim-panel .scrubber { order: 4; }
+.sim-panel .sim-clock { order: 5; }
+.sim-panel .sim-stats { order: 6; }
+.sim-panel .loop-progress { order: 7; }
 
 /* Course map (bird's-eye view) */
 .course-map-wrap { position: relative; background: #1a2030; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -418,43 +427,33 @@ body {
 
   /* Simulator: sidebar + full-height course map */
   .sim-container {
-    display: grid;
-    grid-template-columns: 360px 1fr;
-    grid-template-rows: auto 1fr auto;
-    grid-template-areas:
-      "races  visual"
-      "panel  visual"
-      "panel  visual";
+    flex-direction: row;
     height: calc(100vh - 52px);
     overflow: hidden;
   }
-  .sim-container > .sim-races { grid-area: races; }
-  .sim-container > .sim-visual {
-    grid-area: visual;
+  .sim-panel {
     display: flex; flex-direction: column;
-    min-height: 0;
-    border-left: 1px solid var(--border);
+    width: 360px; flex-shrink: 0;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+  .sim-panel .scrubber { margin-top: auto; } /* Push scrubber to bottom */
+  .sim-panel .sim-clock { padding: 12px 16px; }
+  .sim-panel .sim-clock .clock-time { font-size: 1.4rem; }
+  .sim-panel .sim-clock .clock-label { font-size: 0.55rem; }
+  .sim-panel .sim-stats { grid-template-columns: repeat(3, 1fr); }
+  .sim-visual {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
   }
   .sim-visual .course-map-wrap { flex: 1; min-height: 0; }
   #courseMapCanvas { height: 100%; }
   #simTerrain { height: 60px; }
-  .sim-container > .goal-time-bar,
-  .sim-container > .scrubber,
-  .sim-container > .sim-clock,
-  .sim-container > .sim-stats,
-  .sim-container > .loop-progress {
-    grid-column: 1; /* Left column */
-  }
-  .sim-stats { grid-template-columns: repeat(3, 1fr); }
-
-  /* Make left column scrollable */
-  .sim-container > .goal-time-bar { border-bottom: 1px solid var(--border); }
-  .sim-container > .loop-progress { overflow-y: auto; }
 }
 
 @media (min-width: 1440px) {
   .page-shell { max-width: 1080px; }
-  .sim-container { grid-template-columns: 400px 1fr; }
+  .sim-panel { width: 400px; }
 }
 </style>
 </head>
@@ -525,16 +524,57 @@ body {
 ═══════════════════════════════════════════════════════════ -->
 <div id="simView" class="view">
   <div class="sim-container">
-    <div class="sim-races" id="simRaces"></div>
+    <div class="sim-panel">
+      <div class="sim-races" id="simRaces"></div>
 
-    <div class="goal-time-bar">
-      <span class="goal-label">Goal Time</span>
-      <div class="goal-inputs">
-        <input type="number" class="goal-input" id="goalHrs" min="0" max="48" value="2" onchange="updateGoalTime()" onclick="this.select()">
-        <span class="goal-colon">:</span>
-        <input type="number" class="goal-input" id="goalMins" min="0" max="59" value="30" onchange="updateGoalTime()" onclick="this.select()">
+      <div class="goal-time-bar">
+        <span class="goal-label">Goal Time</span>
+        <div class="goal-inputs">
+          <input type="number" class="goal-input" id="goalHrs" min="0" max="48" value="2" onchange="updateGoalTime()" onclick="this.select()">
+          <span class="goal-colon">:</span>
+          <input type="number" class="goal-input" id="goalMins" min="0" max="59" value="30" onchange="updateGoalTime()" onclick="this.select()">
+        </div>
+        <div class="goal-pace" id="goalPace">Avg pace: <strong>10:54 /mi</strong></div>
       </div>
-      <div class="goal-pace" id="goalPace">Avg pace: <strong>10:54 /mi</strong></div>
+
+      <div class="sim-clock">
+        <div class="clock-time" id="clockTime">5:00 AM</div>
+        <div class="clock-label">Current Time (Race starts 5:00 AM)</div>
+        <div class="clock-finish" id="clockFinish" style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary)">Finish: <strong id="finishTime" style="color:var(--green)">7:30 AM</strong></div>
+      </div>
+
+      <div class="sim-stats">
+        <div class="sim-stat"><div class="val" id="statDist">0.0</div><div class="label">Miles</div></div>
+        <div class="sim-stat"><div class="val" id="statEle">0</div><div class="label">Elevation</div></div>
+        <div class="sim-stat"><div class="val" id="statGain">0</div><div class="label">Gain</div></div>
+        <div class="sim-stat"><div class="val" id="statTotalGain">0</div><div class="label">Total Gain</div></div>
+        <div class="sim-stat"><div class="val" id="statGrade">0%</div><div class="label">Grade</div></div>
+        <div class="sim-stat"><div class="val" id="statPct">0%</div><div class="label">Complete</div></div>
+      </div>
+
+      <div class="loop-progress">
+        <h4>Loop Progress</h4>
+        <div id="loopTracker"></div>
+      </div>
+
+      <div class="scrubber">
+        <div class="scrub-row">
+          <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+          <div class="scrub-track" id="scrubTrack">
+            <div class="scrub-bg">
+              <div class="scrub-segs" id="scrubSegs"></div>
+              <div class="scrub-fill" id="scrubFill"></div>
+            </div>
+            <div class="scrub-hq" id="scrubHQ"></div>
+            <div class="scrub-handle" id="scrubHandle"></div>
+          </div>
+          <div class="speed-btns">
+            <button class="speed-btn active" onclick="setSpeed(1,this)">1x</button>
+            <button class="speed-btn" onclick="setSpeed(2,this)">2x</button>
+            <button class="speed-btn" onclick="setSpeed(4,this)">4x</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="sim-visual">
@@ -549,45 +589,6 @@ body {
       <div class="terrain-wrap">
         <canvas id="simTerrain"></canvas>
       </div>
-    </div>
-
-    <div class="scrubber">
-      <div class="scrub-row">
-        <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
-        <div class="scrub-track" id="scrubTrack">
-          <div class="scrub-bg">
-            <div class="scrub-segs" id="scrubSegs"></div>
-            <div class="scrub-fill" id="scrubFill"></div>
-          </div>
-          <div class="scrub-hq" id="scrubHQ"></div>
-          <div class="scrub-handle" id="scrubHandle"></div>
-        </div>
-        <div class="speed-btns">
-          <button class="speed-btn active" onclick="setSpeed(1,this)">1x</button>
-          <button class="speed-btn" onclick="setSpeed(2,this)">2x</button>
-          <button class="speed-btn" onclick="setSpeed(4,this)">4x</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="sim-clock">
-      <div class="clock-time" id="clockTime">5:00 AM</div>
-      <div class="clock-label">Current Time (Race starts 5:00 AM)</div>
-      <div class="clock-finish" id="clockFinish" style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary)">Finish: <strong id="finishTime" style="color:var(--green)">7:30 AM</strong></div>
-    </div>
-
-    <div class="sim-stats">
-      <div class="sim-stat"><div class="val" id="statDist">0.0</div><div class="label">Miles</div></div>
-      <div class="sim-stat"><div class="val" id="statEle">0</div><div class="label">Elevation</div></div>
-      <div class="sim-stat"><div class="val" id="statGain">0</div><div class="label">Gain</div></div>
-      <div class="sim-stat"><div class="val" id="statTotalGain">0</div><div class="label">Total Gain</div></div>
-      <div class="sim-stat"><div class="val" id="statGrade">0%</div><div class="label">Grade</div></div>
-      <div class="sim-stat"><div class="val" id="statPct">0%</div><div class="label">Complete</div></div>
-    </div>
-
-    <div class="loop-progress">
-      <h4>Loop Progress</h4>
-      <div id="loopTracker"></div>
     </div>
   </div>
 </div>
