@@ -48,7 +48,7 @@ describe('wild-goose map updates', () => {
       const layerStart = html.indexOf("id: 'course-trails-label'");
       const layerEnd = html.indexOf('});', layerStart);
       const layerBlock = html.substring(layerStart, layerEnd);
-      expect(layerBlock).toContain('20, 16');
+      expect(layerBlock).toContain('20, 18');
     });
   });
 
