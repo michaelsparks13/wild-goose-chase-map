@@ -415,12 +415,46 @@ body {
 @media (min-width: 1024px) {
   .page-shell { max-width: 960px; margin: 0 auto; min-height: 100vh; background: var(--bg-alt); box-shadow: 0 0 1px rgba(0,0,0,0.1); }
   #profileCanvas { height: 150px; }
-  #courseMapCanvas { height: 380px; }
+
+  /* Simulator: sidebar + full-height course map */
+  .sim-container {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      "races  visual"
+      "panel  visual"
+      "panel  visual";
+    height: calc(100vh - 52px);
+    overflow: hidden;
+  }
+  .sim-container > .sim-races { grid-area: races; }
+  .sim-container > .sim-visual {
+    grid-area: visual;
+    display: flex; flex-direction: column;
+    min-height: 0;
+    border-left: 1px solid var(--border);
+  }
+  .sim-visual .course-map-wrap { flex: 1; min-height: 0; }
+  #courseMapCanvas { height: 100%; }
   #simTerrain { height: 60px; }
+  .sim-container > .goal-time-bar,
+  .sim-container > .scrubber,
+  .sim-container > .sim-clock,
+  .sim-container > .sim-stats,
+  .sim-container > .loop-progress {
+    grid-column: 1; /* Left column */
+  }
+  .sim-stats { grid-template-columns: repeat(3, 1fr); }
+
+  /* Make left column scrollable */
+  .sim-container > .goal-time-bar { border-bottom: 1px solid var(--border); }
+  .sim-container > .loop-progress { overflow-y: auto; }
 }
 
 @media (min-width: 1440px) {
   .page-shell { max-width: 1080px; }
+  .sim-container { grid-template-columns: 400px 1fr; }
 }
 </style>
 </head>
@@ -503,16 +537,18 @@ body {
       <div class="goal-pace" id="goalPace">Avg pace: <strong>10:54 /mi</strong></div>
     </div>
 
-    <div class="course-map-wrap">
-      <canvas id="courseMapCanvas"></canvas>
-      <div class="runner-info">
-        <div class="runner-ele" id="runnerDist">Mile 0.0</div>
-        <div class="runner-meta" id="runnerMeta">1,200 ft · Starting</div>
+    <div class="sim-visual">
+      <div class="course-map-wrap">
+        <canvas id="courseMapCanvas"></canvas>
+        <div class="runner-info">
+          <div class="runner-ele" id="runnerDist">Mile 0.0</div>
+          <div class="runner-meta" id="runnerMeta">1,200 ft · Starting</div>
+        </div>
+        <div class="loop-pill" id="loopPill" style="color:#E834EC;border-color:#E834EC">Pink</div>
       </div>
-      <div class="loop-pill" id="loopPill" style="color:#E834EC;border-color:#E834EC">Pink</div>
-    </div>
-    <div class="terrain-wrap">
-      <canvas id="simTerrain"></canvas>
+      <div class="terrain-wrap">
+        <canvas id="simTerrain"></canvas>
+      </div>
     </div>
 
     <div class="scrubber">
