@@ -61,8 +61,8 @@ test.describe('Escarpment map', () => {
   test('uses light theme background', async ({ page }) => {
     const body = page.locator('body');
     const bgColor = await body.evaluate(el => getComputedStyle(el).backgroundColor);
-    // Should be white or near-white
-    expect(bgColor).toMatch(/rgb\(255,\s*255,\s*255\)/);
+    // Should be near-white (--bg-alt: #f2f2f2)
+    expect(bgColor).toMatch(/rgb\(24[0-9],\s*24[0-9],\s*24[0-9]\)/);
   });
 
   test('aid stations button starts inactive and toggles', async ({ page }) => {

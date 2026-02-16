@@ -35,7 +35,7 @@
 html { font-size: 16px; }
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  background: var(--bg);
+  background: var(--bg-alt);
   color: var(--text);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -411,6 +411,7 @@ body {
   .sim-stats { grid-template-columns: repeat(6, 1fr); }
 }
 @media (min-width: 1024px) {
+  .page-shell { max-width: 960px; margin: 0 auto; min-height: 100vh; background: var(--bg-alt); box-shadow: 0 0 1px rgba(0,0,0,0.1); }
   .sim-container { flex-direction: row; height: calc(100vh - 52px); overflow: hidden; }
   .sim-panel {
     display: flex; flex-direction: column;
@@ -429,9 +430,14 @@ body {
   #courseMapCanvas { height: 100%; }
   #simProfileCanvas { height: 60px; }
 }
+@media (min-width: 1440px) {
+  .page-shell { max-width: 1080px; }
+  .sim-panel { width: 400px; }
+}
 </style>
 </head>
 <body>
+<div class="page-shell">
 
 <header class="header">
   <div class="header-left">
@@ -568,6 +574,7 @@ body {
   Escarpment Trail Run &bull; <a href="https://escarpmenttrail.com" target="_blank">escarpmenttrail.com</a>
   <br>Interactive map powered by MapLibre
 </footer>
+</div><!-- .page-shell -->
 
 <script>
 const protocol = new pmtiles.Protocol();
