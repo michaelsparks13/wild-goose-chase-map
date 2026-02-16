@@ -148,13 +148,14 @@ describe('wild-goose map updates', () => {
       expect(fnBlock).toContain("fillText('S'");
     });
 
-    it('renderCourseMap draws mile markers with adaptive interval', () => {
+    it('renderCourseMap draws mile markers with collision suppression', () => {
       const fnStart = html.indexOf('function renderCourseMap(');
       const fnEnd = html.indexOf('\nfunction renderSimTerrain(');
       const fnBlock = html.substring(fnStart, fnEnd);
       expect(fnBlock).toContain('Mile markers');
-      expect(fnBlock).toContain('mileInterval');
-      expect(fnBlock).toContain('m += mileInterval');
+      expect(fnBlock).toContain('priority');
+      expect(fnBlock).toContain('collision');
+      expect(fnBlock).toContain('placed');
     });
 
     it('renderSim calls renderCourseMap', () => {
