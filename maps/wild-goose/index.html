@@ -237,7 +237,7 @@ body {
 .sim-panel .scrubber { order: 4; }
 .sim-panel .sim-clock { order: 5; }
 .sim-panel .sim-stats { order: 6; }
-.sim-panel .loop-progress { order: 7; }
+.sim-panel .loop-progress { order: 7; flex: 1; }
 
 /* Course map (bird's-eye view) */
 .course-map-wrap { position: relative; background: #1a2030; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -437,7 +437,7 @@ body {
     overflow-y: auto;
     border-right: 1px solid var(--border);
   }
-  .sim-panel .scrubber { margin-top: auto; } /* Push scrubber to bottom */
+  .sim-panel .scrubber { border-bottom: 1px solid var(--border); }
   .sim-panel .sim-clock { padding: 12px 16px; }
   .sim-panel .sim-clock .clock-time { font-size: 1.4rem; }
   .sim-panel .sim-clock .clock-label { font-size: 0.55rem; }
@@ -537,6 +537,25 @@ body {
         <div class="goal-pace" id="goalPace">Avg pace: <strong>10:54 /mi</strong></div>
       </div>
 
+      <div class="scrubber">
+        <div class="scrub-row">
+          <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+          <div class="scrub-track" id="scrubTrack">
+            <div class="scrub-bg">
+              <div class="scrub-segs" id="scrubSegs"></div>
+              <div class="scrub-fill" id="scrubFill"></div>
+            </div>
+            <div class="scrub-hq" id="scrubHQ"></div>
+            <div class="scrub-handle" id="scrubHandle"></div>
+          </div>
+          <div class="speed-btns">
+            <button class="speed-btn active" onclick="setSpeed(1,this)">1x</button>
+            <button class="speed-btn" onclick="setSpeed(2,this)">2x</button>
+            <button class="speed-btn" onclick="setSpeed(4,this)">4x</button>
+          </div>
+        </div>
+      </div>
+
       <div class="sim-clock">
         <div class="clock-time" id="clockTime">5:00 AM</div>
         <div class="clock-label">Current Time (Race starts 5:00 AM)</div>
@@ -555,25 +574,6 @@ body {
       <div class="loop-progress">
         <h4>Loop Progress</h4>
         <div id="loopTracker"></div>
-      </div>
-
-      <div class="scrubber">
-        <div class="scrub-row">
-          <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
-          <div class="scrub-track" id="scrubTrack">
-            <div class="scrub-bg">
-              <div class="scrub-segs" id="scrubSegs"></div>
-              <div class="scrub-fill" id="scrubFill"></div>
-            </div>
-            <div class="scrub-hq" id="scrubHQ"></div>
-            <div class="scrub-handle" id="scrubHandle"></div>
-          </div>
-          <div class="speed-btns">
-            <button class="speed-btn active" onclick="setSpeed(1,this)">1x</button>
-            <button class="speed-btn" onclick="setSpeed(2,this)">2x</button>
-            <button class="speed-btn" onclick="setSpeed(4,this)">4x</button>
-          </div>
-        </div>
       </div>
     </div>
 
