@@ -230,9 +230,13 @@ body {
 ═══════════════════════════════════════════════════════════ */
 .sim-container { background: var(--bg); }
 
-/* Terrain visualization */
+/* Course map (bird's-eye view) */
+.course-map-wrap { position: relative; background: #1a2030; border-bottom: 1px solid rgba(255,255,255,0.05); }
+#courseMapCanvas { width: 100%; height: 200px; display: block; }
+
+/* Terrain visualization (elevation profile) */
 .terrain-wrap { position: relative; background: #1a2030; }
-#simTerrain { width: 100%; height: 200px; display: block; }
+#simTerrain { width: 100%; height: 140px; display: block; }
 
 .runner-info {
   position: absolute; top: 12px; left: 12px; pointer-events: none;
@@ -404,13 +408,15 @@ body {
   #profileCanvas { height: 130px; padding: 0 16px 12px; }
   .cards-section { padding: 24px; }
   .race-cards { grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  #simTerrain { height: 280px; }
+  #courseMapCanvas { height: 260px; }
+  #simTerrain { height: 180px; }
   .sim-stats { grid-template-columns: repeat(6, 1fr); }
 }
 
 @media (min-width: 1024px) {
   #profileCanvas { height: 150px; }
-  #simTerrain { height: 320px; }
+  #courseMapCanvas { height: 300px; }
+  #simTerrain { height: 200px; }
 }
 </style>
 </head>
@@ -492,13 +498,16 @@ body {
       <div class="goal-pace" id="goalPace">Avg pace: <strong>10:54 /mi</strong></div>
     </div>
 
-    <div class="terrain-wrap">
-      <canvas id="simTerrain"></canvas>
+    <div class="course-map-wrap">
+      <canvas id="courseMapCanvas"></canvas>
       <div class="runner-info">
         <div class="runner-ele" id="runnerEle">1,200<span class="unit">ft</span></div>
         <div class="runner-meta" id="runnerMeta">Mile 0.0 · Starting</div>
       </div>
       <div class="loop-pill" id="loopPill" style="color:#E834EC;border-color:#E834EC">Pink</div>
+    </div>
+    <div class="terrain-wrap">
+      <canvas id="simTerrain"></canvas>
     </div>
 
     <div class="scrubber">
@@ -582,6 +591,22 @@ LOOPS.blue.geojson = blueData.features[0];
 LOOPS.blue.profile = blueData.profile;
 LOOPS.checkered.geojson = checkeredData.features[0];
 LOOPS.checkered.profile = checkeredData.profile;
+
+// Pre-compute cumulative distances for each loop's coordinates
+const loopCoordDistances = {};
+for (const id of ['pink', 'blue', 'checkered']) {
+  const coords = LOOPS[id].geojson.geometry.coordinates;
+  const dists = [0];
+  for (let i = 1; i < coords.length; i++) {
+    const [x1, y1] = coords[i - 1], [x2, y2] = coords[i];
+    const dLng = (x2 - x1) * Math.cos((y1 + y2) / 2 * Math.PI / 180) * 69.172;
+    const dLat = (y2 - y1) * 69.172;
+    dists.push(dists[i - 1] + Math.sqrt(dLng * dLng + dLat * dLat));
+  }
+  const raw = dists[dists.length - 1];
+  for (let i = 0; i < dists.length; i++) dists[i] = (dists[i] / raw) * LOOPS[id].miles;
+  loopCoordDistances[id] = dists;
+}
 
 // ============================================================
 // MAP
@@ -1187,6 +1212,31 @@ function getSimPointAt(dist) {
   return simProfile[simProfile.length - 1];
 }
 
+function getSimCoordAtDist(dist) {
+  let cumDist = 0;
+  for (let i = 0; i < simRace.loops.length; i++) {
+    const id = simRace.loops[i];
+    const loopMiles = LOOPS[id].miles;
+    if (dist <= cumDist + loopMiles || i === simRace.loops.length - 1) {
+      const localDist = Math.min(dist - cumDist, loopMiles);
+      const coords = LOOPS[id].geojson.geometry.coordinates;
+      const dists = loopCoordDistances[id];
+      for (let j = 1; j < dists.length; j++) {
+        if (dists[j] >= localDist) {
+          const t = (localDist - dists[j - 1]) / (dists[j] - dists[j - 1]);
+          const c0 = coords[j - 1], c1 = coords[j];
+          return { coord: [c0[0] + (c1[0] - c0[0]) * t, c0[1] + (c1[1] - c0[1]) * t], loopId: id, loopIdx: i };
+        }
+      }
+      return { coord: coords[coords.length - 1], loopId: id, loopIdx: i };
+    }
+    cumDist += loopMiles;
+  }
+  const lastId = simRace.loops[simRace.loops.length - 1];
+  const lastCoords = LOOPS[lastId].geojson.geometry.coordinates;
+  return { coord: lastCoords[lastCoords.length - 1], loopId: lastId, loopIdx: simRace.loops.length - 1 };
+}
+
 function getSimGrade(dist) {
   const delta = 0.05;
   const p1 = getSimPointAt(Math.max(0, dist - delta));
@@ -1255,6 +1305,7 @@ function renderSim() {
   document.getElementById('statPct').textContent = Math.round(simProgress * 100) + '%';
 
   renderLoopTracker(pt.loopIdx, dist);
+  renderCourseMap(dist);
   renderSimTerrain(dist, pt.e, pt.loopId);
 }
 
@@ -1274,6 +1325,202 @@ function renderLoopTracker(currentIdx, dist) {
     cumDist += loopDist;
   }
   document.getElementById('loopTracker').innerHTML = html;
+}
+
+function renderCourseMap(currentDist) {
+  const canvas = document.getElementById('courseMapCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+
+  // Background gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, '#1a2030');
+  bgGrad.addColorStop(1, '#1f2538');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Compute bounding box across ALL loop coordinates
+  let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  for (const id of ['pink', 'blue', 'checkered']) {
+    for (const [lng, lat] of LOOPS[id].geojson.geometry.coordinates) {
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+    }
+  }
+  const padding = 30;
+  const drawW = W - padding * 2;
+  const drawH = H - padding * 2;
+  const lngRange = maxLng - minLng;
+  const latRange = maxLat - minLat;
+  const cosLat = Math.cos((minLat + maxLat) / 2 * Math.PI / 180);
+  const adjLngRange = lngRange * cosLat;
+  const scale = Math.min(drawW / adjLngRange, drawH / latRange);
+  const offsetX = padding + (drawW - adjLngRange * scale) / 2;
+  const offsetY = padding + (drawH - latRange * scale) / 2;
+
+  const toX = lng => offsetX + (lng - minLng) * cosLat * scale;
+  const toY = lat => offsetY + (maxLat - lat) * scale;
+
+  // Determine which loops are used in the current race
+  const usedLoops = new Set(simRace.loops);
+
+  // Draw dim background trace for each used loop
+  for (const id of usedLoops) {
+    const coords = LOOPS[id].geojson.geometry.coordinates;
+    const color = LOOPS[id].color;
+    ctx.beginPath();
+    for (let i = 0; i < coords.length; i++) {
+      const x = toX(coords[i][0]);
+      const y = toY(coords[i][1]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    if (LOOPS[id].pattern === 'checkered') {
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    } else {
+      const r = parseInt(color.slice(1, 3), 16), g = parseInt(color.slice(3, 5), 16), b = parseInt(color.slice(5, 7), 16);
+      ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',0.2)';
+    }
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+  }
+
+  // Draw completed and remaining portions for each loop occurrence
+  let cumDist = 0;
+  const runner = getSimCoordAtDist(currentDist);
+
+  for (let li = 0; li < simRace.loops.length; li++) {
+    const id = simRace.loops[li];
+    const loopMiles = LOOPS[id].miles;
+    const coords = LOOPS[id].geojson.geometry.coordinates;
+    const dists = loopCoordDistances[id];
+    const color = LOOPS[id].color;
+    const loopStart = cumDist;
+    const loopEnd = cumDist + loopMiles;
+
+    if (currentDist >= loopEnd) {
+      // Fully completed loop — draw bright
+      ctx.beginPath();
+      for (let i = 0; i < coords.length; i++) {
+        const x = toX(coords[i][0]);
+        const y = toY(coords[i][1]);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      if (LOOPS[id].pattern === 'checkered') {
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      } else {
+        ctx.strokeStyle = color;
+      }
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    } else if (currentDist > loopStart) {
+      // Partially completed — draw completed portion bright, rest dim
+      const localDist = currentDist - loopStart;
+      let splitIdx = 0;
+      for (let j = 1; j < dists.length; j++) {
+        if (dists[j] >= localDist) { splitIdx = j; break; }
+      }
+
+      // Completed portion
+      if (splitIdx > 0) {
+        ctx.beginPath();
+        for (let i = 0; i <= splitIdx; i++) {
+          const x = toX(coords[i][0]);
+          const y = toY(coords[i][1]);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        // Draw to exact runner position
+        ctx.lineTo(toX(runner.coord[0]), toY(runner.coord[1]));
+        if (LOOPS[id].pattern === 'checkered') {
+          ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+        } else {
+          ctx.strokeStyle = color;
+        }
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+      }
+    }
+    // Future loops (currentDist <= loopStart): already drawn as dim background
+
+    cumDist += loopMiles;
+  }
+
+  // Start marker
+  const firstId = simRace.loops[0];
+  const startCoord = LOOPS[firstId].geojson.geometry.coordinates[0];
+  const sx = toX(startCoord[0]);
+  const sy = toY(startCoord[1]);
+  ctx.beginPath();
+  ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = LOOPS[firstId].color;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = LOOPS[firstId].color;
+  ctx.font = 'bold 8px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('S', sx, sy + 0.5);
+
+  // Mile markers every 5 miles
+  for (let m = 5; m < simTotalDist; m += 5) {
+    const mc = getSimCoordAtDist(m);
+    const mx = toX(mc.coord[0]);
+    const my = toY(mc.coord[1]);
+    ctx.beginPath();
+    ctx.arc(mx, my, 10, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(26,32,48,0.85)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '600 8px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(m, mx, my);
+  }
+
+  // Runner dot with glow
+  const rx = toX(runner.coord[0]);
+  const ry = toY(runner.coord[1]);
+  const loopColor = LOOPS[runner.loopId].color;
+  const glowColor = LOOPS[runner.loopId].pattern === 'checkered' ? '255,255,255' : (
+    parseInt(loopColor.slice(1, 3), 16) + ',' + parseInt(loopColor.slice(3, 5), 16) + ',' + parseInt(loopColor.slice(5, 7), 16)
+  );
+
+  ctx.beginPath();
+  ctx.arc(rx, ry, 14, 0, Math.PI * 2);
+  const glow = ctx.createRadialGradient(rx, ry, 4, rx, ry, 14);
+  glow.addColorStop(0, 'rgba(' + glowColor + ',0.4)');
+  glow.addColorStop(1, 'rgba(' + glowColor + ',0)');
+  ctx.fillStyle = glow;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(rx, ry, 7, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = LOOPS[runner.loopId].pattern === 'checkered' ? '#fff' : loopColor;
+  ctx.lineWidth = 3;
+  ctx.stroke();
 }
 
 function renderSimTerrain(currentDist, currentEle, currentLoopId) {

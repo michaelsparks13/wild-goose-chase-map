@@ -111,4 +111,69 @@ describe('wild-goose map updates', () => {
       expect(html).not.toContain("t.textContent.toLowerCase() === view");
     });
   });
+
+  describe('Simulator course map', () => {
+    it('has a courseMapCanvas element', () => {
+      expect(html).toContain('id="courseMapCanvas"');
+    });
+
+    it('has a course-map-wrap container', () => {
+      expect(html).toContain('class="course-map-wrap"');
+    });
+
+    it('has renderCourseMap function', () => {
+      expect(html).toContain('function renderCourseMap(');
+    });
+
+    it('renderCourseMap draws all loop traces', () => {
+      const fnStart = html.indexOf('function renderCourseMap(');
+      const fnEnd = html.indexOf('\nfunction renderSimTerrain(');
+      const fnBlock = html.substring(fnStart, fnEnd);
+      expect(fnBlock).toContain("'pink', 'blue', 'checkered'");
+    });
+
+    it('renderCourseMap draws runner dot with glow', () => {
+      const fnStart = html.indexOf('function renderCourseMap(');
+      const fnEnd = html.indexOf('\nfunction renderSimTerrain(');
+      const fnBlock = html.substring(fnStart, fnEnd);
+      expect(fnBlock).toContain('createRadialGradient');
+      expect(fnBlock).toContain('Runner dot');
+    });
+
+    it('renderCourseMap draws start marker', () => {
+      const fnStart = html.indexOf('function renderCourseMap(');
+      const fnEnd = html.indexOf('\nfunction renderSimTerrain(');
+      const fnBlock = html.substring(fnStart, fnEnd);
+      expect(fnBlock).toContain('Start marker');
+      expect(fnBlock).toContain("fillText('S'");
+    });
+
+    it('renderCourseMap draws mile markers every 5 miles', () => {
+      const fnStart = html.indexOf('function renderCourseMap(');
+      const fnEnd = html.indexOf('\nfunction renderSimTerrain(');
+      const fnBlock = html.substring(fnStart, fnEnd);
+      expect(fnBlock).toContain('Mile markers every 5 miles');
+      expect(fnBlock).toContain('m += 5');
+    });
+
+    it('renderSim calls renderCourseMap', () => {
+      const fnStart = html.indexOf('function renderSim()');
+      const fnEnd = html.indexOf('\nfunction renderLoopTracker(');
+      const fnBlock = html.substring(fnStart, fnEnd);
+      expect(fnBlock).toContain('renderCourseMap(dist)');
+    });
+
+    it('has loopCoordDistances pre-computed for all loops', () => {
+      expect(html).toContain('loopCoordDistances');
+      expect(html).toContain("loopCoordDistances[id] = dists");
+    });
+
+    it('has getSimCoordAtDist helper function', () => {
+      expect(html).toContain('function getSimCoordAtDist(');
+    });
+
+    it('courseMapCanvas has proper CSS height', () => {
+      expect(html).toContain('#courseMapCanvas { width: 100%; height: 200px;');
+    });
+  });
 });
