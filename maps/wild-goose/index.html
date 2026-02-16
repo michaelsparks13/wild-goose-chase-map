@@ -159,22 +159,6 @@ body {
 .loop-toggle .name { font-size: 0.75rem; font-weight: 600; color: var(--text); }
 .loop-toggle .stats { font-size: 0.65rem; color: var(--text-secondary); }
 
-.race-wrap label {
-  display: block; font-size: 0.6rem; font-weight: 600;
-  color: var(--text-muted); text-transform: uppercase;
-  letter-spacing: 1px; margin-bottom: 8px;
-}
-.race-select {
-  width: 100%; background: var(--bg-alt); color: var(--text);
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 12px 14px; font-size: 0.85rem; font-family: inherit;
-  font-weight: 500; cursor: pointer; appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 12px center;
-  padding-right: 36px;
-}
-.race-select:focus { outline: none; border-color: var(--green); }
-
 /* ═══ ELEVATION PROFILE ═══ */
 .profile-section { background: var(--bg); border-bottom: 1px solid var(--border); }
 .profile-header {
@@ -222,7 +206,8 @@ body {
 .turn-marker { width: 24px; height: 24px; cursor: pointer; }
 .turn-marker svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
 .streetview-popup { max-width: 320px !important; }
-.streetview-popup .maplibregl-popup-content { padding: 0 !important; overflow: hidden; }
+.streetview-popup .maplibregl-popup-content { padding: 0 !important; overflow: hidden; border-radius: var(--radius) !important; }
+.streetview-popup .maplibregl-popup-close-button { right: 4px !important; top: 4px !important; width: 24px !important; height: 24px !important; background: rgba(0,0,0,0.5) !important; color: #fff !important; border-radius: 50% !important; display: flex; align-items: center; justify-content: center; line-height: 1 !important; }
 .streetview-img { width: 100%; height: 180px; object-fit: cover; display: block; }
 .streetview-caption { padding: 10px 12px; }
 .streetview-caption strong { display: block; margin-bottom: 4px; }
@@ -414,7 +399,6 @@ body {
   .controls { padding: 16px 24px; display: flex; align-items: flex-start; gap: 24px; }
   .controls > div:first-child { flex: 1; }
   .loop-toggles { margin-bottom: 0; }
-  .race-wrap { min-width: 240px; }
   .profile-header { padding: 12px 24px 6px; }
   #profileCanvas { height: 130px; padding: 0 16px 12px; }
   .cards-section { padding: 24px; }
@@ -474,19 +458,6 @@ body {
         </div>
       </div>
     </div>
-    <div class="race-wrap">
-      <label>Select Race Distance</label>
-      <select class="race-select" id="raceSel" onchange="selectRace(this.value)">
-        <option value="all">All Loops</option>
-        <option value="10k">10K (6 mi)</option>
-        <option value="half">Half Marathon (13.75 mi)</option>
-        <option value="30k">30K (18.5 mi)</option>
-        <option value="50k">50K (31 mi)</option>
-        <option value="50m">50 Miler (50.75 mi)</option>
-        <option value="100k">100K (62 mi)</option>
-        <option value="100m">100 Miler (100.25 mi)</option>
-      </select>
-    </div>
   </div>
 
   <section class="profile-section">
@@ -498,7 +469,7 @@ body {
   </section>
 
   <section class="cards-section">
-    <h3>Race Distances</h3>
+    <h3>Select Race Distance</h3>
     <div class="race-cards" id="raceCards"></div>
   </section>
 </div>
@@ -839,7 +810,7 @@ function buildCards() {
       }
       return '<div class="dot" style="background:' + LOOPS[l].color + '"></div>';
     }).join('');
-    html += '<div class="race-card" data-race="' + id + '" onclick="selectRace(\'' + id + '\');document.getElementById(\'raceSel\').value=\'' + id + '\'"><div class="name">' + race.name + '</div><div class="details">' + race.miles + ' mi</div><div class="dots">' + dots + '</div></div>';
+    html += '<div class="race-card" data-race="' + id + '" onclick="selectRace(\'' + id + '\')"><div class="name">' + race.name + '</div><div class="details">' + race.miles + ' mi</div><div class="dots">' + dots + '</div></div>';
   }
   document.getElementById('raceCards').innerHTML = html;
 }
