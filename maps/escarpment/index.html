@@ -291,8 +291,14 @@ body {
 .view.active { display: block; }
 
 /* Simulator */
-.sim-container { background: var(--bg); }
-.sim-split { display: flex; flex-direction: column; }
+.sim-container { background: var(--bg); display: flex; flex-direction: column; }
+.sim-panel { display: contents; }
+/* Mobile order */
+.sim-panel .goal-time-bar { order: 1; }
+.sim-visual { order: 2; }
+.sim-panel .scrubber { order: 3; }
+.sim-panel .sim-clock { order: 4; }
+.sim-panel .sim-stats { order: 5; }
 
 /* Course map canvas */
 .course-map-wrap { position: relative; background: #e8ede9; border-bottom: 1px solid var(--border); }
@@ -304,12 +310,11 @@ body {
   font-size: 1.8rem; font-weight: 700; color: #222; line-height: 1;
   text-shadow: 0 1px 3px rgba(255,255,255,0.7);
 }
-.runner-ele .unit { font-size: 0.4em; font-weight: 400; opacity: 0.7; }
 .runner-meta { font-size: 0.7rem; color: #555; margin-top: 2px; }
 
 /* Sim elevation profile */
 .sim-profile-wrap { position: relative; background: #e8ede9; }
-#simProfileCanvas { width: 100%; height: 140px; display: block; }
+#simProfileCanvas { width: 100%; height: 40px; display: block; }
 
 /* Scrubber */
 .scrubber {
@@ -401,9 +406,28 @@ body {
   #map { height: 45vh; }
 }
 @media (min-width: 768px) {
-  #courseMapCanvas { height: 320px; }
-  #simProfileCanvas { height: 180px; }
+  #courseMapCanvas { height: 300px; }
+  #simProfileCanvas { height: 50px; }
   .sim-stats { grid-template-columns: repeat(6, 1fr); }
+}
+@media (min-width: 1024px) {
+  .sim-container { flex-direction: row; height: calc(100vh - 52px); overflow: hidden; }
+  .sim-panel {
+    display: flex; flex-direction: column;
+    width: 360px; flex-shrink: 0;
+    overflow-y: auto; border-right: 1px solid var(--border);
+  }
+  .sim-panel .sim-clock { padding: 12px 16px; }
+  .sim-panel .sim-clock .clock-time { font-size: 1.4rem; }
+  .sim-panel .sim-clock .clock-label { font-size: 0.55rem; }
+  .sim-panel .sim-stats { grid-template-columns: repeat(3, 1fr); }
+  .sim-visual {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
+  }
+  .sim-visual .course-map-wrap { flex: 1; min-height: 0; }
+  #courseMapCanvas { height: 100%; }
+  #simProfileCanvas { height: 60px; }
 }
 </style>
 </head>
@@ -415,8 +439,8 @@ body {
     <div class="subtitle">July 26, 2026 &bull; <a href="https://escarpmenttrail.com" target="_blank">Escarpment Trail Run</a></div>
   </div>
   <div class="view-tabs">
-    <button class="view-tab active" onclick="switchView('map')">Map</button>
-    <button class="view-tab" onclick="switchView('sim')">Simulator</button>
+    <button class="view-tab active" data-view="map" onclick="switchView('map')">Map</button>
+    <button class="view-tab" data-view="sim" onclick="switchView('sim')">Simulator</button>
   </div>
 </header>
 
@@ -481,61 +505,62 @@ body {
 
 <div id="simView" class="view">
   <div class="sim-container">
-
-    <div class="goal-time-bar">
-      <span class="goal-label">Goal Time</span>
-      <div class="goal-inputs">
-        <input type="number" class="goal-input" id="goalHrs" min="0" max="48" value="4" onchange="updateGoalTime()" onclick="this.select()">
-        <span class="goal-colon">:</span>
-        <input type="number" class="goal-input" id="goalMins" min="0" max="59" value="0" onchange="updateGoalTime()" onclick="this.select()">
+    <div class="sim-panel">
+      <div class="goal-time-bar">
+        <span class="goal-label">Goal Time</span>
+        <div class="goal-inputs">
+          <input type="number" class="goal-input" id="goalHrs" min="0" max="48" value="4" onchange="updateGoalTime()" onclick="this.select()">
+          <span class="goal-colon">:</span>
+          <input type="number" class="goal-input" id="goalMins" min="0" max="59" value="0" onchange="updateGoalTime()" onclick="this.select()">
+        </div>
+        <div class="goal-pace" id="goalPace">Avg pace: <strong>12:54 /mi</strong></div>
       </div>
-      <div class="goal-pace" id="goalPace">Avg pace: <strong>12:54 /mi</strong></div>
-    </div>
 
-    <div class="course-map-wrap">
-      <canvas id="courseMapCanvas"></canvas>
-      <div class="runner-info-overlay">
-        <div class="runner-ele" id="runnerEle">1,772<span class="unit">ft</span></div>
-        <div class="runner-meta" id="runnerMeta">Mile 0.0 &middot; Starting</div>
-      </div>
-    </div>
-
-    <div class="sim-profile-wrap">
-      <canvas id="simProfileCanvas"></canvas>
-    </div>
-
-    <div class="scrubber">
-      <div class="scrub-row">
-        <button class="play-btn" id="playBtn" onclick="togglePlay()">&#9654;</button>
-        <div class="scrub-track" id="scrubTrack">
-          <div class="scrub-bg">
-            <div class="scrub-fill" id="scrubFill"></div>
+      <div class="scrubber">
+        <div class="scrub-row">
+          <button class="play-btn" id="playBtn" onclick="togglePlay()">&#9654;</button>
+          <div class="scrub-track" id="scrubTrack">
+            <div class="scrub-bg">
+              <div class="scrub-fill" id="scrubFill"></div>
+            </div>
+            <div class="scrub-handle" id="scrubHandle"></div>
           </div>
-          <div class="scrub-handle" id="scrubHandle"></div>
+          <div class="speed-btns">
+            <button class="speed-btn active" onclick="setSpeed(1,this)">1x</button>
+            <button class="speed-btn" onclick="setSpeed(2,this)">2x</button>
+            <button class="speed-btn" onclick="setSpeed(4,this)">4x</button>
+          </div>
         </div>
-        <div class="speed-btns">
-          <button class="speed-btn active" onclick="setSpeed(1,this)">1x</button>
-          <button class="speed-btn" onclick="setSpeed(2,this)">2x</button>
-          <button class="speed-btn" onclick="setSpeed(4,this)">4x</button>
-        </div>
+      </div>
+
+      <div class="sim-clock">
+        <div class="clock-time" id="clockTime">9:00 AM</div>
+        <div class="clock-label">Current Time (Race starts 9:00 AM)</div>
+        <div style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary)">Finish: <strong id="finishTime" style="color:var(--primary)">1:00 PM</strong></div>
+      </div>
+
+      <div class="sim-stats">
+        <div class="sim-stat"><div class="val" id="statDist">0.0</div><div class="label">Miles</div></div>
+        <div class="sim-stat"><div class="val" id="statEle">0</div><div class="label">Elevation (ft)</div></div>
+        <div class="sim-stat"><div class="val" id="statGain">0</div><div class="label">Gain (ft)</div></div>
+        <div class="sim-stat"><div class="val" id="statGrade">0%</div><div class="label">Grade</div></div>
+        <div class="sim-stat"><div class="val" id="statPace">--:--</div><div class="label">Pace /mi</div></div>
+        <div class="sim-stat"><div class="val" id="statPct">0%</div><div class="label">Complete</div></div>
       </div>
     </div>
 
-    <div class="sim-clock">
-      <div class="clock-time" id="clockTime">9:00 AM</div>
-      <div class="clock-label">Current Time (Race starts 9:00 AM)</div>
-      <div style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary)">Finish: <strong id="finishTime" style="color:var(--primary)">1:00 PM</strong></div>
+    <div class="sim-visual">
+      <div class="course-map-wrap">
+        <canvas id="courseMapCanvas"></canvas>
+        <div class="runner-info-overlay">
+          <div class="runner-ele" id="runnerDist">Mile 0.0</div>
+          <div class="runner-meta" id="runnerMeta">1,772 ft &middot; Starting</div>
+        </div>
+      </div>
+      <div class="sim-profile-wrap">
+        <canvas id="simProfileCanvas"></canvas>
+      </div>
     </div>
-
-    <div class="sim-stats">
-      <div class="sim-stat"><div class="val" id="statDist">0.0</div><div class="label">Miles</div></div>
-      <div class="sim-stat"><div class="val" id="statEle">0</div><div class="label">Elevation (ft)</div></div>
-      <div class="sim-stat"><div class="val" id="statGain">0</div><div class="label">Gain (ft)</div></div>
-      <div class="sim-stat"><div class="val" id="statGrade">0%</div><div class="label">Grade</div></div>
-      <div class="sim-stat"><div class="val" id="statPace">--:--</div><div class="label">Pace /mi</div></div>
-      <div class="sim-stat"><div class="val" id="statPct">0%</div><div class="label">Complete</div></div>
-    </div>
-
   </div>
 </div><!-- end simView -->
 
@@ -1032,7 +1057,7 @@ let simInitialized = false;
 
 function switchView(view) {
   currentView = view;
-  document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t.textContent.toLowerCase() === view));
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(view + 'View').classList.add('active');
   if (view === 'map' && !mapInitialized) {
@@ -1193,9 +1218,9 @@ function renderSim() {
   document.getElementById('scrubHandle').style.left = (simProgress * 100) + '%';
 
   // Runner info
-  document.getElementById('runnerEle').innerHTML = Math.round(ele).toLocaleString() + '<span class="unit">ft</span>';
+  document.getElementById('runnerDist').textContent = 'Mile ' + dist.toFixed(1);
   const gradeDir = grade > 2 ? 'Climbing' : grade < -2 ? 'Descending' : 'Rolling';
-  document.getElementById('runnerMeta').textContent = 'Mile ' + dist.toFixed(1) + ' \u00b7 ' + gradeDir;
+  document.getElementById('runnerMeta').textContent = Math.round(ele).toLocaleString() + ' ft \u00b7 ' + gradeDir;
 
   // Clock
   const elapsed = (dist / TOTAL_MILES) * simFinishHours;
@@ -1261,7 +1286,7 @@ function renderCourseMap(currentDist) {
     if (lat < minLat) minLat = lat;
     if (lat > maxLat) maxLat = lat;
   }
-  const padding = 30;
+  const padding = 15;
   const drawW = W - padding * 2;
   const drawH = H - padding * 2;
   const lngRange = maxLng - minLng;
@@ -1302,8 +1327,8 @@ function renderCourseMap(currentDist) {
     if (i === Math.max(0, runnerIdx - 1)) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }
-  ctx.strokeStyle = 'rgba(46,125,50,0.25)';
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(46,125,50,0.4)';
+  ctx.lineWidth = 4;
   ctx.stroke();
 
   // Draw completed portion (bright green)
@@ -1320,7 +1345,7 @@ function renderCourseMap(currentDist) {
     const ry = toY(runnerCoord[1]);
     ctx.lineTo(rx, ry);
     ctx.strokeStyle = '#2E7D32';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
     ctx.stroke();
   }
 
@@ -1378,23 +1403,43 @@ function renderCourseMap(currentDist) {
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  // Mile markers every 5 miles
-  for (let m = 5; m < TOTAL_MILES; m += 5) {
+  // Mile markers — priority-based with collision suppression
+  const markerR = Math.max(8, Math.min(11, W / 35));
+  const markerFont = Math.max(7, Math.min(9, W / 45));
+  const gap = 3;
+  const candidates = [];
+  for (let m = 1; m <= Math.floor(TOTAL_MILES); m++) {
     const mc = getCoordAtDist(m);
     const mx = toX(mc[0]);
     const my = toY(mc[1]);
-    ctx.beginPath();
-    ctx.arc(mx, my, 10, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.fillStyle = '#555';
-    ctx.font = '600 8px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(m, mx, my);
+    const priority = (m % 10 === 0) ? 1 : (m % 5 === 0) ? 2 : 3;
+    candidates.push({ mile: m, x: mx, y: my, priority: priority });
+  }
+  candidates.sort(function(a, b) { return a.priority - b.priority; });
+  const placed = [];
+  for (var ci = 0; ci < candidates.length; ci++) {
+    var c = candidates[ci];
+    var r = markerR + gap;
+    var overlaps = false;
+    for (var pi = 0; pi < placed.length; pi++) {
+      var dx = c.x - placed[pi].x, dy = c.y - placed[pi].y;
+      if (dx * dx + dy * dy < (r + markerR + gap) * (r + markerR + gap)) { overlaps = true; break; }
+    }
+    if (!overlaps) {
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, markerR, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fill();
+      ctx.strokeStyle = c.priority === 1 ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = c.priority === 1 ? 1.5 : 1;
+      ctx.stroke();
+      ctx.fillStyle = c.priority === 1 ? '#333' : '#555';
+      ctx.font = (c.priority === 1 ? '700 ' : '600 ') + markerFont + 'px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(c.mile, c.x, c.y);
+      placed.push(c);
+    }
   }
 }
 
@@ -1430,7 +1475,7 @@ function renderSimProfile(currentDist, currentEle) {
   const eles = pts.map(p => p.e);
   const eMin = Math.min(...eles) - 30;
   const eMax = Math.max(...eles) + 50;
-  const mt = 30, mb = 0;
+  const mt = Math.min(30, H * 0.15), mb = 0;
 
   const xScale = d => ((d - windowStart) / windowMiles) * W;
   const yScale = e => mt + (H - mt - mb) - ((e - eMin) / (eMax - eMin)) * (H - mt - mb);
