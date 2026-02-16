@@ -148,12 +148,13 @@ describe('wild-goose map updates', () => {
       expect(fnBlock).toContain("fillText('S'");
     });
 
-    it('renderCourseMap draws mile markers every 5 miles', () => {
+    it('renderCourseMap draws mile markers with adaptive interval', () => {
       const fnStart = html.indexOf('function renderCourseMap(');
       const fnEnd = html.indexOf('\nfunction renderSimTerrain(');
       const fnBlock = html.substring(fnStart, fnEnd);
-      expect(fnBlock).toContain('Mile markers every 5 miles');
-      expect(fnBlock).toContain('m += 5');
+      expect(fnBlock).toContain('Mile markers');
+      expect(fnBlock).toContain('mileInterval');
+      expect(fnBlock).toContain('m += mileInterval');
     });
 
     it('renderSim calls renderCourseMap', () => {
@@ -173,7 +174,7 @@ describe('wild-goose map updates', () => {
     });
 
     it('courseMapCanvas has proper CSS height', () => {
-      expect(html).toContain('#courseMapCanvas { width: 100%; height: 200px;');
+      expect(html).toContain('#courseMapCanvas { width: 100%; height: 260px;');
     });
   });
 });
