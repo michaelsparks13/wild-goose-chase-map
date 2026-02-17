@@ -132,19 +132,21 @@ map.addLayer({
 }); // no beforeId — renders on top of course
 ```
 
-### Basemap Cleanup
-The Protomaps `light` basemap style does not include POI icons or trail/path rendering
-that conflicts with our custom overlays, so no cleanup code is needed. The only trails
-visible are your own course and park trail overlay layers.
+### Basemap Cleanup (Required)
+The Protomaps basemap renders hiking trails, paths, and footways from OSM data that conflict with our custom course and park trail overlays. **Every map must hide these layers** at the start of `map.on('load')`:
 
-If you add layers to the basemap style in the future and need to hide some by default:
 ```javascript
-map.getStyle().layers.forEach(layer => {
-  if (layer.id.startsWith('prefix-to-hide-')) {
-    map.setLayoutProperty(layer.id, 'visibility', 'none');
-  }
-});
+// Hide basemap trail/path layers that conflict with our custom overlays
+['roads_other','roads_bridges_other','roads_bridges_other_casing',
+ 'roads_tunnels_other','roads_tunnels_other_casing','roads_labels_minor'
+].forEach(id => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none'); });
 ```
+
+These Protomaps layer IDs correspond to:
+- `roads_other` — Main path/trail lines (highway=path, highway=footway)
+- `roads_bridges_other` / `_casing` — Paths on bridges
+- `roads_tunnels_other` / `_casing` — Paths in tunnels
+- `roads_labels_minor` — Labels for paths and minor roads
 
 ### No Course Click Popup
 Do NOT add click interaction on the course line. The course info is already displayed in the stats section and header — a click popup is redundant and clutters the map.

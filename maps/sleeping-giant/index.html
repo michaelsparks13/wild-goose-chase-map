@@ -808,6 +808,11 @@ function initMap() {
   map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
 
   map.on('load', () => {
+    // Hide basemap trail/path layers that conflict with our custom overlays
+    ['roads_other','roads_bridges_other','roads_bridges_other_casing',
+     'roads_tunnels_other','roads_tunnels_other_casing','roads_labels_minor'
+    ].forEach(id => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none'); });
+
     // Add course line
     map.addSource('course', { type: 'geojson', data: COURSE });
     map.addLayer({
