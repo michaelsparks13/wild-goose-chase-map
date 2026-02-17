@@ -14,12 +14,34 @@
 - **MapLibre GL JS** - Map rendering and interactivity (open-source, no API key)
 - **PMTiles** - Self-hosted vector tiles via Cloudflare R2 (no third-party tile service)
 - **Protomaps Basemaps** - Client-side basemap style generation
-- **Vanilla HTML/CSS/JS** - No framework, single `index.html` per map
+- **Vanilla HTML/CSS/JS** - No framework, compiled via `build.js` into standalone `index.html` per map
 - **GeoJSON** - Course routes, trails, and point data
 - **Canvas API** - Elevation profile rendering
+- **Node.js build system** - Zero-dependency build script compiles shared code + per-map config into standalone HTML
+
+## Build System
+
+### Commands
+- `node build.js` — Build all maps to `dist/` (~30ms)
+- `node dev.js` — Dev server with file watching + SSE live reload on port 3000
+- `npx vitest run` — Run unit tests (requires build first)
+- `npx playwright test` — Run e2e tests (auto-builds via playwright.config.js)
+
+### How It Works
+`build.js` reads shared CSS/JS modules from `src/shared/`, HTML templates from `src/templates/`, and per-map config from `src/maps/{slug}/config.js`. It concatenates everything, replaces `{{PLACEHOLDERS}}`, and outputs standalone `index.html` files to `dist/maps/{slug}/`. All course/trail data is inlined from the config's data files — no runtime `fetch()`.
+
+### Adding a New Map
+1. Create `src/maps/{slug}/config.js` (CommonJS module exporting config object)
+2. Add course data files to `src/maps/{slug}/data/`
+3. Config specifies: meta, CSS variables, map center/zoom, course coords, elevations, markers, toggle buttons, colors, etc.
+4. For complex maps (multi-loop), use `skipSharedJs: true` + `overrideJs` for standalone JS
+5. Run `node build.js` to generate `dist/maps/{slug}/index.html`
+
+### Deployment
+Netlify auto-deploys from `main` branch. Config in `netlify.toml`: `command = "node build.js"`, `publish = "dist"`.
 
 ## Data Loading Rules
-**IMPORTANT:** All course and trail GeoJSON data must be inlined directly into `index.html` as JavaScript variables whenever possible. Do NOT use `fetch()` to load local data files at runtime. Opening maps via `file://` protocol causes `fetch()` to silently fail due to browser CORS restrictions. Inlining the data ensures maps work without a local server.
+**IMPORTANT:** All course and trail GeoJSON data must be inlined directly into `index.html` as JavaScript variables. The build system handles this automatically — data files in `src/maps/{slug}/data/` are loaded by `config.js` via `require()` and inlined into the built HTML.
 
 ## Key Data Structures
 
@@ -468,29 +490,33 @@ When given a race website URL, extract the following information:
 
 ### Step 3: Project Setup
 
-Create folder structure:
+Create a new map in the build system:
 ```
-/[race-name]/
-├── index.html          # Main map application
+src/maps/[race-name]/
+├── config.js           # CommonJS config module (see escarpment/config.js for template)
 ├── data/
-│   ├── course.geojson  # Route geometry
+│   ├── course.json     # Route coordinates array [[lng, lat], ...]
 │   ├── trails.geojson  # Park trail segments with blaze colors (required)
-│   └── landmarks.geojson # POI data (optional)
+│   └── course.gpx      # Original GPX source (for reference)
+├── override.js         # Optional: standalone JS for complex maps (multi-loop)
+└── override.css        # Optional: extra CSS for complex maps
 ```
+
+Run `node build.js` to generate `dist/maps/[race-name]/index.html`.
 
 ### Step 4: Map Creation
 
-**For single-course races (half marathon, marathon):**
-- Use simplified template with one course line
-- Include: course toggle, landmarks toggle, 3D terrain toggle
-- Add elevation profile canvas
-- List key landmarks in clickable grid
+**For single-course races (half marathon, marathon, point-to-point):**
+- Create `config.js` based on `src/maps/escarpment/config.js` (simplest template)
+- Config provides: course coords, elevations, CSS vars, toggle buttons, stats HTML
+- Shared modules handle: map init, course layers, mile markers, elevation profile, simulator
 
 **For multi-loop trail races:**
-- Use Wild Goose template with LOOPS object
+- Create `config.js` based on `src/maps/wild-goose/config.js`
+- Use `skipSharedJs: true` + `overrideJs` for standalone JS with LOOPS/RACES objects
+- Use `mapViewHtml` / `simViewHtml` overrides for custom HTML structure
 - Each loop gets: color, label, miles, elevation gain, geojson
 - Handle overlapping segments with offset lines
-- Include race distance picker
 
 ### Step 5: Essential Features
 
@@ -649,20 +675,40 @@ Use `['Noto Sans Medium']` for all text layers. Glyphs are hosted by Protomaps.
 
 ```
 /falsesummitstudio/
-├── index.html                    # Landing page
-├── assets/                       # Shared assets (logo, etc.)
-├── maps/
-│   ├── wild-goose/
-│   │   ├── index.html           # → falsesummitstudio.com/maps/wild-goose/
-│   │   └── data/
-│   └── [new-race]/              # Future maps go here
+├── build.js                      # Build script (zero deps, ~250 lines)
+├── dev.js                        # Dev server with watch + SSE live reload
+├── index.html                    # Landing page (copied to dist/)
+├── assets/                       # Shared assets (copied to dist/)
+├── src/
+│   ├── shared/                   # Shared CSS + JS modules
+│   │   ├── base.css, layout.css, simulator.css, responsive.css, maplibre-overrides.css
+│   │   ├── coord-helpers.js, map-init.js, map-layers.js, map-toggles.js
+│   │   ├── elevation-profile.js, view-switch.js, sim-engine.js, sim-renderers.js
+│   │   └── init.js               # Entry point (calls initMap, binds events)
+│   ├── templates/
+│   │   ├── shell.html            # Outer HTML with {{PLACEHOLDERS}}
+│   │   ├── map-view.html         # Map view section template
+│   │   └── sim-view.html         # Simulator view section template
+│   └── maps/
+│       ├── escarpment/config.js + data/
+│       ├── sleeping-giant/config.js + data/
+│       └── wild-goose/config.js + override.js + override.css + data/
+├── maps/                         # Unmigrated maps (GPX data for future builds)
+│   ├── rock-the-ridge/data/
+│   ├── manitous-revenge/data/
+│   └── shawangunk-ridge/data/
+├── dist/                         # Build output (gitignored)
+│   └── maps/{slug}/index.html
 └── CLAUDE.md
 ```
 
 ## Existing Race Maps
 
-| Race | Location | Type | URL Path |
-|------|----------|------|----------|
-| Wild Goose Trail Festival | Wawayanda State Park, NJ | Multi-loop trail | `/maps/wild-goose/` |
-| Sleeping Giant Trail Runs 25K | Sleeping Giant State Park, CT | Single-loop trail | `/maps/sleeping-giant/` |
-| Escarpment Trail Run 30K | Catskill Mountains, NY | Point-to-point trail | `/maps/escarpment/` |
+| Race | Location | Type | URL Path | Status |
+|------|----------|------|----------|--------|
+| Wild Goose Trail Festival | Wawayanda State Park, NJ | Multi-loop trail | `/maps/wild-goose/` | Migrated |
+| Sleeping Giant Trail Runs 25K | Sleeping Giant State Park, CT | Single-loop trail | `/maps/sleeping-giant/` | Migrated |
+| Escarpment Trail Run 30K | Catskill Mountains, NY | Point-to-point trail | `/maps/escarpment/` | Migrated |
+| Rock the Ridge 50M | Mohonk Preserve, NY | Point-to-point | `/maps/rock-the-ridge/` | GPX only |
+| Manitou's Revenge | Catskill Mountains, NY | Point-to-point | `/maps/manitous-revenge/` | GPX only |
+| Shawangunk Ridge Trail Run 70M | Shawangunk Ridge, NY | Point-to-point | `/maps/shawangunk-ridge/` | GPX only |

@@ -24,7 +24,7 @@ const MIME_TYPES = {
   '.woff2': 'font/woff2',
 };
 
-const LIVE_RELOAD_SCRIPT = '<script>new EventSource("/__live-reload").onmessage=function(){location.reload()}</script>';
+const LIVE_RELOAD_SCRIPT = '<script>new EventSource("/__live-reload").addEventListener("reload",function(){location.reload()})</script>';
 
 let sseClients = [];
 let buildTimer = null;
@@ -41,7 +41,7 @@ function build() {
 
 function notifyClients() {
   for (const res of sseClients) {
-    try { res.write('data: reload\n\n'); } catch (e) { /* ignore */ }
+    try { res.write('event: reload\ndata: 1\n\n'); } catch (e) { /* ignore */ }
   }
 }
 
