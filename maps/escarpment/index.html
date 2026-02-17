@@ -1114,7 +1114,8 @@ function getEleAtDist(dist) {
   for (let i = 1; i < eleProfile.length; i++) {
     if (eleProfile[i].d >= dist) {
       const p0 = eleProfile[i - 1], p1 = eleProfile[i];
-      const t = (dist - p0.d) / (p1.d - p0.d);
+      const dRange = p1.d - p0.d;
+      const t = dRange > 0 ? (dist - p0.d) / dRange : 0;
       return p0.e + (p1.e - p0.e) * t;
     }
   }
