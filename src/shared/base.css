@@ -1,0 +1,10 @@
+/* base.css - Reset, typography, body */
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body {
+  font-family: var(--font-family);
+  background: var(--bg-alt);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}

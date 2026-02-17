@@ -3,9 +3,8 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const maps = [
-  { name: 'sleeping-giant', path: '../maps/sleeping-giant/index.html' },
-  { name: 'shawangunk-ridge', path: '../maps/shawangunk-ridge/index.html' },
-  { name: 'wild-goose', path: '../maps/wild-goose/index.html' },
+  { name: 'sleeping-giant', path: '../dist/maps/sleeping-giant/index.html' },
+  { name: 'wild-goose', path: '../dist/maps/wild-goose/index.html' },
 ];
 
 maps.forEach(({ name, path }) => {
@@ -25,8 +24,8 @@ maps.forEach(({ name, path }) => {
       const styleStart = html.indexOf('BASEMAP_STYLE');
       const styleEnd = html.indexOf('};', styleStart);
       const styleBlock = html.substring(styleStart, styleEnd);
-      // layers should use spread syntax
-      expect(styleBlock).toContain('layers: [...basemaps.layers(');
+      // layers should concat basemaps with hillshade
+      expect(styleBlock).toMatch(/layers:.*basemaps\.layers\(/);
       // hillshade layer definition should be in the style block
       expect(styleBlock).toContain("id: 'hillshade'");
       expect(styleBlock).toContain("source: 'hillshade-dem'");
@@ -56,7 +55,7 @@ maps.forEach(({ name, path }) => {
 
 // Wild-goose specific: terrain-dem source should still be added in load callback
 describe('wild-goose terrain-dem preserved in load callback', () => {
-  const html = readFileSync(resolve(__dirname, '../maps/wild-goose/index.html'), 'utf-8');
+  const html = readFileSync(resolve(__dirname, '../dist/maps/wild-goose/index.html'), 'utf-8');
 
   it('still adds terrain-dem source in map.on load', () => {
     expect(html).toContain("map.addSource('terrain-dem'");

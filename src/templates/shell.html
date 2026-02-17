@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="{{THEME_COLOR}}">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<title>{{TITLE}}</title>
+<script src="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/pmtiles@4.4.0/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/@protomaps/basemaps@5.7.0/dist/basemaps.js" crossorigin="anonymous"></script>
+{{GOOGLE_FONTS}}
+<style>
+{{CSS_VARS}}
+{{CSS}}
+</style>
+</head>
+<body>
+<div class="page-shell">
+
+<header class="header">
+  <div class="header-left">
+    <h1>{{RACE_NAME}}</h1>
+    <div class="subtitle">{{SUBTITLE}}</div>
+  </div>
+  <div class="view-tabs">
+    <button class="view-tab active" data-view="map" onclick="switchView('map')">Map</button>
+    <button class="view-tab" data-view="sim" onclick="switchView('sim')">Simulator</button>
+  </div>
+</header>
+
+{{MAP_VIEW}}
+
+{{SIM_VIEW}}
+
+<footer class="footer">
+  {{FOOTER_HTML}}
+</footer>
+</div><!-- .page-shell -->
+
+<script>
+{{CONFIG_DATA}}
+{{JS}}
+</script>
+</body>
+</html>

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const html = readFileSync(resolve(__dirname, '../maps/wild-goose/index.html'), 'utf-8');
+const html = readFileSync(resolve(__dirname, '../dist/maps/wild-goose/index.html'), 'utf-8');
 
 describe('wild-goose map updates', () => {
   describe('Park Trails button', () => {
@@ -93,7 +93,7 @@ describe('wild-goose map updates', () => {
     });
 
     it('has terrain3D state variable', () => {
-      expect(html).toContain('let terrain3D = false');
+      expect(html).toContain('var terrain3D = false');
     });
   });
 

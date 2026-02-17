@@ -1,0 +1,230 @@
+/* Wild Goose Trail Festival - Override CSS */
+/* Multi-loop course with loop toggles, race cards, turn markers, and scrubber segments */
+
+/* ═══ HEADER OVERRIDES ═══ */
+.header { background: var(--bg); padding: 10px 16px; }
+.header-left h1 { font-size: 0.9rem; }
+.header-left .subtitle a { color: var(--green); }
+
+/* ═══ HQ BADGE ═══ */
+.hq-badge {
+  position: absolute; top: 10px; left: 10px; z-index: 10;
+  background: var(--bg); border-radius: var(--radius);
+  padding: 6px 10px; box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 6px;
+}
+.hq-badge .dot { width: 10px; height: 10px; border-radius: 50%; background: #FFD700; }
+.hq-badge .text { font-size: 0.65rem; font-weight: 600; }
+
+/* ═══ MAP BUTTONS (trail-btn instead of toggle-btn) ═══ */
+.map-btns {
+  position: absolute; top: 10px; right: 48px; z-index: 10;
+  display: flex; gap: 6px;
+}
+.trail-btn {
+  background: var(--bg); border: none; border-radius: var(--radius);
+  padding: 8px 10px; font-size: 0.7rem; font-weight: 500;
+  font-family: inherit; color: var(--text-secondary);
+  cursor: pointer; box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 4px; transition: all 0.15s;
+}
+.trail-btn:active { transform: scale(0.96); }
+.trail-btn.active { background: var(--green); color: #fff; }
+
+/* ═══ CONTROLS (loop toggles) ═══ */
+.controls {
+  background: var(--bg);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.section-label {
+  font-size: 0.6rem; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+}
+.loop-toggles {
+  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px;
+  margin-bottom: 14px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.loop-toggles::-webkit-scrollbar { display: none; }
+.loop-toggle {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-radius: var(--radius);
+  background: var(--bg-alt); border: 2px solid transparent;
+  cursor: pointer; user-select: none; transition: all 0.15s; flex-shrink: 0;
+}
+.loop-toggle:active { transform: scale(0.98); }
+.loop-toggle.active {
+  border-color: var(--loop-color); background: var(--bg);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.loop-toggle .swatch { width: 12px; height: 12px; border-radius: 3px; }
+.loop-toggle .swatch.checkered { background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50%/6px 6px; border: 1px solid #ccc; }
+.loop-toggle .info { text-align: left; }
+.loop-toggle .name { font-size: 0.75rem; font-weight: 600; color: var(--text); }
+.loop-toggle .stats { font-size: 0.65rem; color: var(--text-secondary); }
+
+/* ═══ RACE CARDS ═══ */
+.cards-section { padding: 16px; }
+.cards-section h3 {
+  font-size: 0.65rem; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+}
+.race-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.race-card {
+  background: var(--bg); border-radius: var(--radius); padding: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer;
+  transition: all 0.15s; border: 2px solid transparent;
+}
+.race-card:active { transform: scale(0.98); }
+.race-card.active { border-color: var(--green); }
+.race-card .name { font-weight: 600; font-size: 0.85rem; color: var(--text); }
+.race-card .details { font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px; }
+.race-card .dots { display: flex; gap: 3px; margin-top: 6px; }
+.race-card .dot { width: 6px; height: 6px; border-radius: 2px; }
+.race-card .dot.checkered-dot { background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50%/4px 4px; border: 0.5px solid #999; }
+
+/* ═══ TURN MARKERS & STREET VIEW ═══ */
+.hq-marker { width: 28px; height: 28px; cursor: pointer; }
+.hq-marker svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); }
+.turn-marker { width: 24px; height: 24px; cursor: pointer; }
+.turn-marker svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
+.streetview-popup { max-width: 320px !important; }
+.streetview-popup .maplibregl-popup-content { padding: 0 !important; overflow: hidden; border-radius: var(--radius) !important; }
+.streetview-popup .maplibregl-popup-close-button { right: 4px !important; top: 4px !important; width: 24px !important; height: 24px !important; background: rgba(0,0,0,0.5) !important; color: #fff !important; border-radius: 50% !important; display: flex; align-items: center; justify-content: center; line-height: 1 !important; }
+.streetview-img { width: 100%; height: 180px; object-fit: cover; display: block; }
+.streetview-caption { padding: 10px 12px; }
+.streetview-caption strong { display: block; margin-bottom: 4px; }
+.streetview-caption a { color: var(--green); text-decoration: none; font-size: 0.75rem; }
+.streetview-caption a:hover { text-decoration: underline; }
+
+/* ═══ FOOTER OVERRIDE ═══ */
+.footer a { color: var(--green); }
+
+/* ═══ SIM PANEL ORDERING ═══ */
+.sim-container { background: var(--bg); }
+.sim-panel { display: contents; }
+.sim-panel .sim-races { order: 1; }
+.sim-panel .goal-time-bar { order: 2; }
+.sim-visual { order: 3; }
+.sim-panel .scrubber { order: 4; }
+.sim-panel .sim-clock { order: 5; }
+.sim-panel .sim-stats { order: 6; }
+.sim-panel .loop-progress { order: 7; flex: 1; }
+
+/* ═══ COURSE MAP (dark theme) ═══ */
+.course-map-wrap { background: #1a2030; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+/* ═══ TERRAIN (dark theme) ═══ */
+.terrain-wrap { position: relative; background: #1a2030; }
+#simTerrain { width: 100%; height: 40px; display: block; }
+
+/* ═══ RUNNER INFO (replaces runner-info-overlay) ═══ */
+.runner-info {
+  position: absolute; top: 12px; left: 12px; pointer-events: none;
+}
+.runner-ele {
+  font-size: 1.8rem; font-weight: 700; color: #fff; line-height: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+.runner-meta { font-size: 0.7rem; color: rgba(255,255,255,0.7); margin-top: 2px; }
+
+/* ═══ LOOP PILL ═══ */
+.loop-pill {
+  display: inline-block; margin-top: 4px;
+  padding: 2px 8px; border-radius: 10px;
+  font-size: 0.6rem; font-weight: 600;
+  border: 1px solid; background: rgba(0,0,0,0.3);
+}
+
+/* ═══ SCRUBBER SEGMENTS ═══ */
+.scrub-segs { position: absolute; top: 0; left: 0; height: 100%; display: flex; width: 100%; }
+.scrub-seg { height: 100%; }
+.scrub-hq { position: absolute; top: 0; left: 0; right: 0; height: 36px; pointer-events: none; }
+.hq-tick {
+  position: absolute; top: 6px; width: 2px; height: 24px;
+  background: rgba(212,160,23,0.4); border-radius: 1px;
+}
+
+/* ═══ SCRUBBER (green accents) ═══ */
+.play-btn { background: var(--green); }
+.play-btn:active { background: var(--green-dark); }
+.scrub-handle { background: var(--green); box-shadow: 0 2px 6px rgba(92,169,33,0.4); }
+.speed-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+/* ═══ GOAL INPUT (green focus) ═══ */
+.goal-input:focus { border-color: var(--green); }
+.goal-pace strong { color: var(--text); }
+
+/* ═══ FINISH TIME ═══ */
+.clock-finish { margin-top: 8px; font-size: 0.8rem; color: var(--text-secondary); }
+#finishTime { color: var(--green); }
+
+/* ═══ LOOP PROGRESS ═══ */
+.loop-progress { padding: 16px; background: var(--bg); }
+.loop-progress h4 {
+  font-size: 0.6rem; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+}
+.loop-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 8px; margin-bottom: 4px;
+}
+.loop-row.current { background: var(--bg-alt); }
+.loop-row .ldot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: middle; margin-left: 6px; }
+.loop-row .ldot.checkered-ldot { background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50%/6px 6px; border: 1px solid #999; }
+.loop-row .lname { flex: 1; font-size: 0.8rem; font-weight: 500; }
+.loop-row .lstatus { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+.loop-row .lstatus.done { color: var(--green); }
+.loop-row .lstatus.active { color: var(--text); }
+
+/* ═══ SIM RACE PICKER ═══ */
+.sim-races {
+  display: flex; gap: 6px; padding: 12px 16px;
+  overflow-x: auto; background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: none;
+}
+.sim-races::-webkit-scrollbar { display: none; }
+.sim-race-btn {
+  padding: 8px 14px; border-radius: 8px; background: var(--bg-alt);
+  border: 2px solid transparent; font-family: inherit;
+  font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);
+  cursor: pointer; white-space: nowrap; transition: all 0.15s;
+}
+.sim-race-btn:active { transform: scale(0.97); }
+.sim-race-btn.active {
+  border-color: var(--green); background: var(--bg); color: var(--text);
+}
+
+/* ═══ RESPONSIVE OVERRIDES ═══ */
+@media (min-width: 768px) {
+  .controls { display: flex; align-items: flex-start; gap: 24px; }
+  .controls > div:first-child { flex: 1; }
+  .loop-toggles { margin-bottom: 0; }
+  .cards-section { padding: 24px; }
+  .race-cards { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  #simTerrain { height: 50px; }
+}
+
+@media (min-width: 1024px) {
+  /* Simulator sidebar layout */
+  .sim-panel {
+    display: flex; flex-direction: column;
+    width: 360px; flex-shrink: 0;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+  .sim-panel .sim-races { flex-wrap: wrap; overflow-x: visible; }
+  .sim-panel .scrubber { border-bottom: 1px solid var(--border); }
+  .sim-panel .sim-clock { padding: 12px 16px; }
+  .sim-panel .sim-clock .clock-time { font-size: 1.4rem; }
+  .sim-panel .sim-clock .clock-label { font-size: 0.55rem; }
+  .sim-panel .sim-stats { grid-template-columns: repeat(3, 1fr); }
+  .sim-visual .course-map-wrap { flex: 1; min-height: 0; }
+  #courseMapCanvas { height: 100%; }
+  #simTerrain { height: 60px; }
+}
+
+@media (min-width: 1440px) {
+  .sim-panel { width: 400px; }
+}

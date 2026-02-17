@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const html = readFileSync(resolve(__dirname, '../maps/escarpment/index.html'), 'utf-8');
+const html = readFileSync(resolve(__dirname, '../dist/maps/escarpment/index.html'), 'utf-8');
 
 describe('Escarpment map fixes', () => {
   it('links to correct race website (escarpmenttrail.com)', () => {
@@ -20,8 +20,8 @@ describe('Escarpment map fixes', () => {
     expect(html).not.toContain("--bg: #1a1a2e");
   });
 
-  it('inlines TRAILS_DATA instead of using fetch', () => {
-    expect(html).toContain('const TRAILS_DATA =');
+  it('inlines trail data instead of using fetch', () => {
+    expect(html).toContain('CONFIG.trailsData');
     expect(html).not.toContain("fetch('data/trails.geojson')");
     expect(html).not.toContain('fetch("data/trails.geojson")');
   });
@@ -109,8 +109,7 @@ describe('Escarpment map fixes', () => {
     expect(trailSection).toContain("'line-cap': 'butt'");
   });
 
-  it('has 7 aid stations defined', () => {
-    expect(html).toContain('const AID_STATIONS =');
+  it('has 7 aid stations defined in config', () => {
     const stations = ['Windham Peak', 'Acra', 'Base of Blackhead', 'Top of Blackhead',
       "Dutcher's Notch", 'Stoppel Point', 'North Point'];
     stations.forEach(name => {

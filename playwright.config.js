@@ -7,7 +7,7 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
   },
   webServer: {
-    command: 'npx serve -l 3000 --no-clipboard',
+    command: 'node build.js && npx serve -l 3000 --no-clipboard dist',
     port: 3000,
     reuseExistingServer: true,
   },

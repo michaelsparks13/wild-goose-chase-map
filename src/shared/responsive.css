@@ -1,0 +1,35 @@
+/* responsive.css - Media queries */
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-card .value { font-size: 1.2rem; }
+  #map { height: 45vh; }
+}
+@media (min-width: 768px) {
+  #courseMapCanvas { height: 300px; }
+  #simProfileCanvas { height: 50px; }
+  .sim-stats { grid-template-columns: repeat(6, 1fr); }
+}
+@media (min-width: 1024px) {
+  .page-shell { max-width: 960px; margin: 0 auto; min-height: 100vh; background: var(--bg-alt); box-shadow: 0 0 1px rgba(0,0,0,0.1); }
+  .sim-container { flex-direction: row; height: calc(100vh - 52px); overflow: hidden; }
+  .sim-panel {
+    display: flex; flex-direction: column;
+    width: 360px; flex-shrink: 0;
+    overflow-y: auto; border-right: 1px solid var(--border);
+  }
+  .sim-panel .sim-clock { padding: 12px 16px; }
+  .sim-panel .sim-clock .clock-time { font-size: 1.4rem; }
+  .sim-panel .sim-clock .clock-label { font-size: 0.55rem; }
+  .sim-panel .sim-stats { grid-template-columns: repeat(3, 1fr); }
+  .sim-visual {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
+  }
+  .sim-visual .course-map-wrap { flex: 1; min-height: 0; }
+  #courseMapCanvas { height: 100%; }
+  #simProfileCanvas { height: 60px; }
+}
+@media (min-width: 1440px) {
+  .page-shell { max-width: 1080px; }
+  .sim-panel { width: 400px; }
+}

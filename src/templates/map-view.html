@@ -1,0 +1,30 @@
+<div id="mapView" class="view active">
+
+<div class="map-wrap">
+  <div id="map"></div>
+  <div class="map-overlay">
+    <div class="info-badge">
+      <div class="label">{{INFO_BADGE_LABEL}}</div>
+      <div class="value">{{INFO_BADGE_VALUE}}</div>
+    </div>
+  </div>
+  <div class="toggle-btns">
+    {{TOGGLE_BUTTONS}}
+  </div>
+</div>
+
+{{STATS_HTML}}
+
+<section class="profile-section">
+  <div class="profile-header">
+    <h3>Elevation Profile</h3>
+    <div class="profile-stats">
+      {{PROFILE_STATS}}
+    </div>
+  </div>
+  <canvas id="profileCanvas"></canvas>
+</section>
+
+{{COURSE_DESCRIPTION_HTML}}
+
+</div><!-- end mapView -->

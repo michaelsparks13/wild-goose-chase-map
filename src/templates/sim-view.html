@@ -1,0 +1,61 @@
+<div id="simView" class="view">
+  <div class="sim-container">
+    <div class="sim-panel">
+      <div class="goal-time-bar">
+        {{DISTANCE_PICKER}}
+        <span class="goal-label">Goal Time</span>
+        <div class="goal-inputs">
+          <input type="number" class="goal-input" id="goalHrs" min="0" max="48" value="{{DEFAULT_GOAL_HOURS}}" onchange="updateGoalTime()" onclick="this.select()">
+          <span class="goal-colon">:</span>
+          <input type="number" class="goal-input" id="goalMins" min="0" max="59" value="{{DEFAULT_GOAL_MINS}}" onchange="updateGoalTime()" onclick="this.select()">
+        </div>
+        <div class="goal-pace" id="goalPace">Avg pace: <strong>{{DEFAULT_PACE}}</strong></div>
+      </div>
+
+      <div class="scrubber">
+        <div class="scrub-row">
+          <button class="play-btn" id="playBtn" onclick="togglePlay()">&#9654;</button>
+          <div class="scrub-track" id="scrubTrack">
+            <div class="scrub-bg">
+              <div class="scrub-fill" id="scrubFill"></div>
+            </div>
+            <div class="scrub-handle" id="scrubHandle"></div>
+          </div>
+          <div class="speed-btns">
+            <button class="speed-btn active" onclick="setSpeed(1,this)">1x</button>
+            <button class="speed-btn" onclick="setSpeed(2,this)">2x</button>
+            <button class="speed-btn" onclick="setSpeed(4,this)">4x</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sim-clock">
+        <div class="clock-time" id="clockTime">{{DEFAULT_CLOCK}}</div>
+        <div class="clock-label">Current Time (Race starts {{RACE_START_LABEL}})</div>
+        <div style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary)">Finish: <strong id="finishTime" style="color:var(--primary)">{{DEFAULT_FINISH_TIME}}</strong></div>
+      </div>
+
+      <div class="sim-stats">
+        <div class="sim-stat"><div class="val" id="statDist">0.0</div><div class="label">Miles</div></div>
+        <div class="sim-stat"><div class="val" id="statEle">0</div><div class="label">Elevation (ft)</div></div>
+        <div class="sim-stat"><div class="val" id="statGain">0</div><div class="label">Gain (ft)</div></div>
+        <div class="sim-stat"><div class="val" id="statGrade">0%</div><div class="label">Grade</div></div>
+        <div class="sim-stat"><div class="val" id="statPace">--:--</div><div class="label">Pace /mi</div></div>
+        <div class="sim-stat"><div class="val" id="statPct">0%</div><div class="label">Complete</div></div>
+      </div>
+    </div>
+
+    <div class="sim-visual">
+      <div class="course-map-wrap">
+        <canvas id="courseMapCanvas"></canvas>
+        <div class="runner-info-overlay">
+          <div class="runner-ele" id="runnerDist">Mile 0.0</div>
+          <div class="runner-meta" id="runnerMeta">{{DEFAULT_RUNNER_META}}</div>
+        </div>
+      </div>
+      <div class="sim-profile-wrap">
+        <canvas id="simProfileCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+</div><!-- end simView -->
