@@ -62,7 +62,7 @@ function addTrailLayers() {
         'line-color': ['match', ['get', 'blaze'],
           'white', '#ffffff', 'blue', '#2196F3', 'yellow', '#FFD700',
           'orange', '#FF9800', 'green', '#4CAF50', 'red', '#f44336',
-          'violet', '#9C27B0', 'purple', '#9C27B0', '#9E9E9E'
+          'violet', '#9C27B0', 'purple', '#9C27B0', 'teal', '#009688', '#9E9E9E'
         ],
         'line-width': ['interpolate', ['linear'], ['zoom'], 12, 3, 15, 5, 20, 8],
         'line-dasharray': [2, 3],
