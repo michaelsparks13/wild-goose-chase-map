@@ -749,5 +749,6 @@ Use `['Noto Sans Medium']` for all text layers. Glyphs are hosted by Protomaps.
 | Sleeping Giant Trail Runs 25K | Sleeping Giant State Park, CT | Single-loop trail | `/maps/sleeping-giant/` | Migrated |
 | Escarpment Trail Run 30K | Catskill Mountains, NY | Point-to-point trail | `/maps/escarpment/` | Migrated |
 | Rock the Ridge 50M | Mohonk Preserve, NY | Point-to-point | `/maps/rock-the-ridge/` | GPX only |
-| Manitou's Revenge | Catskill Mountains, NY | Point-to-point | `/maps/manitous-revenge/` | GPX only |
+| Golden Leaf Half Marathon | Aspen, CO | Point-to-point trail | `/maps/golden-leaf/` | Migrated |
+| Manitou's Revenge | Catskill Mountains, NY | Point-to-point | `/maps/manitous-revenge/` | Migrated |
 | Shawangunk Ridge Trail Run 70M | Shawangunk Ridge, NY | Point-to-point | `/maps/shawangunk-ridge/` | GPX only |
