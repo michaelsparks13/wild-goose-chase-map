@@ -77,16 +77,17 @@ function addTrailLayers() {
       layout: {
         'symbol-placement': 'line',
         'text-field': ['get', 'name'],
-        'text-size': ['interpolate', ['linear'], ['zoom'], 13, 9, 16, 13, 20, 16],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 12, 9, 13, 11, 16, 14, 20, 16],
         'text-font': ['Noto Sans Medium'],
-        'text-max-angle': 30,
-        'text-padding': 10
+        'text-max-angle': 45,
+        'text-padding': 2,
+        'symbol-spacing': 150
       },
       paint: {
         'text-color': CONFIG.colors.trailLabelColor || '#333',
         'text-halo-color': CONFIG.colors.trailLabelHalo || '#fff',
         'text-halo-width': 1.5,
-        'text-opacity': ['interpolate', ['linear'], ['zoom'], 13, 0, 13.5, 1]
+        'text-opacity': ['interpolate', ['linear'], ['zoom'], 11.5, 0, 12, 1]
       }
     });
   }

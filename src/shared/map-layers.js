@@ -99,11 +99,12 @@ function initMap() {
         var coords = getCoordAtDist(station.mile);
         var el = document.createElement('div');
         el.className = 'aid-marker';
-        el.innerHTML = '<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="' + CONFIG.colors.primary + '" stroke="#fff" stroke-width="2"/><text x="14" y="18" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff">+</text></svg>';
+        var aidColor = CONFIG.colors.aidStation || CONFIG.colors.primary;
+        el.innerHTML = '<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="' + aidColor + '" stroke="#fff" stroke-width="2"/><text x="14" y="18" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff">+</text></svg>';
         var marker = new maplibregl.Marker({ element: el })
           .setLngLat(coords)
           .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML(
-            '<strong style="color:' + CONFIG.colors.primary + '">' + station.name + '</strong>' +
+            '<strong style="color:' + aidColor + '">' + station.name + '</strong>' +
             '<br><span style="color:#888">Mile ' + station.mile + '</span>' +
             (station.services ? '<br><span style="font-size:0.8rem;color:#555">' + station.services + '</span>' : '')
           ));

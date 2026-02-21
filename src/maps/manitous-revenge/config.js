@@ -17,8 +17,11 @@ module.exports = {
   cssOverrides: `
     .header h1 { font-family: 'Oswald', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
     .stat-card .value { font-family: 'Oswald', sans-serif; font-weight: 600; }
-    .toggle-btn { border-color: #333 !important; }
-    .toggle-btn.active { background: #e0e0e0 !important; color: #000 !important; border-color: #e0e0e0 !important; }
+    .toggle-btn { border-color: #333 !important; color: #aaa !important; }
+    .toggle-btn.active { background: #000 !important; color: #fff !important; border-color: #555 !important; }
+    .info-badge { padding: 7px 10px; }
+    .info-badge .label { font-size: 0.5rem; }
+    .info-badge .value { font-size: 0.7rem; }
   `,
 
   cssVars: {
@@ -72,8 +75,8 @@ module.exports = {
   finishCoords: [-74.31025, 42.08404],
   finishLabel: 'Finish - Phoenicia, NY',
 
-  courseOutlineColor: '#ffffff',
-  courseLineColor: '#e0e0e0',
+  courseOutlineColor: '#333333',
+  courseLineColor: '#000000',
   mileMarkerFillColor: '#1a1a1a',
   mileMarkerStrokeColor: '#e0e0e0',
   mileMarkerTextColor: '#e0e0e0',
@@ -121,6 +124,7 @@ module.exports = {
     profileLabel: '#777777',
     trailLabelColor: '#333',
     trailLabelHalo: '#fff',
+    aidStation: '#000000',
     sky: {
       night: ['#1a1a2e', '#0d0d1a'],
       dawn: ['#2a1a2e', '#1a1020'],
@@ -157,7 +161,7 @@ module.exports = {
   </div>
 </section>`,
 
-  footerHtml: "Manitou's Revenge Ultra &bull; <a href=\"https://www.manitousrevengeultra.com\" target=\"_blank\">manitousrevengeultra.com</a>\n  <br>Interactive map powered by MapLibre",
+  footerHtml: "Manitou's Revenge Ultra &bull; <a href=\"https://www.manitousrevengeultra.com\" target=\"_blank\">manitousrevengeultra.com</a>\n  <br>Made by False Summit Studio",
 
   defaultClock: '5:00 AM',
   raceStartLabel: '5:00 AM',
