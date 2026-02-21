@@ -245,6 +245,56 @@ function renderCourseMap(currentDist) {
       placed.push(c);
     }
   }
+
+  // Cutoff markers on course map
+  if (CONFIG.cutoffs) {
+    var accentColor = colors.accent || '#C1440E';
+    for (var ci = 0; ci < CONFIG.cutoffs.length; ci++) {
+      var cutoff = CONFIG.cutoffs[ci];
+      var cc = getCoordAtDist(cutoff.mile);
+      var ccx = toX(cc[0]);
+      var ccy = toY(cc[1]);
+      // Flag pole
+      ctx.beginPath();
+      ctx.moveTo(ccx, ccy);
+      ctx.lineTo(ccx, ccy - 22);
+      ctx.strokeStyle = accentColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // Flag
+      ctx.beginPath();
+      ctx.moveTo(ccx, ccy - 22);
+      ctx.lineTo(ccx + 18, ccy - 18);
+      ctx.lineTo(ccx, ccy - 14);
+      ctx.closePath();
+      ctx.fillStyle = accentColor;
+      ctx.fill();
+      // Label pill above flag
+      var labelFont = Math.max(7, Math.min(9, W / 50));
+      ctx.font = 'bold ' + labelFont + 'px ' + CONFIG.fontFamily;
+      var ltw = ctx.measureText(cutoff.time).width;
+      var lpx = 4, lpy = 2;
+      var lbx = ccx - lpx;
+      var lby = ccy - 38;
+      ctx.fillStyle = accentColor;
+      ctx.beginPath();
+      if (ctx.roundRect) { ctx.roundRect(lbx, lby, ltw + lpx * 2, labelFont + lpy * 2, 3); }
+      else { ctx.rect(lbx, lby, ltw + lpx * 2, labelFont + lpy * 2); }
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(cutoff.time, lbx + (ltw + lpx * 2) / 2, lby + (labelFont + lpy * 2) / 2);
+      // Dot at course
+      ctx.beginPath();
+      ctx.arc(ccx, ccy, 4, 0, Math.PI * 2);
+      ctx.fillStyle = accentColor;
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  }
 }
 
 function renderSimProfile(currentDist, currentEle) {
@@ -369,5 +419,41 @@ function renderSimProfile(currentDist, currentEle) {
     ctx.font = '9px ' + CONFIG.fontFamily;
     ctx.textAlign = 'center';
     ctx.fillText(m + ' mi', mx, mt - 8);
+  }
+
+  // Cutoff markers
+  if (CONFIG.cutoffs) {
+    var accentColor = colors.accent || '#C1440E';
+    for (var ci = 0; ci < CONFIG.cutoffs.length; ci++) {
+      var cutoff = CONFIG.cutoffs[ci];
+      if (cutoff.mile < windowStart || cutoff.mile > windowStart + windowMiles) continue;
+      var cx = xScale(cutoff.mile);
+      // Dashed line
+      ctx.save();
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(cx, mt);
+      ctx.lineTo(cx, H);
+      ctx.strokeStyle = accentColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+      // Label pill
+      var label = 'Cutoff ' + cutoff.time;
+      ctx.font = 'bold 9px ' + CONFIG.fontFamily;
+      var tw = ctx.measureText(label).width;
+      var px = 5, py = 3;
+      var lx = cx - (tw + px * 2) / 2;
+      var ly = mt + 6;
+      ctx.fillStyle = accentColor;
+      ctx.beginPath();
+      if (ctx.roundRect) { ctx.roundRect(lx, ly, tw + px * 2, 14 + py, 3); }
+      else { ctx.rect(lx, ly, tw + px * 2, 14 + py); }
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, cx, ly + 7 + py / 2);
+    }
   }
 }

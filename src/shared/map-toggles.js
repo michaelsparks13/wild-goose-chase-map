@@ -27,10 +27,10 @@ function toggle3D() {
       });
     }
     map.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
-    map.easeTo({ pitch: 45, duration: 1000 });
+    map.easeTo({ pitch: 40, zoom: map.getZoom() - 1, duration: 1000 });
   } else {
     map.setTerrain(null);
-    map.easeTo({ pitch: 0, duration: 1000 });
+    map.easeTo({ pitch: 0, center: CONFIG.mapCenter, zoom: CONFIG.mapZoom, duration: 1000 });
   }
 }
 

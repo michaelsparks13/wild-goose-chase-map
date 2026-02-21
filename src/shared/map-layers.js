@@ -46,7 +46,7 @@ function initMap() {
     startEl.innerHTML = '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="' + CONFIG.colors.primary + '" stroke="#fff" stroke-width="2"/><text x="16" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">S</text></svg>';
     new maplibregl.Marker({ element: startEl })
       .setLngLat(CONFIG.startCoords)
-      .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML('<strong style="color:' + CONFIG.colors.primary + '">' + CONFIG.startLabel + '</strong><br><span style="color:#888">' + CONFIG.raceName + '</span>'))
+      .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML('<strong style="color:' + CONFIG.colors.primary + '">' + CONFIG.startLabel + '</strong><br><span style="color:var(--text-muted)">' + CONFIG.raceName + '</span>'))
       .addTo(map);
 
     // Finish marker (only for point-to-point courses)
@@ -56,7 +56,7 @@ function initMap() {
       finishEl.innerHTML = '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="' + CONFIG.colors.primary + '" stroke="#fff" stroke-width="2"/><text x="16" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">F</text></svg>';
       new maplibregl.Marker({ element: finishEl })
         .setLngLat(CONFIG.finishCoords)
-        .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML('<strong style="color:' + CONFIG.colors.primary + '">' + CONFIG.finishLabel + '</strong><br><span style="color:#888">' + CONFIG.raceName + '</span>'))
+        .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML('<strong style="color:' + CONFIG.colors.primary + '">' + CONFIG.finishLabel + '</strong><br><span style="color:var(--text-muted)">' + CONFIG.raceName + '</span>'))
         .addTo(map);
     }
 
@@ -105,8 +105,8 @@ function initMap() {
           .setLngLat(coords)
           .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML(
             '<strong style="color:' + aidColor + '">' + station.name + '</strong>' +
-            '<br><span style="color:#888">Mile ' + station.mile + '</span>' +
-            (station.services ? '<br><span style="font-size:0.8rem;color:#555">' + station.services + '</span>' : '')
+            '<br><span style="color:var(--text-muted)">Mile ' + station.mile + '</span>' +
+            (station.services ? '<br><span style="font-size:0.8rem;color:var(--text-secondary)">' + station.services + '</span>' : '')
           ));
         aidMarkers.push(marker);
       });

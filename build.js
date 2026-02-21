@@ -124,6 +124,7 @@ function buildConfigData(config) {
     profileMaxDist: config.profileMaxDist || config.totalMiles,
     profileMileStep: config.profileMileStep || 3,
     aidStations: config.aidStations || null,
+    cutoffs: config.cutoffs || null,
     loopMiles: config.loopMiles || null,
     loopGain: config.loopGain || null,
     colors: config.colors,

@@ -382,6 +382,45 @@ function toggleAidStations() {
 }
 ```
 
+### Adding Cutoff Times
+Many trail races have time cutoffs at specific mile markers. **Check the race website for cutoff info** — look in "Course", "Rules", or "Race Info" sections.
+
+**Two places cutoffs appear:**
+1. **Aid station popups** — Include cutoff time in the `services` string (e.g., `'Water, Skratch · Cutoff: 1h 10m'`)
+2. **Simulator** — Rendered as flag markers on the course map canvas and dashed lines with pill labels on the profile canvas
+
+**Implementation pattern:**
+1. Add cutoff info to relevant `aidStations` entries in `services` field
+2. Add a standalone cutoff point as an aid station if there's no hydration there (e.g., `{ name: 'Tiehack Road Cutoff', mile: 11, services: 'Cutoff: 3h 10m' }`)
+3. Add a `cutoffs` array to config for the simulator rendering
+4. Add `accent` color to the `colors` object for cutoff marker styling
+
+```javascript
+// In config.js
+aidStations: [
+  { name: 'Aid Station 1', mile: 4, services: 'Water, Skratch · Cutoff: 1h 10m' },
+  { name: 'Cutoff Point', mile: 11, services: 'Cutoff: 3h 10m' },
+],
+
+cutoffs: [
+  { mile: 4, time: '1h 10m' },
+  { mile: 11, time: '3h 10m' },
+],
+
+colors: {
+  accent: '#C1440E',  // Used for cutoff markers in simulator
+  // ... other colors
+},
+```
+
+**IMPORTANT:** The `cutoffs` property must be listed in `build.js`'s `buildConfigData()` allowlist to be inlined into the browser CONFIG object. It is already included — just add the array to your config.
+
+The shared `sim-renderers.js` automatically renders cutoff markers when `CONFIG.cutoffs` is defined:
+- **Course map canvas**: Flag markers with pill labels above each cutoff point
+- **Profile canvas**: Dashed vertical lines with "Cutoff [time]" pill labels
+
+Also mention cutoffs in the `courseDescriptionHtml` for the map view.
+
 ### Adding Turn Markers with Street View
 Turn markers show key navigation points with embedded Google Street View images.
 
