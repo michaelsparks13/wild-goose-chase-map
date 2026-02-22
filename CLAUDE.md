@@ -235,6 +235,15 @@ Do NOT add click interaction on the course line. The course info is already disp
 "[Park Name]" overpass-turbo
 ```
 
+### Toggle Button Ordering
+Map toggle buttons should follow this standard order (left to right):
+1. **Aid Stations** — hidden by default
+2. **Park Trails** — hidden by default
+3. **Photos** — hidden by default (if applicable)
+4. **3D** — terrain toggle
+
+Photos should always appear **after** Aid Stations and Park Trails, not before them.
+
 ### Layer Ordering
 Add layers in correct z-order. Use `beforeId` parameter to insert below existing layers:
 ```javascript
