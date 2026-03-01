@@ -234,13 +234,15 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 5px 10px;
-  font-family: monospace;
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-family: inherit;
+  font-size: 0.65rem;
+  font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s;
   line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 .embed-btn:hover {
   border-color: var(--primary);

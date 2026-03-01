@@ -97,7 +97,8 @@ const server = http.createServer(function(req, res) {
   }
 
   // Static file serving from dist/
-  let filePath = path.join(DIST, req.url === '/' ? 'index.html' : req.url);
+  var urlPath = req.url.split('?')[0];
+  let filePath = path.join(DIST, urlPath === '/' ? 'index.html' : urlPath);
 
   // Directory → index.html
   if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
