@@ -44,3 +44,8 @@ window.addEventListener('resize', function() {
   drawElevationProfile();
   if (currentView === 'sim') renderSim();
 });
+
+// Embed: switch to default view if specified via URL param
+if (window._embedDefaultView === 'sim') {
+  switchView('sim');
+}

@@ -46,6 +46,12 @@ function loadSharedCSS() {
   return cssFiles.map(f => readFile(path.join(SRC, 'shared', f))).join('\n');
 }
 
+// --- Load embed CSS (shared + embed overrides) ---
+function loadEmbedCSS() {
+  const cssFiles = ['base.css', 'layout.css', 'simulator.css', 'responsive.css', 'maplibre-overrides.css', 'embed.css'];
+  return cssFiles.map(f => readFile(path.join(SRC, 'shared', f))).join('\n');
+}
+
 // --- Load shared JS ---
 function loadSharedJS() {
   const jsFiles = [
@@ -62,10 +68,28 @@ function loadSharedJS() {
   return jsFiles.map(f => readFile(path.join(SRC, 'shared', f))).join('\n\n');
 }
 
+// --- Load embed JS (shared + embed-params before init) ---
+function loadEmbedJS() {
+  const jsFiles = [
+    'coord-helpers.js',
+    'map-init.js',
+    'map-layers.js',
+    'map-toggles.js',
+    'elevation-profile.js',
+    'view-switch.js',
+    'sim-engine.js',
+    'sim-renderers.js',
+    'embed-params.js',
+    'init.js',
+  ];
+  return jsFiles.map(f => readFile(path.join(SRC, 'shared', f))).join('\n\n');
+}
+
 // --- Load templates ---
 function loadTemplates() {
   return {
     shell: readFile(path.join(SRC, 'templates', 'shell.html')),
+    embedShell: readFile(path.join(SRC, 'templates', 'embed-shell.html')),
     mapView: readFile(path.join(SRC, 'templates', 'map-view.html')),
     simView: readFile(path.join(SRC, 'templates', 'sim-view.html')),
   };
@@ -218,6 +242,88 @@ function buildMap(slug, templates) {
   console.log(`  Built: dist/maps/${slug}/index.html (${(html.length / 1024).toFixed(0)} KB)`);
 }
 
+// --- Build one embed ---
+function buildEmbed(slug, templates) {
+  const mapDir = path.join(SRC, 'maps', slug);
+  const configPath = path.resolve(path.join(mapDir, 'config.js'));
+  delete require.cache[configPath];
+  const config = require(configPath);
+
+  // Allow maps to opt out of embed generation
+  if (config.noEmbed) return;
+
+  const cssVars = buildCssVars(config);
+  const sharedCSS = loadEmbedCSS();
+  let overrideCSS = config.cssOverrides || '';
+  if (config.overrideCss) {
+    overrideCSS += '\n' + readFile(path.join(mapDir, config.overrideCss));
+  }
+  const fullCSS = cssVars + '\n' + sharedCSS + (overrideCSS ? '\n' + overrideCSS : '');
+
+  const configData = config.configDataJs || buildConfigData(config);
+  // For skipSharedJs maps, inject embed-params.js alongside the override JS
+  const embedParamsJS = readFile(path.join(SRC, 'shared', 'embed-params.js'));
+  let sharedJS, fullJS;
+  if (config.skipSharedJs) {
+    const overrideJS = config.overrideJs
+      ? readFile(path.join(mapDir, config.overrideJs))
+      : '';
+    fullJS = configData + '\n\n' + embedParamsJS + '\n\n' + overrideJS;
+  } else {
+    sharedJS = loadEmbedJS();
+    const overrideJS = config.overrideJs
+      ? readFile(path.join(mapDir, config.overrideJs))
+      : '';
+    fullJS = configData + '\n\n' + sharedJS + (overrideJS ? '\n\n' + overrideJS : '');
+  }
+
+  // Build map view HTML (same logic as buildMap)
+  let mapView;
+  if (config.mapViewHtml) {
+    mapView = config.mapViewHtml;
+  } else {
+    mapView = templates.mapView
+      .replace('{{INFO_BADGE_LABEL}}', config.infoBadgeLabel || '')
+      .replace('{{INFO_BADGE_VALUE}}', config.infoBadgeValue || '')
+      .replace('{{TOGGLE_BUTTONS}}', buildToggleButtons(config))
+      .replace('{{STATS_HTML}}', config.statsHtml || '')
+      .replace('{{PROFILE_STATS}}', config.profileStats || '')
+      .replace('{{COURSE_DESCRIPTION_HTML}}', config.courseDescriptionHtml || '');
+  }
+
+  let simView;
+  if (config.simViewHtml) {
+    simView = config.simViewHtml;
+  } else {
+    simView = templates.simView
+      .replace('{{DISTANCE_PICKER}}', buildDistancePicker(config))
+      .replace('{{DEFAULT_GOAL_HOURS}}', String(config.defaultGoalHours))
+      .replace('{{DEFAULT_GOAL_MINS}}', String(config.defaultGoalMins))
+      .replace('{{DEFAULT_PACE}}', config.defaultPace || '')
+      .replace('{{DEFAULT_CLOCK}}', config.defaultClock || '')
+      .replace('{{RACE_START_LABEL}}', config.raceStartLabel || '')
+      .replace('{{DEFAULT_FINISH_TIME}}', config.defaultFinishTime || '')
+      .replace('{{DEFAULT_RUNNER_META}}', config.defaultRunnerMeta || '');
+  }
+
+  // Build final HTML from embed template
+  let html = templates.embedShell
+    .replace('{{THEME_COLOR}}', config.themeColor)
+    .replace('{{TITLE}}', config.title)
+    .replace('{{GOOGLE_FONTS}}', config.googleFontsUrl || '')
+    .replace('{{CSS}}', fullCSS)
+    .replace('{{RACE_NAME}}', config.raceName)
+    .replace('{{MAP_VIEW}}', mapView)
+    .replace('{{SIM_VIEW}}', simView)
+    .replace('{{JS}}', fullJS);
+
+  // Write output
+  const outDir = path.join(DIST, 'embed', slug);
+  mkdirp(outDir);
+  fs.writeFileSync(path.join(outDir, 'index.html'), html);
+  console.log(`  Built: dist/embed/${slug}/index.html (${(html.length / 1024).toFixed(0)} KB)`);
+}
+
 // --- Main ---
 function build() {
   const start = Date.now();
@@ -240,14 +346,15 @@ function build() {
   // Load templates once
   const templates = loadTemplates();
 
-  // Build each map
+  // Build each map + embed
   const maps = getMapDirs();
   for (const slug of maps) {
     buildMap(slug, templates);
+    buildEmbed(slug, templates);
   }
 
   const elapsed = Date.now() - start;
-  console.log(`Done! Built ${maps.length} map(s) in ${elapsed}ms`);
+  console.log(`Done! Built ${maps.length} map(s) + embeds in ${elapsed}ms`);
 }
 
 build();

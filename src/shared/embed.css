@@ -1,0 +1,120 @@
+/* embed.css - Overrides for iframe embed context */
+
+body.embed-mode {
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* Compact header replaces the full site header */
+.embed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  height: 40px;
+  flex-shrink: 0;
+}
+.embed-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.embed-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-alt);
+  padding: 3px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* Map view fills remaining viewport height and scrolls content below */
+body.embed-mode #mapView.active {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+body.embed-mode .map-wrap {
+  flex-shrink: 0;
+}
+body.embed-mode #map {
+  height: 60vh;
+  min-height: 250px;
+}
+
+/* Simulator fills remaining viewport */
+body.embed-mode .sim-container {
+  height: calc(100vh - 40px);
+}
+
+/* Compact height mode — map fills everything, no scrollable content */
+body.embed-mode.compact #mapView.active {
+  overflow: hidden;
+}
+body.embed-mode.compact #map {
+  height: calc(100vh - 40px);
+  min-height: unset;
+}
+body.embed-mode.compact .stats-section,
+body.embed-mode.compact .profile-section,
+body.embed-mode.compact .course-info {
+  display: none;
+}
+
+/* Powered-by badge */
+.powered-by {
+  position: fixed;
+  bottom: 4px;
+  right: 8px;
+  font-size: 0.55rem;
+  font-family: var(--font-family);
+  color: var(--text-muted);
+  text-decoration: none;
+  opacity: 0.7;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 2px 6px;
+  border-radius: 3px;
+  backdrop-filter: blur(4px);
+}
+.powered-by:hover {
+  opacity: 1;
+}
+
+/* Feature hiding via data attributes on body */
+body[data-embed-hide-elevation] .profile-section { display: none !important; }
+body[data-embed-hide-stats] .stats-section { display: none !important; }
+body[data-embed-hide-description] .course-info { display: none !important; }
+body[data-embed-hide-simulator] .embed-tabs { display: none !important; }
+body[data-embed-hide-simulator] #simView { display: none !important; }
+
+/* When simulator is hidden, map gets full height (no tabs taking space) */
+body[data-embed-hide-simulator] #map {
+  height: calc(100vh - 40px);
+}
+body[data-embed-hide-simulator] #mapView.active {
+  height: calc(100vh - 40px);
+}
+
+/* Override desktop page-shell constraints — embed fills 100% */
+@media (min-width: 1024px) {
+  body.embed-mode .page-shell {
+    max-width: none;
+    box-shadow: none;
+  }
+  body.embed-mode .sim-container {
+    height: calc(100vh - 40px);
+  }
+}
+@media (min-width: 1440px) {
+  body.embed-mode .page-shell {
+    max-width: none;
+  }
+}
