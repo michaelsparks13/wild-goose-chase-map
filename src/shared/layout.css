@@ -299,7 +299,6 @@
   margin-bottom: 16px;
 }
 .embed-code-wrap {
-  position: relative;
   margin-bottom: 16px;
 }
 .embed-code {
@@ -307,7 +306,6 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 14px;
-  padding-right: 70px;
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
   font-size: 0.7rem;
   color: var(--text-secondary);
@@ -319,16 +317,16 @@
   overflow-y: auto;
 }
 .embed-copy-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+  display: block;
+  width: 100%;
+  margin-top: 10px;
   background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 6px;
-  padding: 6px 14px;
+  padding: 8px 14px;
   font-family: inherit;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
