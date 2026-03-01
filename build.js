@@ -63,6 +63,7 @@ function loadSharedJS() {
     'view-switch.js',
     'sim-engine.js',
     'sim-renderers.js',
+    'embed-modal.js',
     'init.js',
   ];
   return jsFiles.map(f => readFile(path.join(SRC, 'shared', f))).join('\n\n');
@@ -187,8 +188,12 @@ function buildMap(slug, templates) {
   const overrideJS = config.overrideJs
     ? readFile(path.join(mapDir, config.overrideJs))
     : '';
+  // For skipSharedJs maps, inject embed-modal.js so the embed button works
+  const embedModalJS = config.skipSharedJs
+    ? readFile(path.join(SRC, 'shared', 'embed-modal.js'))
+    : '';
 
-  const fullJS = configData + '\n\n' + sharedJS + (overrideJS ? '\n\n' + overrideJS : '');
+  const fullJS = configData + '\n\n' + sharedJS + (embedModalJS ? '\n\n' + embedModalJS : '') + (overrideJS ? '\n\n' + overrideJS : '');
 
   // Build map view HTML (config can override entirely via mapViewHtml)
   let mapView;

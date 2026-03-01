@@ -25,11 +25,39 @@
     <h1>{{RACE_NAME}}</h1>
     <div class="subtitle">{{SUBTITLE}}</div>
   </div>
-  <div class="view-tabs">
-    <button class="view-tab active" data-view="map" onclick="switchView('map')">Map</button>
-    <button class="view-tab" data-view="sim" onclick="switchView('sim')">Simulator</button>
+  <div class="header-right">
+    <button class="embed-btn" onclick="openEmbedModal()" title="Embed this map">&#60;/&#62;</button>
+    <div class="view-tabs">
+      <button class="view-tab active" data-view="map" onclick="switchView('map')">Map</button>
+      <button class="view-tab" data-view="sim" onclick="switchView('sim')">Simulator</button>
+    </div>
   </div>
 </header>
+
+<div class="embed-modal-backdrop" id="embedBackdrop" onclick="closeEmbedModal()">
+  <div class="embed-modal" onclick="event.stopPropagation()">
+    <div class="embed-modal-header">
+      <h3>Embed this map</h3>
+      <button class="embed-modal-close" onclick="closeEmbedModal()">&times;</button>
+    </div>
+    <p class="embed-modal-desc">Copy this code to embed the interactive map on your website.</p>
+    <div class="embed-code-wrap">
+      <pre class="embed-code" id="embedCode"></pre>
+      <button class="embed-copy-btn" id="embedCopyBtn" onclick="copyEmbedCode()">Copy</button>
+    </div>
+    <div class="embed-modal-options">
+      <label class="embed-option">
+        <input type="checkbox" id="embedCompact" onchange="updateEmbedCode()"> Compact (map only)
+      </label>
+      <label class="embed-option">
+        <input type="checkbox" id="embedNoSim" onchange="updateEmbedCode()"> Hide simulator
+      </label>
+      <label class="embed-option">
+        <input type="checkbox" id="embedDark" onchange="updateEmbedCode()"> Dark theme
+      </label>
+    </div>
+  </div>
+</div>
 
 {{MAP_VIEW}}
 
