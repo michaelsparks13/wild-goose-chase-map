@@ -28,7 +28,7 @@
 - `npx playwright test` — Run e2e tests (auto-builds via playwright.config.js)
 
 ### How It Works
-`build.js` reads shared CSS/JS modules from `src/shared/`, HTML templates from `src/templates/`, and per-map config from `src/maps/{slug}/config.js`. It concatenates everything, replaces `{{PLACEHOLDERS}}`, and outputs standalone `index.html` files to `dist/maps/{slug}/`. All course/trail data is inlined from the config's data files — no runtime `fetch()`.
+`build.js` reads shared CSS/JS modules from `src/shared/`, HTML templates from `src/templates/`, and per-map config from `src/maps/{slug}/config.js`. It concatenates everything, replaces `{{PLACEHOLDERS}}`, and outputs standalone `index.html` files to `dist/maps/{slug}/`. It also generates a stripped-down embeddable version at `dist/embed/{slug}/index.html` using `embed-shell.html` (no header/footer, compact layout, URL parameter customization). All course/trail data is inlined from the config's data files — no runtime `fetch()`.
 
 ### Adding a New Map
 1. Create `src/maps/{slug}/config.js` (CommonJS module exporting config object)
@@ -464,6 +464,44 @@ const mapsUrl = 'https://www.google.com/maps/@?api=1&map_action=pano&pano=' +
 
 Turn markers are toggled via a button (like trails). Markers are hidden by default and stored in `turnMarkers` array for visibility control.
 
+### Embeddable Widget
+Every map page includes an **"Embed"** button in the header (next to the Map/Simulator view tabs). Clicking it opens a modal with a copyable `<iframe>` snippet that race directors can paste into their websites (WordPress, Squarespace, Wix, raw HTML).
+
+**How it works:**
+- `build.js` generates a second HTML file per map at `dist/embed/{slug}/index.html` using `embed-shell.html` — a stripped-down template with no `.page-shell`, no sticky header, no footer
+- The embed version includes `embed-params.js` which parses URL parameters and `embed.css` for compact layout
+- The main map pages include `embed-modal.js` which powers the Embed button and modal UI
+- `shell.html` contains the embed button and modal HTML in the `.header-right` section
+
+**Embed URL parameters:**
+| Param | Example | Effect |
+|-------|---------|--------|
+| `theme` | `dark` | Dark color scheme |
+| `accent` | `FF6B35` | Override brand color |
+| `zoom` | `14` | Override default zoom |
+| `height` | `compact` | Map only, no stats/profile |
+| `hide` | `simulator,stats` | Hide specific sections |
+| `show` | `map,elevation` | Show only listed sections |
+| `view` | `sim` | Open to simulator tab |
+
+**postMessage API** (for parent page control):
+- `fss:switchView` — switch between map and simulator
+- `fss:flyTo` — fly to coordinates
+- `fss:toggleLayer` — toggle map layers
+- Embed sends `fss:ready` to parent when loaded
+
+**Embed code example:**
+```html
+<iframe
+  src="https://falsesummitstudio.com/embed/escarpment/"
+  width="100%" height="600"
+  style="border: none; border-radius: 8px;"
+  loading="lazy" allow="geolocation"
+></iframe>
+```
+
+**Important:** The embed button and modal are automatically included for all maps via `shell.html`. For `skipSharedJs` maps (e.g., wild-goose), `build.js` injects `embed-modal.js` separately into the override JS block.
+
 ## Race Map Business Context
 This project serves as a template for building custom race maps. Key selling points:
 - Interactive loop selection with elevation profiles
@@ -730,11 +768,15 @@ Use `['Noto Sans Medium']` for all text layers. Glyphs are hosted by Protomaps.
 ├── src/
 │   ├── shared/                   # Shared CSS + JS modules
 │   │   ├── base.css, layout.css, simulator.css, responsive.css, maplibre-overrides.css
+│   │   ├── embed.css             # Embed-specific CSS (compact layout, URL param overrides)
 │   │   ├── coord-helpers.js, map-init.js, map-layers.js, map-toggles.js
 │   │   ├── elevation-profile.js, view-switch.js, sim-engine.js, sim-renderers.js
+│   │   ├── embed-modal.js        # Embed code modal (copy iframe snippet)
+│   │   ├── embed-params.js       # URL param parsing + postMessage API for embeds
 │   │   └── init.js               # Entry point (calls initMap, binds events)
 │   ├── templates/
-│   │   ├── shell.html            # Outer HTML with {{PLACEHOLDERS}}
+│   │   ├── shell.html            # Outer HTML with {{PLACEHOLDERS}} + embed modal
+│   │   ├── embed-shell.html      # Stripped-down embed template (no header/footer)
 │   │   ├── map-view.html         # Map view section template
 │   │   └── sim-view.html         # Simulator view section template
 │   └── maps/
@@ -746,7 +788,8 @@ Use `['Noto Sans Medium']` for all text layers. Glyphs are hosted by Protomaps.
 │   ├── manitous-revenge/data/
 │   └── shawangunk-ridge/data/
 ├── dist/                         # Build output (gitignored)
-│   └── maps/{slug}/index.html
+│   ├── maps/{slug}/index.html    # Full map pages
+│   └── embed/{slug}/index.html   # Embeddable widget versions
 └── CLAUDE.md
 ```
 
