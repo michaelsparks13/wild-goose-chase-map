@@ -8,7 +8,8 @@ function initMap() {
     center: CONFIG.mapCenter,
     zoom: CONFIG.mapZoom,
     pitch: 0,
-    attributionControl: false
+    attributionControl: false,
+    preserveDrawingBuffer: true  // Required for pocket map canvas snapshot (map.getCanvas().toDataURL)
   });
 
   map.addControl(new maplibregl.AttributionControl({ compact: true }));

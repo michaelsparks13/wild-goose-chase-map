@@ -26,6 +26,7 @@
     <div class="subtitle">{{SUBTITLE}}</div>
   </div>
   <div class="header-right">
+    <button class="embed-btn pocket-btn" onclick="openPocketModal()" title="Save offline map to phone">Pocket Map</button>
     <button class="embed-btn" onclick="openEmbedModal()" title="Embed this map">Embed</button>
     <div class="view-tabs">
       <button class="view-tab active" data-view="map" onclick="switchView('map')">Map</button>
@@ -56,6 +57,33 @@
         <input type="checkbox" id="embedDark" onchange="updateEmbedCode()"> Dark theme
       </label>
     </div>
+  </div>
+</div>
+
+<div class="pocket-modal-backdrop" id="pocketBackdrop" onclick="closePocketModal()">
+  <div class="pocket-modal" onclick="event.stopPropagation()">
+    <div class="pocket-modal-header">
+      <h3>Save Pocket Map</h3>
+      <button class="pocket-modal-close" onclick="closePocketModal()">&times;</button>
+    </div>
+    <p class="pocket-modal-desc">Download a lightweight offline file you can open on your phone during the race — no cell service needed.</p>
+    <div class="pocket-options">
+      <label class="pocket-option"><input type="checkbox" id="pocketIncludeSim" onchange="updatePocketSizeEstimate()" checked> Race simulator</label>
+      <label class="pocket-option"><input type="checkbox" id="pocketIncludeElevation" onchange="updatePocketSizeEstimate()" checked> Elevation profile</label>
+      <label class="pocket-option"><input type="checkbox" id="pocketIncludeGPS" onchange="updatePocketSizeEstimate()" checked> GPS tracking dot</label>
+    </div>
+    <div class="pocket-info">
+      <div class="pocket-info-row">
+        <span class="pocket-info-label">Estimated size</span>
+        <span class="pocket-info-value" id="pocketSizeEstimate">~500 KB</span>
+      </div>
+      <div class="pocket-info-row">
+        <span class="pocket-info-label">Includes</span>
+        <span class="pocket-info-value">Map snapshot, aid stations, trail cue sheet</span>
+      </div>
+    </div>
+    <button class="pocket-download-btn" id="pocketDownloadBtn" onclick="generatePocketMap()">Download Pocket Map</button>
+    <div class="pocket-status" id="pocketStatus"></div>
   </div>
 </div>
 

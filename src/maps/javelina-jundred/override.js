@@ -109,7 +109,8 @@ function initMap() {
     pitch: 20,
     bearing: 0,
     antialias: true,
-    attributionControl: false
+    attributionControl: false,
+    preserveDrawingBuffer: true  // Required for pocket map canvas snapshot
   });
 
   map.addControl(new maplibregl.AttributionControl({ compact: true }));
