@@ -118,7 +118,11 @@ const server = http.createServer(function(req, res) {
 
   // Inject live reload script into HTML responses
   if (ext === '.html') {
-    content = content.toString().replace('</body>', LIVE_RELOAD_SCRIPT + '</body>');
+    var str = content.toString();
+    var lastBody = str.lastIndexOf('</body>');
+    if (lastBody !== -1) {
+      content = str.slice(0, lastBody) + LIVE_RELOAD_SCRIPT + str.slice(lastBody);
+    }
   }
 
   res.writeHead(200, { 'Content-Type': contentType });

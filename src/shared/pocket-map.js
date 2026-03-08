@@ -694,7 +694,7 @@ function buildPocketHTML(options) {
   (gpsJs ? gpsJs + '\n\n' : '') +
   initScript + '\n' +
   '</' + 'script>\n' +
-  '</body>\n' +
+  '</' + 'body>\n' +
   '</html>';
 }
 

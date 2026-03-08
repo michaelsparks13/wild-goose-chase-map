@@ -5,10 +5,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 100;
+}
+.header-left {
+  min-width: 0;
+  flex-shrink: 1;
 }
 .header-left h1 {
   font-size: 1.1rem;
@@ -225,17 +230,17 @@
 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-/* Embed button */
+/* Embed / Pocket Map buttons */
 .embed-btn {
   background: var(--bg-alt);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 5px 10px;
+  padding: 4px 8px;
   font-family: inherit;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
@@ -243,6 +248,8 @@
   line-height: 1;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .embed-btn:hover {
   border-color: var(--primary);

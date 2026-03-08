@@ -3,6 +3,17 @@
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .stat-card .value { font-size: 1.2rem; }
   #map { height: 45vh; }
+  .header { flex-wrap: wrap; padding: 12px 14px; gap: 6px 10px; }
+  .header-left { flex: 1; min-width: 0; }
+  .header-right { flex-shrink: 0; }
+  .embed-btn { padding: 3px 6px; font-size: 0.55rem; }
+  .toggle-btns { flex-wrap: wrap; max-width: 50%; justify-content: flex-end; }
+  .toggle-btn { padding: 5px 10px; font-size: 0.6rem; }
+  .info-badge { padding: 6px 10px; }
+  .info-badge .label { font-size: 0.5rem; margin-bottom: 1px; }
+  .info-badge .value { font-size: 0.75rem; }
+  .map-overlay { bottom: 8px; top: auto; left: 8px; }
+  .toggle-btns { top: 8px; right: 8px; }
 }
 @media (min-width: 768px) {
   #courseMapCanvas { height: 300px; }
