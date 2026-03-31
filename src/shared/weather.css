@@ -1,0 +1,81 @@
+/* Weather Intelligence Cards */
+.weather-section {
+  background: var(--bg-card);
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.weather-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.weather-card {
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--bg-alt);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  position: relative;
+}
+.weather-card .risk-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-bottom: 4px;
+}
+.weather-card .value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.weather-card .label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+.weather-card .detail {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Exposure Legend (below elevation profile) */
+.exposure-legend {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 0 0;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.exposure-legend .swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.exposure-legend .swatch-exposed { background: rgba(249,168,37,0.5); }
+.exposure-legend .swatch-partial { background: rgba(33,150,243,0.3); }
+.exposure-legend .swatch-shaded { background: rgba(76,175,80,0.35); }
+
+/* Weather Narrative */
+.weather-narrative {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* Mobile: 2-column grid */
+@media (max-width: 600px) {
+  .weather-grid { grid-template-columns: repeat(2, 1fr); }
+  .weather-card .value { font-size: 1rem; }
+}

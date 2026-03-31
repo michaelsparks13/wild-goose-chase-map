@@ -42,13 +42,13 @@ function getMapDirs() {
 
 // --- Load shared CSS ---
 function loadSharedCSS() {
-  const cssFiles = ['base.css', 'layout.css', 'simulator.css', 'responsive.css', 'maplibre-overrides.css'];
+  const cssFiles = ['base.css', 'layout.css', 'simulator.css', 'responsive.css', 'weather.css', 'maplibre-overrides.css'];
   return cssFiles.map(f => readFile(path.join(SRC, 'shared', f))).join('\n');
 }
 
 // --- Load embed CSS (shared + embed overrides) ---
 function loadEmbedCSS() {
-  const cssFiles = ['base.css', 'layout.css', 'simulator.css', 'responsive.css', 'maplibre-overrides.css', 'embed.css'];
+  const cssFiles = ['base.css', 'layout.css', 'simulator.css', 'responsive.css', 'weather.css', 'maplibre-overrides.css', 'embed.css'];
   return cssFiles.map(f => readFile(path.join(SRC, 'shared', f))).join('\n');
 }
 
@@ -60,6 +60,7 @@ function loadSharedJS() {
     'map-layers.js',
     'map-toggles.js',
     'elevation-profile.js',
+    'weather-ui.js',
     'view-switch.js',
     'sim-engine.js',
     'sim-renderers.js',
@@ -78,6 +79,7 @@ function loadEmbedJS() {
     'map-layers.js',
     'map-toggles.js',
     'elevation-profile.js',
+    'weather-ui.js',
     'view-switch.js',
     'sim-engine.js',
     'sim-renderers.js',
@@ -154,13 +156,18 @@ function buildConfigData(config) {
     loopMiles: config.loopMiles || null,
     loopGain: config.loopGain || null,
     colors: config.colors,
+    weather: config.weather || null,
   };
 
   // Inline trails data separately (can be large)
   const trailsJson = JSON.stringify(config.trailsData);
   const configJson = JSON.stringify(browserConfig);
 
-  return `var CONFIG = ${configJson};\nCONFIG.trailsData = ${trailsJson};`;
+  let result = `var CONFIG = ${configJson};\nCONFIG.trailsData = ${trailsJson};`;
+  if (config.weather) {
+    result += `\nCONFIG.weather = ${JSON.stringify(config.weather)};`;
+  }
+  return result;
 }
 
 // --- Build one map ---
@@ -189,15 +196,18 @@ function buildMap(slug, templates) {
   const overrideJS = config.overrideJs
     ? readFile(path.join(mapDir, config.overrideJs))
     : '';
-  // For skipSharedJs maps, inject embed-modal.js and pocket-map.js so header buttons work
+  // For skipSharedJs maps, inject shared modules that header buttons and weather need
   const embedModalJS = config.skipSharedJs
     ? readFile(path.join(SRC, 'shared', 'embed-modal.js'))
     : '';
   const pocketMapJS = config.skipSharedJs
     ? readFile(path.join(SRC, 'shared', 'pocket-map.js'))
     : '';
+  const weatherUiJS = config.skipSharedJs
+    ? readFile(path.join(SRC, 'shared', 'weather-ui.js'))
+    : '';
 
-  const fullJS = configData + '\n\n' + sharedJS + (embedModalJS ? '\n\n' + embedModalJS : '') + (pocketMapJS ? '\n\n' + pocketMapJS : '') + (overrideJS ? '\n\n' + overrideJS : '');
+  const fullJS = configData + '\n\n' + sharedJS + (weatherUiJS ? '\n\n' + weatherUiJS : '') + (embedModalJS ? '\n\n' + embedModalJS : '') + (pocketMapJS ? '\n\n' + pocketMapJS : '') + (overrideJS ? '\n\n' + overrideJS : '');
 
   // Build map view HTML (config can override entirely via mapViewHtml)
   let mapView;
@@ -209,6 +219,7 @@ function buildMap(slug, templates) {
       .replace('{{INFO_BADGE_VALUE}}', config.infoBadgeValue || '')
       .replace('{{TOGGLE_BUTTONS}}', buildToggleButtons(config))
       .replace('{{STATS_HTML}}', config.statsHtml || '')
+      .replace('{{WEATHER_HTML}}', config.weatherHtml || '')
       .replace('{{PROFILE_STATS}}', config.profileStats || '')
       .replace('{{COURSE_DESCRIPTION_HTML}}', config.courseDescriptionHtml || '');
   }
@@ -270,14 +281,15 @@ function buildEmbed(slug, templates) {
   const fullCSS = cssVars + '\n' + sharedCSS + (overrideCSS ? '\n' + overrideCSS : '');
 
   const configData = config.configDataJs || buildConfigData(config);
-  // For skipSharedJs maps, inject embed-params.js alongside the override JS
+  // For skipSharedJs maps, inject embed-params.js and weather-ui.js alongside the override JS
   const embedParamsJS = readFile(path.join(SRC, 'shared', 'embed-params.js'));
+  const embedWeatherUiJS = readFile(path.join(SRC, 'shared', 'weather-ui.js'));
   let sharedJS, fullJS;
   if (config.skipSharedJs) {
     const overrideJS = config.overrideJs
       ? readFile(path.join(mapDir, config.overrideJs))
       : '';
-    fullJS = configData + '\n\n' + embedParamsJS + '\n\n' + overrideJS;
+    fullJS = configData + '\n\n' + embedWeatherUiJS + '\n\n' + embedParamsJS + '\n\n' + overrideJS;
   } else {
     sharedJS = loadEmbedJS();
     const overrideJS = config.overrideJs
@@ -296,6 +308,7 @@ function buildEmbed(slug, templates) {
       .replace('{{INFO_BADGE_VALUE}}', config.infoBadgeValue || '')
       .replace('{{TOGGLE_BUTTONS}}', buildToggleButtons(config))
       .replace('{{STATS_HTML}}', config.statsHtml || '')
+      .replace('{{WEATHER_HTML}}', config.weatherHtml || '')
       .replace('{{PROFILE_STATS}}', config.profileStats || '')
       .replace('{{COURSE_DESCRIPTION_HTML}}', config.courseDescriptionHtml || '');
   }

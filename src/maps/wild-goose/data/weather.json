@@ -1,0 +1,143 @@
+{
+  "fetchedAt": "2026-03-31T19:25:31.176Z",
+  "raceDate": "2026-09-01",
+  "dateWindow": "Aug 18 – Sep 15",
+  "dataYears": 15,
+  "nearestStation": {
+    "name": "NASA POWER grid point",
+    "distanceMi": 0
+  },
+  "historical": {
+    "temperature": {
+      "avgHighF": 81,
+      "avgLowF": 60,
+      "recordHighF": 96,
+      "p90HighF": 89
+    },
+    "humidity": {
+      "avgPct": 74,
+      "p90Pct": 88
+    },
+    "precipitation": {
+      "probPct": 16,
+      "avgInches": 0.16,
+      "p90Inches": 0.9,
+      "source": "estimated"
+    },
+    "wind": {
+      "avgMph": 0.7,
+      "p90Mph": 0.8
+    },
+    "solarRadiation": {
+      "avgKwhM2Day": 4.7
+    }
+  },
+  "wbgt": {
+    "estimated": 78,
+    "p90": 88.5,
+    "risk": "high",
+    "riskColor": "#FF9800",
+    "riskLabel": "High"
+  },
+  "storms": {
+    "thunderstormDaysPerMonth": 3.8,
+    "lightningEventsPerYear": 1.5,
+    "flashFloodEventsPerYear": 0.2,
+    "source": "estimated"
+  },
+  "aqi": {
+    "avgAQI": 38,
+    "p90AQI": 72,
+    "smokeRiskPct": 10,
+    "source": "estimated"
+  },
+  "exposure": [
+    {
+      "startMile": 0,
+      "endMile": 1.2,
+      "type": "partial",
+      "label": "SQUATCH HQ to trailhead"
+    },
+    {
+      "startMile": 1.2,
+      "endMile": 3.8,
+      "type": "shaded",
+      "label": "Pink Loop forest canopy"
+    },
+    {
+      "startMile": 3.8,
+      "endMile": 5,
+      "type": "exposed",
+      "label": "Wawayanda Ridge powerline cut"
+    },
+    {
+      "startMile": 5,
+      "endMile": 7.75,
+      "type": "shaded",
+      "label": "Pink Loop return woods"
+    },
+    {
+      "startMile": 7.75,
+      "endMile": 10.5,
+      "type": "shaded",
+      "label": "Blue Loop lakeside trail"
+    },
+    {
+      "startMile": 10.5,
+      "endMile": 11.8,
+      "type": "exposed",
+      "label": "Blue Loop fire road"
+    },
+    {
+      "startMile": 11.8,
+      "endMile": 13.75,
+      "type": "shaded",
+      "label": "Blue Loop return to HQ"
+    },
+    {
+      "startMile": 13.75,
+      "endMile": 15.5,
+      "type": "shaded",
+      "label": "Checkered Loop woods"
+    },
+    {
+      "startMile": 15.5,
+      "endMile": 16.8,
+      "type": "partial",
+      "label": "Checkered Loop meadow"
+    },
+    {
+      "startMile": 16.8,
+      "endMile": 18.5,
+      "type": "shaded",
+      "label": "Checkered Loop return"
+    }
+  ],
+  "riskSummary": {
+    "heat": {
+      "level": "high",
+      "label": "High",
+      "color": "#FF9800",
+      "detail": "WBGT 78°F"
+    },
+    "storm": {
+      "level": "low",
+      "label": "Low",
+      "color": "#4CAF50",
+      "detail": "3.8 days/mo"
+    },
+    "air": {
+      "level": "low",
+      "label": "Good",
+      "color": "#4CAF50",
+      "detail": "Avg AQI 38"
+    },
+    "wind": {
+      "level": "low",
+      "label": "Light",
+      "color": "#4CAF50",
+      "detail": "0.7–0.8 mph"
+    }
+  },
+  "narrative": "Expect highs around 81°F (90th percentile: 89°F) with elevated humidity (74%) typical of late-fall NJ. WBGT heat risk is high at 78°F — the combination of warmth and humidity demands proactive hydration and cooling. Most of the course runs through dense forest canopy, but Wawayanda Ridge powerline cut and Blue Loop fire road (2.5 mi exposed) will feel significantly hotter. Thunderstorm probability is moderate with 3.8 storm days per month historically — carry a lightweight rain layer. Air quality is historically good (avg AQI 38) with 10% chance of elevated smoke. Wind is generally light (0.7 mph avg) with the forest providing shelter on most sections."
+}

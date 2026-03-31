@@ -13,6 +13,8 @@ const blueProfile = loadJSON('data/blue-profile.json');
 const checkeredGeo = loadJSON('data/checkered.geojson');
 const checkeredProfile = loadJSON('data/checkered-profile.json');
 const trailsData = loadJSON('data/trails.geojson');
+const weatherData = fs.existsSync(path.join(__dirname, 'data/weather.json'))
+  ? loadJSON('data/weather.json') : null;
 
 // Build the custom config data JS block (replaces standard CONFIG block)
 // Wild Goose uses LOOPS, RACES, HQ instead of CONFIG.courseCoords
@@ -40,6 +42,7 @@ var pinkData = ${JSON.stringify(Object.assign({}, pinkGeo, { profile: pinkProfil
 var blueData = ${JSON.stringify(Object.assign({}, blueGeo, { profile: blueProfile }))};
 var checkeredData = ${JSON.stringify(Object.assign({}, checkeredGeo, { profile: checkeredProfile }))};
 var courseTrailsData = ${JSON.stringify(trailsData)};
+var CONFIG = { weather: ${JSON.stringify(weatherData)} };
 
 LOOPS.pink.geojson = pinkData.features[0];
 LOOPS.pink.profile = pinkData.profile;
@@ -148,18 +151,33 @@ module.exports = {
     </div>
   </div>
 
+  ${weatherData ? `<section class="weather-section">
+    <div class="weather-grid">
+      <div class="weather-card"><span class="risk-dot" style="background:${weatherData.riskSummary.heat.color}"></span><div class="value">${weatherData.riskSummary.heat.label}</div><div class="label">Heat Risk</div><div class="detail">${weatherData.riskSummary.heat.detail}</div></div>
+      <div class="weather-card"><span class="risk-dot" style="background:${weatherData.riskSummary.storm.color}"></span><div class="value">${weatherData.riskSummary.storm.label}</div><div class="label">Storm Risk</div><div class="detail">${weatherData.riskSummary.storm.detail}</div></div>
+      <div class="weather-card"><span class="risk-dot" style="background:${weatherData.riskSummary.air.color}"></span><div class="value">${weatherData.riskSummary.air.label}</div><div class="label">Air Quality</div><div class="detail">${weatherData.riskSummary.air.detail}</div></div>
+      <div class="weather-card"><span class="risk-dot" style="background:${weatherData.riskSummary.wind.color}"></span><div class="value">${weatherData.riskSummary.wind.label}</div><div class="label">Wind</div><div class="detail">${weatherData.riskSummary.wind.detail}</div></div>
+    </div>
+  </section>` : ''}
+
   <section class="profile-section">
     <div class="profile-header">
       <h3 id="profileTitle">Elevation Profile</h3>
       <div class="profile-stats" id="profileStats"></div>
     </div>
     <canvas id="profileCanvas"></canvas>
+    ${weatherData ? `<div class="exposure-legend"><span><span class="swatch swatch-exposed"></span> Exposed</span><span><span class="swatch swatch-partial"></span> Partial</span><span><span class="swatch swatch-shaded"></span> Shaded</span></div>` : ''}
   </section>
 
   <section class="cards-section">
     <h3>Select Race Distance</h3>
     <div class="race-cards" id="raceCards"></div>
   </section>
+
+  ${weatherData ? `<section class="course-info">
+    <h4>Race Day Weather</h4>
+    <p class="weather-narrative">${weatherData.narrative}</p>
+  </section>` : ''}
 </div>`,
 
   simViewHtml: `<div id="simView" class="view">

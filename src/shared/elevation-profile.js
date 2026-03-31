@@ -32,6 +32,11 @@ function drawElevationProfile() {
     ctx.stroke();
   }
 
+  // Draw exposure zones behind elevation fill (if weather data exists)
+  if (typeof drawExposureZones === 'function' && CONFIG.weather) {
+    drawExposureZones(ctx, padding, chartW, chartH, CONFIG.weather.exposure, maxDist);
+  }
+
   // Draw elevation area
   var elevations = CONFIG.elevations;
   ctx.beginPath();
