@@ -120,20 +120,23 @@ test.describe('Weather Panel - mobile responsive', () => {
     expect(panelOrder).toBe('-1');
   });
 
-  test('weather panel can be collapsed on mobile', async ({ page }) => {
+  test('weather panel starts collapsed on mobile and can be toggled', async ({ page }) => {
     await page.goto('/maps/wild-goose/');
     await page.waitForSelector('#map');
 
     const header = page.locator('.weather-panel-header');
     const body = page.locator('#weatherPanelBody');
 
-    // Click to collapse
-    await header.click();
+    // Panel starts collapsed on mobile
     await expect(body).toHaveClass(/collapsed/);
 
     // Click to expand
     await header.click();
     await expect(body).not.toHaveClass(/collapsed/);
+
+    // Click to collapse again
+    await header.click();
+    await expect(body).toHaveClass(/collapsed/);
   });
 
   test('risk cards use 2 columns on small mobile', async ({ page }) => {

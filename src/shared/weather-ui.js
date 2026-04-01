@@ -388,6 +388,14 @@
   };
 
   // --- Init ---
+  // Collapse weather panel by default on mobile so the map stays prominent
+  if (window.innerWidth < 1024) {
+    var body = document.getElementById('weatherPanelBody');
+    var btn = document.getElementById('weatherToggleBtn');
+    if (body) body.classList.add('collapsed');
+    if (btn) btn.classList.add('collapsed');
+  }
+
   renderRiskCards();
   renderDailyAverages();
   renderExplainer();
