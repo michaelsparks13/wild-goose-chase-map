@@ -303,12 +303,6 @@ function drawCombined(loopSeq, title) {
     ctx.fillText(e + "'", ml - 3, y + 3);
   }
 
-  // Draw exposure zones behind elevation fill (if weather data exists)
-  if (typeof drawExposureZones === 'function' && typeof CONFIG !== 'undefined' && CONFIG.weather) {
-    var expPad = { top: mt, left: ml };
-    drawExposureZones(ctx, expPad, cw, ch, CONFIG.weather.exposure, totalD);
-  }
-
   for (var si = 0; si < segments.length; si++) {
     var seg = segments[si];
     var pts = seg.pts;

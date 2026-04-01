@@ -42,7 +42,7 @@ var pinkData = ${JSON.stringify(Object.assign({}, pinkGeo, { profile: pinkProfil
 var blueData = ${JSON.stringify(Object.assign({}, blueGeo, { profile: blueProfile }))};
 var checkeredData = ${JSON.stringify(Object.assign({}, checkeredGeo, { profile: checkeredProfile }))};
 var courseTrailsData = ${JSON.stringify(trailsData)};
-var CONFIG = { weather: ${JSON.stringify(weatherData)} };
+var CONFIG = { mapCenter: [-74.432, 41.183], weather: ${JSON.stringify(weatherData)} };
 
 LOOPS.pink.geojson = pinkData.features[0];
 LOOPS.pink.profile = pinkData.profile;
@@ -79,7 +79,7 @@ module.exports = {
   themeColor: '#ffffff',
   googleFontsUrl: '<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">',
   fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
-  subtitle: '<a href="https://www.sassquadtrailrunning.com/wildgoose" target="_blank">sassquadtrailrunning.com</a>',
+  subtitle: 'September 18\u201320, 2026 &middot; <a href="https://www.sassquadtrailrunning.com/wildgoose" target="_blank">sassquadtrailrunning.com</a>',
 
   cssVars: {
     '--green': '#5CA921',
@@ -121,12 +121,14 @@ module.exports = {
 
   // Custom HTML sections (replace standard templates)
   mapViewHtml: `<div id="mapView" class="view active">
+<div class="map-weather-layout">
+  <div class="map-main">
   <div class="map-wrap">
     <div id="map"></div>
     <div class="hq-badge"><div class="dot"></div><div class="text">SQUATCH HQ</div></div>
     <div class="map-btns">
-      <button class="trail-btn" id="turnsBtn" onclick="toggleTurns()">📍 Turns</button>
-      <button class="trail-btn" id="trailBtn" onclick="toggleTrails()">🥾 Park Trails</button>
+      <button class="trail-btn" id="turnsBtn" onclick="toggleTurns()">Turns</button>
+      <button class="trail-btn" id="trailBtn" onclick="toggleTrails()">Park Trails</button>
       <button class="trail-btn" id="terrainBtn" onclick="toggle3D()">3D</button>
     </div>
   </div>
@@ -137,28 +139,19 @@ module.exports = {
       <div class="loop-toggles">
         <div class="loop-toggle active" data-loop="pink" style="--loop-color:#E834EC" onclick="toggleLoop('pink')">
           <div class="swatch" style="background:#E834EC"></div>
-          <div class="info"><div class="name">Pink</div><div class="stats">7.75 mi · 840'</div></div>
+          <div class="info"><div class="name">Pink</div><div class="stats">7.75 mi &middot; 840'</div></div>
         </div>
         <div class="loop-toggle active" data-loop="blue" style="--loop-color:#0479FF" onclick="toggleLoop('blue')">
           <div class="swatch" style="background:#0479FF"></div>
-          <div class="info"><div class="name">Blue</div><div class="stats">6.0 mi · 600'</div></div>
+          <div class="info"><div class="name">Blue</div><div class="stats">6.0 mi &middot; 600'</div></div>
         </div>
         <div class="loop-toggle active" data-loop="checkered" style="--loop-color:#333" onclick="toggleLoop('checkered')">
           <div class="swatch checkered"></div>
-          <div class="info"><div class="name">Checkered</div><div class="stats">4.75 mi · 479'</div></div>
+          <div class="info"><div class="name">Checkered</div><div class="stats">4.75 mi &middot; 479'</div></div>
         </div>
       </div>
     </div>
   </div>
-
-  ${weatherData ? `<section class="weather-section">
-    <div class="weather-grid">
-      <div class="weather-card"><span class="risk-dot" style="background:${weatherData.riskSummary.heat.color}"></span><div class="value">${weatherData.riskSummary.heat.label}</div><div class="label">Heat Risk</div><div class="detail">${weatherData.riskSummary.heat.detail}</div></div>
-      <div class="weather-card"><span class="risk-dot" style="background:${weatherData.riskSummary.storm.color}"></span><div class="value">${weatherData.riskSummary.storm.label}</div><div class="label">Storm Risk</div><div class="detail">${weatherData.riskSummary.storm.detail}</div></div>
-      <div class="weather-card"><span class="risk-dot" style="background:${weatherData.riskSummary.air.color}"></span><div class="value">${weatherData.riskSummary.air.label}</div><div class="label">Air Quality</div><div class="detail">${weatherData.riskSummary.air.detail}</div></div>
-      <div class="weather-card"><span class="risk-dot" style="background:${weatherData.riskSummary.wind.color}"></span><div class="value">${weatherData.riskSummary.wind.label}</div><div class="label">Wind</div><div class="detail">${weatherData.riskSummary.wind.detail}</div></div>
-    </div>
-  </section>` : ''}
 
   <section class="profile-section">
     <div class="profile-header">
@@ -166,18 +159,37 @@ module.exports = {
       <div class="profile-stats" id="profileStats"></div>
     </div>
     <canvas id="profileCanvas"></canvas>
-    ${weatherData ? `<div class="exposure-legend"><span><span class="swatch swatch-exposed"></span> Exposed</span><span><span class="swatch swatch-partial"></span> Partial</span><span><span class="swatch swatch-shaded"></span> Shaded</span></div>` : ''}
   </section>
 
   <section class="cards-section">
     <h3>Select Race Distance</h3>
     <div class="race-cards" id="raceCards"></div>
   </section>
+  </div>
 
-  ${weatherData ? `<section class="course-info">
-    <h4>Race Day Weather</h4>
-    <p class="weather-narrative">${weatherData.narrative}</p>
-  </section>` : ''}
+  ${weatherData ? `<aside class="weather-panel" id="weatherPanel">
+    <div class="weather-panel-header" id="weatherPanelHeader" onclick="toggleWeatherPanel()">
+      <h3>Weather Intelligence</h3>
+      <button class="weather-toggle-btn" id="weatherToggleBtn" aria-label="Toggle weather panel">
+        <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="weather-panel-body" id="weatherPanelBody">
+      <div class="weather-risk-row" id="weatherRiskCards"></div>
+      <div id="weatherDaily"></div>
+      <div id="weatherCurrent">
+        <div class="weather-loading">Loading current conditions&hellip;</div>
+      </div>
+      <div id="weatherRadar">
+        <div class="weather-radar-section">
+          <div class="weather-radar-title">Radar</div>
+          <div class="weather-radar-loading">Loading radar&hellip;</div>
+        </div>
+      </div>
+      <div id="weatherExplainer"></div>
+    </div>
+  </aside>` : ''}
+</div>
 </div>`,
 
   simViewHtml: `<div id="simView" class="view">

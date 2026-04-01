@@ -27,8 +27,11 @@ describe("Manitou's Revenge map", () => {
   });
 
   // Course data inlining
-  it('inlines course coordinates (no fetch)', () => {
-    expect(html).not.toMatch(/fetch\s*\(/);
+  it('inlines course coordinates (no runtime course fetch)', () => {
+    // Course data must be inlined, not fetched at runtime
+    // Note: weather-ui.js uses fetch() for live weather/radar — that's expected
+    expect(html).not.toMatch(/fetch\s*\(\s*['"].*course/i);
+    expect(html).not.toMatch(/fetch\s*\(\s*['"].*geojson/i);
     expect(html).toContain('CONFIG.courseCoords');
   });
 

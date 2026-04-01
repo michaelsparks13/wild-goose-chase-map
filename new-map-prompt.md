@@ -24,4 +24,17 @@ them if available (see "Adding Aid Stations" in CLAUDE.md). Check for cutoff
 times and add them to both aid station popups and the simulator (see "Adding
 Cutoff Times" in CLAUDE.md).
 
+WEATHER: After creating the map config, run `node scripts/fetch-weather.js [race-name]`
+to generate weather intelligence data. This fetches 15-year historical averages
+from NASA POWER and Open-Meteo (no API keys needed) and creates
+src/maps/[race-name]/data/weather.json. The weather panel will automatically
+appear beside the map on desktop and above it on mobile. It shows:
+- Risk summary cards (heat stress, storm, air quality, wind)
+- 7-day historical averages for race date ±3 days
+- Live current conditions from Open-Meteo
+- Radar overlay toggle on the map (via RainViewer)
+
+Prerequisites: config.js must export mapCenter ([lng, lat]) and the race date
+must be listed in RACE_DATES in scripts/fetch-weather.js.
+
 After build completion, start the dev server (node dev.js) so I can test.

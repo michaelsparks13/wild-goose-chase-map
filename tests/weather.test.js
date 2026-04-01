@@ -7,9 +7,9 @@ const escarpmentHtml = readFileSync(resolve(__dirname, '../dist/maps/escarpment/
 
 describe('Weather Intelligence', () => {
 
-  describe('WBGT calculation', () => {
-    // Inline the WBGT function for unit testing
-    function estimateWBGT(tempF, rhPct, solarRadWm2, windMph) {
+  describe('Heat Stress Index calculation', () => {
+    // Inline the heat stress function for unit testing
+    function estimateHeatStress(tempF, rhPct, solarRadWm2, windMph) {
       var tempC = (tempF - 32) * 5 / 9;
       var windMs = windMph * 0.44704;
       var Tw = tempC * Math.atan(0.151977 * Math.sqrt(rhPct + 8.313659))
@@ -20,160 +20,210 @@ describe('Weather Intelligence', () => {
       return Math.round((wbgtC * 9 / 5 + 32) * 10) / 10;
     }
 
-    function getWBGTRisk(wbgtF) {
-      if (wbgtF < 65) return { risk: 'low', riskColor: '#4CAF50', riskLabel: 'Low' };
-      if (wbgtF < 73) return { risk: 'moderate', riskColor: '#F9A825', riskLabel: 'Moderate' };
-      if (wbgtF <= 82) return { risk: 'high', riskColor: '#FF9800', riskLabel: 'High' };
+    function getHeatStressRisk(heatStressF) {
+      if (heatStressF < 65) return { risk: 'low', riskColor: '#4CAF50', riskLabel: 'Low' };
+      if (heatStressF < 73) return { risk: 'moderate', riskColor: '#F9A825', riskLabel: 'Moderate' };
+      if (heatStressF <= 82) return { risk: 'high', riskColor: '#FF9800', riskLabel: 'High' };
       return { risk: 'extreme', riskColor: '#f44336', riskLabel: 'Extreme' };
     }
 
-    it('returns reasonable WBGT for hot humid conditions', () => {
-      const wbgt = estimateWBGT(90, 80, 500, 5);
-      expect(wbgt).toBeGreaterThan(75);
-      expect(wbgt).toBeLessThan(100);
+    it('returns reasonable value for hot humid conditions', () => {
+      const hs = estimateHeatStress(90, 80, 500, 5);
+      expect(hs).toBeGreaterThan(75);
+      expect(hs).toBeLessThan(100);
     });
 
-    it('returns lower WBGT for cool dry conditions', () => {
-      const wbgt = estimateWBGT(60, 40, 300, 10);
-      expect(wbgt).toBeLessThan(65);
+    it('returns lower value for cool dry conditions', () => {
+      const hs = estimateHeatStress(60, 40, 300, 10);
+      expect(hs).toBeLessThan(65);
     });
 
-    it('risk level is Low for WBGT under 65', () => {
-      expect(getWBGTRisk(60)).toEqual({ risk: 'low', riskColor: '#4CAF50', riskLabel: 'Low' });
+    it('risk level is Low under 65', () => {
+      expect(getHeatStressRisk(60)).toEqual({ risk: 'low', riskColor: '#4CAF50', riskLabel: 'Low' });
     });
 
-    it('risk level is Moderate for WBGT 65-73', () => {
-      expect(getWBGTRisk(70)).toEqual({ risk: 'moderate', riskColor: '#F9A825', riskLabel: 'Moderate' });
+    it('risk level is Moderate for 65-73', () => {
+      expect(getHeatStressRisk(70)).toEqual({ risk: 'moderate', riskColor: '#F9A825', riskLabel: 'Moderate' });
     });
 
-    it('risk level is High for WBGT 73-82', () => {
-      expect(getWBGTRisk(78)).toEqual({ risk: 'high', riskColor: '#FF9800', riskLabel: 'High' });
+    it('risk level is High for 73-82', () => {
+      expect(getHeatStressRisk(78)).toEqual({ risk: 'high', riskColor: '#FF9800', riskLabel: 'High' });
     });
 
-    it('risk level is Extreme for WBGT over 82', () => {
-      expect(getWBGTRisk(85)).toEqual({ risk: 'extreme', riskColor: '#f44336', riskLabel: 'Extreme' });
+    it('risk level is Extreme over 82', () => {
+      expect(getHeatStressRisk(85)).toEqual({ risk: 'extreme', riskColor: '#f44336', riskLabel: 'Extreme' });
     });
   });
 
-  describe('weather.json generation', () => {
+  describe('weather.json structure', () => {
     it('weather.json exists for wild-goose', () => {
       const weatherPath = resolve(__dirname, '../src/maps/wild-goose/data/weather.json');
       expect(existsSync(weatherPath)).toBe(true);
     });
 
-    it('weather.json has required fields', () => {
+    it('has required top-level fields', () => {
       const weather = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/wild-goose/data/weather.json'), 'utf-8'));
       expect(weather.fetchedAt).toBeTruthy();
-      expect(weather.raceDate).toBe('2026-09-01');
-      expect(weather.historical).toBeTruthy();
-      expect(weather.historical.temperature.avgHighF).toBeGreaterThan(0);
-      expect(weather.wbgt).toBeTruthy();
-      expect(weather.wbgt.estimated).toBeGreaterThan(0);
+      expect(weather.raceDate).toBe('2026-09-19');
+      expect(weather.dataYears).toBe(15);
+      expect(weather.location).toBeTruthy();
+      expect(weather.location.lat).toBeGreaterThan(0);
       expect(weather.riskSummary).toBeTruthy();
-      expect(weather.exposure).toBeInstanceOf(Array);
-      expect(weather.exposure.length).toBeGreaterThan(0);
-      expect(weather.narrative).toBeTruthy();
+      expect(weather.heatStress).toBeTruthy();
+      expect(weather.heatStress.estimated).toBeGreaterThan(0);
+    });
+
+    it('has dailyAverages with 7 entries', () => {
+      const weather = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/wild-goose/data/weather.json'), 'utf-8'));
+      expect(weather.dailyAverages).toBeInstanceOf(Array);
+      expect(weather.dailyAverages).toHaveLength(7);
+    });
+
+    it('has exactly one race day entry', () => {
+      const weather = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/wild-goose/data/weather.json'), 'utf-8'));
+      const raceDays = weather.dailyAverages.filter(d => d.isRaceDay);
+      expect(raceDays).toHaveLength(1);
+      expect(raceDays[0].date).toBe('2026-09-19');
+    });
+
+    it('each daily average has required fields', () => {
+      const weather = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/wild-goose/data/weather.json'), 'utf-8'));
+      for (const d of weather.dailyAverages) {
+        expect(d.date).toBeTruthy();
+        expect(d.dayLabel).toBeTruthy();
+        expect(typeof d.isRaceDay).toBe('boolean');
+        expect(d.temperature.avgHighF).toBeGreaterThan(0);
+        expect(d.temperature.avgLowF).toBeGreaterThan(0);
+        expect(d.humidity.avgPct).toBeGreaterThan(0);
+        expect(typeof d.wind.avgMph).toBe('number');
+        expect(typeof d.precipProbPct).toBe('number');
+        expect(d.heatStress.estimated).toBeGreaterThan(0);
+      }
+    });
+
+    it('does NOT contain deprecated fields', () => {
+      const weather = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/wild-goose/data/weather.json'), 'utf-8'));
+      expect(weather.exposure).toBeUndefined();
+      expect(weather.narrative).toBeUndefined();
+      expect(weather.wbgt).toBeUndefined();
+      expect(weather.historical).toBeUndefined();
+    });
+
+    it('uses real data (no estimated source markers)', () => {
+      const raw = readFileSync(resolve(__dirname, '../src/maps/wild-goose/data/weather.json'), 'utf-8');
+      expect(raw).not.toContain('"source": "estimated"');
     });
   });
 
-  describe('Wild Goose built HTML - weather cards', () => {
-    it('contains weather section HTML', () => {
-      expect(wildGooseHtml).toContain('class="weather-section"');
+  describe('Wild Goose built HTML - weather panel', () => {
+    it('contains weather panel', () => {
+      expect(wildGooseHtml).toContain('id="weatherPanel"');
     });
 
-    it('contains 4 weather cards', () => {
-      const cardMatches = wildGooseHtml.match(/class="weather-card"/g);
-      expect(cardMatches).toHaveLength(4);
+    it('contains weather panel header', () => {
+      expect(wildGooseHtml).toContain('Weather Intelligence');
     });
 
-    it('contains Heat Risk card', () => {
-      expect(wildGooseHtml).toContain('Heat Risk');
+    it('contains weather risk cards container', () => {
+      expect(wildGooseHtml).toContain('id="weatherRiskCards"');
     });
 
-    it('contains Storm Risk card', () => {
-      expect(wildGooseHtml).toContain('Storm Risk');
+    it('contains weather daily container', () => {
+      expect(wildGooseHtml).toContain('id="weatherDaily"');
     });
 
-    it('contains Air Quality card', () => {
-      expect(wildGooseHtml).toContain('Air Quality');
+    it('contains weather current conditions container', () => {
+      expect(wildGooseHtml).toContain('id="weatherCurrent"');
     });
 
-    it('contains Wind card', () => {
-      expect(wildGooseHtml).toContain('>Wind</div>');
+    it('contains map-weather-layout wrapper', () => {
+      expect(wildGooseHtml).toContain('class="map-weather-layout"');
     });
 
-    it('contains risk dots with color styling', () => {
-      expect(wildGooseHtml).toContain('class="risk-dot"');
+    it('contains map-main wrapper', () => {
+      expect(wildGooseHtml).toContain('class="map-main"');
     });
   });
 
-  describe('Wild Goose built HTML - weather data inlined', () => {
+  describe('Wild Goose built HTML - weather data and JS', () => {
     it('CONFIG.weather is defined in JS', () => {
-      expect(wildGooseHtml).toContain('CONFIG = { weather:');
+      expect(wildGooseHtml).toContain('weather:');
+      expect(wildGooseHtml).toContain('"dailyAverages"');
     });
 
-    it('drawExposureZones function is present', () => {
-      expect(wildGooseHtml).toContain('function drawExposureZones');
+    it('contains runtime weather fetch code', () => {
+      expect(wildGooseHtml).toContain('fetchCurrentWeather');
     });
 
-    it('exposure zones call is in override.js profile drawing', () => {
-      expect(wildGooseHtml).toContain('drawExposureZones(ctx, expPad');
-    });
-  });
-
-  describe('Wild Goose built HTML - exposure legend', () => {
-    it('contains exposure legend', () => {
-      expect(wildGooseHtml).toContain('class="exposure-legend"');
+    it('contains radar integration', () => {
+      expect(wildGooseHtml).toContain('rainviewer');
     });
 
-    it('legend has Exposed, Partial, and Shaded labels', () => {
-      expect(wildGooseHtml).toContain('Exposed');
-      expect(wildGooseHtml).toContain('Partial');
-      expect(wildGooseHtml).toContain('Shaded');
-    });
-  });
-
-  describe('Wild Goose built HTML - weather narrative', () => {
-    it('contains weather narrative section', () => {
-      expect(wildGooseHtml).toContain('class="weather-narrative"');
+    it('contains Heat Stress Index explainer', () => {
+      expect(wildGooseHtml).toContain('Heat Stress Index');
     });
 
-    it('narrative mentions WBGT', () => {
-      expect(wildGooseHtml).toContain('WBGT');
+    it('does NOT contain WBGT anywhere', () => {
+      expect(wildGooseHtml).not.toContain('WBGT');
     });
 
-    it('narrative is within a Race Day Weather heading', () => {
-      expect(wildGooseHtml).toContain('Race Day Weather');
+    it('does NOT contain drawExposureZones', () => {
+      expect(wildGooseHtml).not.toContain('drawExposureZones');
+    });
+
+    it('does NOT contain exposure legend', () => {
+      expect(wildGooseHtml).not.toContain('exposure-legend');
+    });
+
+    it('does NOT contain Race Day Weather heading', () => {
+      expect(wildGooseHtml).not.toContain('Race Day Weather');
     });
   });
 
   describe('Escarpment built HTML - no weather (backward compat)', () => {
-    it('does not contain weather section HTML', () => {
-      expect(escarpmentHtml).not.toContain('class="weather-section"');
+    it('does not contain weather panel', () => {
+      expect(escarpmentHtml).not.toContain('id="weatherPanel"');
     });
 
-    it('does not contain weather card elements', () => {
-      expect(escarpmentHtml).not.toMatch(/<div class="weather-card"/);
+    it('does not contain weather risk cards', () => {
+      expect(escarpmentHtml).not.toContain('id="weatherRiskCards"');
     });
 
-    it('does not contain weather narrative', () => {
-      expect(escarpmentHtml).not.toContain('class="weather-narrative"');
+    it('still contains map-weather-layout wrapper', () => {
+      expect(escarpmentHtml).toContain('class="map-weather-layout"');
+    });
+
+    it('still contains map-main wrapper', () => {
+      expect(escarpmentHtml).toContain('class="map-main"');
     });
 
     it('weather CSS is included (harmless shared styles)', () => {
-      expect(escarpmentHtml).toContain('.weather-card');
+      expect(escarpmentHtml).toContain('.weather-panel');
+    });
+
+    it('weather-ui.js guard prevents execution', () => {
+      expect(escarpmentHtml).toContain('if (typeof CONFIG');
     });
   });
 
-  describe('weather.css inclusion', () => {
-    it('weather card styles are in Wild Goose build', () => {
-      expect(wildGooseHtml).toContain('.weather-grid');
-      expect(wildGooseHtml).toContain('.weather-card .risk-dot');
+  describe('weather.css - layout rules', () => {
+    it('contains side-by-side layout styles', () => {
+      expect(wildGooseHtml).toContain('.map-weather-layout');
+      expect(wildGooseHtml).toContain('.weather-panel');
     });
 
-    it('exposure legend styles are in Wild Goose build', () => {
-      expect(wildGooseHtml).toContain('.exposure-legend');
-      expect(wildGooseHtml).toContain('.swatch-exposed');
+    it('contains daily strip styles', () => {
+      expect(wildGooseHtml).toContain('.weather-daily-strip');
+      expect(wildGooseHtml).toContain('.weather-day-card');
+    });
+
+    it('contains current conditions styles', () => {
+      expect(wildGooseHtml).toContain('.weather-current-section');
+    });
+
+    it('contains risk card styles', () => {
+      expect(wildGooseHtml).toContain('.weather-risk-row');
+      expect(wildGooseHtml).toContain('.weather-risk-card');
     });
   });
 });

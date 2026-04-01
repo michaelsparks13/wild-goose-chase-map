@@ -27,32 +27,16 @@ console.log(`Fetching weather for ${config.raceName} at [${lat}, ${lng}]`);
 
 // --- Race date config (per-map overrides) ---
 const RACE_DATES = {
-  'wild-goose': { month: 9, day: 1 },      // September 1
-  'escarpment': { month: 7, day: 26 },      // Late July
-  'sleeping-giant': { month: 10, day: 12 }, // Mid October
-  'golden-leaf': { month: 9, day: 27 },     // Late September
-  'manitous-revenge': { month: 7, day: 19 },// Mid July
+  'wild-goose': { month: 9, day: 19 },
+  'escarpment': { month: 7, day: 26 },
+  'sleeping-giant': { month: 10, day: 12 },
+  'golden-leaf': { month: 9, day: 27 },
+  'manitous-revenge': { month: 7, day: 19 },
 };
 const raceDate = RACE_DATES[slug] || { month: 9, day: 1 };
 
-// --- Exposure segments (hardcoded per-map, require course knowledge) ---
-const EXPOSURE_DATA = {
-  'wild-goose': [
-    { startMile: 0, endMile: 1.2, type: 'partial', label: 'SQUATCH HQ to trailhead' },
-    { startMile: 1.2, endMile: 3.8, type: 'shaded', label: 'Pink Loop forest canopy' },
-    { startMile: 3.8, endMile: 5.0, type: 'exposed', label: 'Wawayanda Ridge powerline cut' },
-    { startMile: 5.0, endMile: 7.75, type: 'shaded', label: 'Pink Loop return woods' },
-    { startMile: 7.75, endMile: 10.5, type: 'shaded', label: 'Blue Loop lakeside trail' },
-    { startMile: 10.5, endMile: 11.8, type: 'exposed', label: 'Blue Loop fire road' },
-    { startMile: 11.8, endMile: 13.75, type: 'shaded', label: 'Blue Loop return to HQ' },
-    { startMile: 13.75, endMile: 15.5, type: 'shaded', label: 'Checkered Loop woods' },
-    { startMile: 15.5, endMile: 16.8, type: 'partial', label: 'Checkered Loop meadow' },
-    { startMile: 16.8, endMile: 18.5, type: 'shaded', label: 'Checkered Loop return' },
-  ],
-};
-
-// --- WBGT calculation (Stull 2011 wet bulb approximation) ---
-function estimateWBGT(tempF, rhPct, solarRadWm2, windMph) {
+// --- Heat Stress Index calculation (Stull 2011 wet bulb approximation) ---
+function estimateHeatStress(tempF, rhPct, solarRadWm2, windMph) {
   var tempC = (tempF - 32) * 5 / 9;
   var windMs = windMph * 0.44704;
   var Tw = tempC * Math.atan(0.151977 * Math.sqrt(rhPct + 8.313659))
@@ -63,16 +47,17 @@ function estimateWBGT(tempF, rhPct, solarRadWm2, windMph) {
   return Math.round((wbgtC * 9 / 5 + 32) * 10) / 10;
 }
 
-function getWBGTRisk(wbgtF) {
-  if (wbgtF < 65) return { risk: 'low', riskColor: '#4CAF50', riskLabel: 'Low' };
-  if (wbgtF < 73) return { risk: 'moderate', riskColor: '#F9A825', riskLabel: 'Moderate' };
-  if (wbgtF <= 82) return { risk: 'high', riskColor: '#FF9800', riskLabel: 'High' };
+function getHeatStressRisk(heatStressF) {
+  if (heatStressF < 65) return { risk: 'low', riskColor: '#4CAF50', riskLabel: 'Low' };
+  if (heatStressF < 73) return { risk: 'moderate', riskColor: '#F9A825', riskLabel: 'Moderate' };
+  if (heatStressF <= 82) return { risk: 'high', riskColor: '#FF9800', riskLabel: 'High' };
   return { risk: 'extreme', riskColor: '#f44336', riskLabel: 'Extreme' };
 }
 
 // --- Stats helpers ---
-function avg(arr) { return arr.reduce((s, v) => s + v, 0) / arr.length; }
+function avg(arr) { return arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0; }
 function percentile(arr, p) {
+  if (!arr.length) return 0;
   const sorted = [...arr].sort((a, b) => a - b);
   const idx = Math.ceil(sorted.length * p / 100) - 1;
   return sorted[Math.max(0, idx)];
@@ -94,33 +79,45 @@ function httpGet(url) {
   });
 }
 
-// --- Build date range for ±14 days around race date across multiple years ---
-function buildDateRange(raceMonth, raceDay, yearsBack) {
-  const currentYear = new Date().getFullYear();
-  const startYear = currentYear - yearsBack;
-  // NASA POWER wants YYYYMMDD format, single continuous range
-  const startDate = `${startYear}0101`;
-  const endDate = `${currentYear}1231`;
-  return { startDate, endDate, startYear, currentYear };
+// --- Date helpers ---
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function getTargetDays(raceMonth, raceDay, windowDays) {
+  const days = [];
+  for (let offset = -windowDays; offset <= windowDays; offset++) {
+    const d = new Date(2026, raceMonth - 1, raceDay + offset);
+    days.push({
+      month: d.getMonth() + 1,
+      day: d.getDate(),
+      date: `2026-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+      dayLabel: DAY_NAMES[d.getDay()],
+      isRaceDay: offset === 0,
+    });
+  }
+  return days;
 }
 
-function isInWindow(dateStr, raceMonth, raceDay, windowDays) {
-  // dateStr format: YYYYMMDD
+function matchesCalendarDay(dateStr, targetMonth, targetDay) {
   const month = parseInt(dateStr.substring(4, 6));
   const day = parseInt(dateStr.substring(6, 8));
-  // Simple day-of-year comparison
-  const raceDoy = raceMonth * 30.44 + raceDay;
-  const dateDoy = month * 30.44 + day;
-  return Math.abs(dateDoy - raceDoy) <= windowDays;
+  return month === targetMonth && day === targetDay;
 }
 
 // --- Main ---
 async function main() {
-  const windowDays = 14;
+  const windowDays = 3;
   const yearsBack = 15;
-  const { startDate, endDate, startYear, currentYear } = buildDateRange(raceDate.month, raceDate.day, yearsBack);
+  const currentYear = new Date().getFullYear();
+  const startYear = currentYear - yearsBack;
+  const startDate = `${startYear}0101`;
+  const endDate = `${currentYear}1231`;
 
-  const params = [
+  const targetDays = getTargetDays(raceDate.month, raceDate.day, windowDays);
+  console.log(`Race date: ${raceDate.month}/${raceDate.day}, window: ±${windowDays} days (${targetDays.length} days)`);
+
+  // --- NASA POWER API (historical temp, humidity, wind, solar) ---
+  const nasaParams = [
     `start=${startDate}`,
     `end=${endDate}`,
     `latitude=${lat}`,
@@ -130,173 +127,227 @@ async function main() {
     `format=JSON`,
   ].join('&');
 
-  const url = `https://power.larc.nasa.gov/api/temporal/daily/point?${params}`;
+  const nasaUrl = `https://power.larc.nasa.gov/api/temporal/daily/point?${nasaParams}`;
   console.log('Fetching NASA POWER data...');
-  console.log(`Date range: ${startDate} to ${endDate}`);
 
-  const raw = await httpGet(url);
-  const data = JSON.parse(raw);
+  const nasaRaw = await httpGet(nasaUrl);
+  const nasaData = JSON.parse(nasaRaw);
 
-  if (!data.properties || !data.properties.parameter) {
-    console.error('Unexpected API response:', JSON.stringify(data).slice(0, 500));
+  if (!nasaData.properties || !nasaData.properties.parameter) {
+    console.error('Unexpected NASA API response:', JSON.stringify(nasaData).slice(0, 500));
     process.exit(1);
   }
 
-  const parameters = data.properties.parameter;
+  const params = nasaData.properties.parameter;
 
-  // Filter to ±14 day window around race date across all years
-  const dates = Object.keys(parameters.T2M_MAX).filter(d => isInWindow(d, raceDate.month, raceDate.day, windowDays));
-  console.log(`Found ${dates.length} data points within ±${windowDays} day window`);
+  // --- Open-Meteo Archive API (historical precipitation) ---
+  console.log('Fetching Open-Meteo precipitation data...');
+  const precipByDay = {};
 
-  // Collect valid values (NASA POWER uses -999 for missing)
-  const tmax = [], tmin = [], rh = [], wind = [], solar = [];
-  for (const d of dates) {
-    const tmaxC = parameters.T2M_MAX[d];
-    const tminC = parameters.T2M_MIN[d];
-    const rhVal = parameters.RH2M[d];
-    const windVal = parameters.WS2M[d];
-    const solarVal = parameters.ALLSKY_SFC_SW_DWN[d];
+  // Fetch precipitation for each year individually to get per-calendar-day data
+  const firstTarget = targetDays[0];
+  const lastTarget = targetDays[targetDays.length - 1];
+  const omStartMM = String(firstTarget.month).padStart(2, '0');
+  const omStartDD = String(firstTarget.day).padStart(2, '0');
+  const omEndMM = String(lastTarget.month).padStart(2, '0');
+  const omEndDD = String(lastTarget.day).padStart(2, '0');
 
-    if (tmaxC > -999) tmax.push(tmaxC * 9 / 5 + 32);  // C to F
-    if (tminC > -999) tmin.push(tminC * 9 / 5 + 32);
-    if (rhVal > -999) rh.push(rhVal);
-    if (windVal > -999) wind.push(windVal * 2.237);     // m/s to mph
-    if (solarVal > -999) solar.push(solarVal);          // kWh/m²/day
+  for (let yr = startYear; yr <= currentYear - 1; yr++) {
+    const omStart = `${yr}-${omStartMM}-${omStartDD}`;
+    const omEnd = `${yr}-${omEndMM}-${omEndDD}`;
+    const omUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lng}&start_date=${omStart}&end_date=${omEnd}&daily=precipitation_sum&timezone=auto`;
+    try {
+      const omRaw = await httpGet(omUrl);
+      const omData = JSON.parse(omRaw);
+      if (omData.daily && omData.daily.time) {
+        for (let i = 0; i < omData.daily.time.length; i++) {
+          const dateStr = omData.daily.time[i]; // YYYY-MM-DD
+          const mmdd = dateStr.substring(5); // MM-DD
+          if (!precipByDay[mmdd]) precipByDay[mmdd] = [];
+          const val = omData.daily.precipitation_sum[i];
+          if (val !== null) precipByDay[mmdd].push(val);
+        }
+      }
+    } catch (e) {
+      console.warn(`  Precip fetch failed for ${yr}: ${e.message}`);
+    }
   }
 
-  console.log(`Valid data points: temp=${tmax.length}, humidity=${rh.length}, wind=${wind.length}, solar=${solar.length}`);
+  // --- Open-Meteo Air Quality API (recent years AQI) ---
+  console.log('Fetching Open-Meteo air quality data...');
+  const aqiByDay = {};
 
-  // Compute statistics
-  const avgHighF = Math.round(avg(tmax));
-  const avgLowF = Math.round(avg(tmin));
-  const recordHighF = Math.round(Math.max(...tmax));
-  const p90HighF = Math.round(percentile(tmax, 90));
-  const avgRH = Math.round(avg(rh));
-  const p90RH = Math.round(percentile(rh, 90));
-  const avgWind = Math.round(avg(wind) * 10) / 10;
-  const p90Wind = Math.round(percentile(wind, 90) * 10) / 10;
-  const avgSolar = Math.round(avg(solar) * 10) / 10;
+  // Air quality historical data is limited — fetch last 2 years
+  for (let yr = currentYear - 2; yr <= currentYear - 1; yr++) {
+    const aqStart = `${yr}-${omStartMM}-${omStartDD}`;
+    const aqEnd = `${yr}-${omEndMM}-${omEndDD}`;
+    const aqUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lng}&hourly=us_aqi&start_date=${aqStart}&end_date=${aqEnd}&timezone=auto`;
+    try {
+      const aqRaw = await httpGet(aqUrl);
+      const aqData = JSON.parse(aqRaw);
+      if (aqData.hourly && aqData.hourly.time) {
+        // Group hourly AQI into daily averages
+        const dailyAqi = {};
+        for (let i = 0; i < aqData.hourly.time.length; i++) {
+          const dateStr = aqData.hourly.time[i].substring(0, 10);
+          const val = aqData.hourly.us_aqi[i];
+          if (val !== null && val !== undefined) {
+            if (!dailyAqi[dateStr]) dailyAqi[dateStr] = [];
+            dailyAqi[dateStr].push(val);
+          }
+        }
+        for (const [dateStr, values] of Object.entries(dailyAqi)) {
+          const mmdd = dateStr.substring(5);
+          if (!aqiByDay[mmdd]) aqiByDay[mmdd] = [];
+          aqiByDay[mmdd].push(Math.round(avg(values)));
+        }
+      }
+    } catch (e) {
+      console.warn(`  AQI fetch failed for ${yr}: ${e.message}`);
+    }
+  }
 
-  // Convert solar from kWh/m²/day to W/m² (average over daylight hours ~10h)
-  const solarWm2 = avgSolar * 1000 / 10;
+  // --- Compute per-day historical averages ---
+  console.log('Computing per-day averages...');
+  const allDates = Object.keys(params.T2M_MAX);
+  const avgSolarGlobal = avg(
+    targetDays.flatMap(td =>
+      allDates
+        .filter(d => matchesCalendarDay(d, td.month, td.day))
+        .map(d => params.ALLSKY_SFC_SW_DWN[d])
+        .filter(v => v > -999)
+    )
+  );
+  const solarWm2 = avgSolarGlobal * 1000 / 10;
 
-  // WBGT
-  const wbgtAvg = estimateWBGT(avgHighF, avgRH, solarWm2, avgWind);
-  const wbgtP90 = estimateWBGT(p90HighF, p90RH, solarWm2 * 1.15, avgWind * 0.5);
-  const wbgtRisk = getWBGTRisk(wbgtAvg);
+  const dailyAverages = targetDays.map(td => {
+    // NASA POWER data for this calendar day across all years
+    const dayDates = allDates.filter(d => matchesCalendarDay(d, td.month, td.day));
 
-  // Precipitation probability estimate (from humidity + solar patterns)
-  const highHumidityDays = rh.filter(v => v > 85).length;
-  const precipProbPct = Math.round((highHumidityDays / rh.length) * 100);
+    const tmax = [], tmin = [], rh = [], wind = [], solar = [];
+    for (const d of dayDates) {
+      if (params.T2M_MAX[d] > -999) tmax.push(params.T2M_MAX[d] * 9 / 5 + 32);
+      if (params.T2M_MIN[d] > -999) tmin.push(params.T2M_MIN[d] * 9 / 5 + 32);
+      if (params.RH2M[d] > -999) rh.push(params.RH2M[d]);
+      if (params.WS2M[d] > -999) wind.push(params.WS2M[d] * 2.237);
+      if (params.ALLSKY_SFC_SW_DWN[d] > -999) solar.push(params.ALLSKY_SFC_SW_DWN[d]);
+    }
 
-  // Date window label
-  const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const windowStart = new Date(2024, raceDate.month - 1, raceDate.day - windowDays);
-  const windowEnd = new Date(2024, raceDate.month - 1, raceDate.day + windowDays);
-  const dateWindow = `${monthNames[windowStart.getMonth() + 1]} ${windowStart.getDate()} – ${monthNames[windowEnd.getMonth() + 1]} ${windowEnd.getDate()}`;
-  const raceDateStr = `2026-${String(raceDate.month).padStart(2, '0')}-${String(raceDate.day).padStart(2, '0')}`;
+    const avgHighF = Math.round(avg(tmax));
+    const avgLowF = Math.round(avg(tmin));
+    const avgRH = Math.round(avg(rh));
+    const avgWind = Math.round(avg(wind) * 10) / 10;
 
-  // Storm and AQI estimates (Phase 3 will add real data)
-  const storms = {
-    thunderstormDaysPerMonth: 3.8,
-    lightningEventsPerYear: 1.5,
-    flashFloodEventsPerYear: 0.2,
-    source: 'estimated',
-  };
-  const aqi = {
-    avgAQI: 38,
-    p90AQI: 72,
-    smokeRiskPct: 10,
-    source: 'estimated',
-  };
+    // Precipitation from Open-Meteo
+    const mmdd = `${String(td.month).padStart(2, '0')}-${String(td.day).padStart(2, '0')}`;
+    const precipValues = precipByDay[mmdd] || [];
+    const precipProbPct = precipValues.length
+      ? Math.round((precipValues.filter(v => v > 2.54).length / precipValues.length) * 100) // >0.1 inches (2.54mm)
+      : 0;
 
-  // Risk summary
-  const windRiskLevel = p90Wind > 20 ? 'high' : p90Wind > 12 ? 'moderate' : 'low';
+    // AQI from Open-Meteo
+    const aqiValues = aqiByDay[mmdd] || [];
+    const avgAQI = aqiValues.length ? Math.round(avg(aqiValues)) : null;
+
+    // Heat stress index
+    const hs = estimateHeatStress(avgHighF, avgRH, solarWm2, avgWind);
+    const hsRisk = getHeatStressRisk(hs);
+
+    return {
+      date: td.date,
+      dayLabel: td.dayLabel,
+      isRaceDay: td.isRaceDay,
+      temperature: { avgHighF, avgLowF },
+      humidity: { avgPct: avgRH },
+      wind: { avgMph: avgWind },
+      precipProbPct,
+      aqi: avgAQI !== null ? { avgAQI } : null,
+      heatStress: { estimated: hs, ...hsRisk },
+    };
+  });
+
+  // --- Race day summary (for overview risk cards) ---
+  const raceDayData = dailyAverages.find(d => d.isRaceDay);
+
+  // Compute aggregate storm risk from precipitation probability
+  const avgPrecipProb = Math.round(avg(dailyAverages.map(d => d.precipProbPct)));
+  const stormRiskLevel = avgPrecipProb > 40 ? 'high' : avgPrecipProb > 20 ? 'moderate' : 'low';
+  const stormRiskLabel = stormRiskLevel === 'high' ? 'High' : stormRiskLevel === 'moderate' ? 'Moderate' : 'Low';
+  const stormRiskColor = stormRiskLevel === 'high' ? '#FF9800' : stormRiskLevel === 'moderate' ? '#F9A825' : '#4CAF50';
+
+  // Wind risk
+  const windRiskLevel = raceDayData.wind.avgMph > 20 ? 'high' : raceDayData.wind.avgMph > 12 ? 'moderate' : 'low';
   const windRiskLabel = windRiskLevel === 'high' ? 'Strong' : windRiskLevel === 'moderate' ? 'Moderate' : 'Light';
   const windRiskColor = windRiskLevel === 'high' ? '#FF9800' : windRiskLevel === 'moderate' ? '#F9A825' : '#4CAF50';
 
+  // AQI risk
+  const raceDayAqi = raceDayData.aqi ? raceDayData.aqi.avgAQI : null;
+  const aqiRiskLevel = raceDayAqi === null ? 'unknown' : raceDayAqi > 100 ? 'high' : raceDayAqi > 50 ? 'moderate' : 'low';
+  const aqiRiskLabel = raceDayAqi === null ? 'N/A' : aqiRiskLevel === 'high' ? 'Unhealthy' : aqiRiskLevel === 'moderate' ? 'Moderate' : 'Good';
+  const aqiRiskColor = aqiRiskLevel === 'high' ? '#FF9800' : aqiRiskLevel === 'moderate' ? '#F9A825' : '#4CAF50';
+
   const riskSummary = {
-    heat: { level: wbgtRisk.risk, label: wbgtRisk.riskLabel, color: wbgtRisk.riskColor, detail: `WBGT ${wbgtAvg}\u00B0F` },
-    storm: { level: 'low', label: 'Low', color: '#4CAF50', detail: `${storms.thunderstormDaysPerMonth} days/mo` },
-    air: { level: 'low', label: 'Good', color: '#4CAF50', detail: `Avg AQI ${aqi.avgAQI}` },
-    wind: { level: windRiskLevel, label: windRiskLabel, color: windRiskColor, detail: `${avgWind}\u2013${p90Wind} mph` },
+    heat: {
+      level: raceDayData.heatStress.risk,
+      label: raceDayData.heatStress.riskLabel,
+      color: raceDayData.heatStress.riskColor,
+      detail: `${raceDayData.heatStress.estimated}\u00B0F heat stress`,
+    },
+    storm: {
+      level: stormRiskLevel,
+      label: stormRiskLabel,
+      color: stormRiskColor,
+      detail: `${raceDayData.precipProbPct}% rain chance`,
+    },
+    air: {
+      level: aqiRiskLevel,
+      label: aqiRiskLabel,
+      color: aqiRiskColor,
+      detail: raceDayAqi !== null ? `Avg AQI ${raceDayAqi}` : 'Data limited',
+    },
+    wind: {
+      level: windRiskLevel,
+      label: windRiskLabel,
+      color: windRiskColor,
+      detail: `${raceDayData.wind.avgMph} mph avg`,
+    },
   };
 
-  // Generate narrative
-  const seasonLabel = raceDate.month >= 6 && raceDate.month <= 8 ? 'summer'
-    : raceDate.month >= 9 && raceDate.month <= 11 ? 'fall' : 'spring';
-  const monthLabel = monthNames[raceDate.month];
-
-  const exposureSegments = EXPOSURE_DATA[slug] || [];
-  const exposedMiles = exposureSegments
-    .filter(s => s.type === 'exposed')
-    .reduce((sum, s) => sum + (s.endMile - s.startMile), 0);
-  const exposedLabels = exposureSegments
-    .filter(s => s.type === 'exposed')
-    .map(s => s.label);
-
-  let narrative = `Expect highs around ${avgHighF}\u00B0F (90th percentile: ${p90HighF}\u00B0F) with `;
-  narrative += avgRH > 65 ? `elevated humidity (${avgRH}%)` : `moderate humidity (${avgRH}%)`;
-  narrative += ` typical of late-${seasonLabel} ${config.mapCenter[1] > 40 ? 'NJ' : 'the region'}. `;
-
-  if (wbgtRisk.risk === 'high' || wbgtRisk.risk === 'extreme') {
-    narrative += `WBGT heat risk is ${wbgtRisk.riskLabel.toLowerCase()} at ${wbgtAvg}\u00B0F \u2014 the combination of warmth and humidity demands proactive hydration and cooling. `;
-  } else if (wbgtRisk.risk === 'moderate') {
-    narrative += `WBGT heat risk is moderate at ${wbgtAvg}\u00B0F \u2014 stay on top of hydration. `;
-  }
-
-  if (exposedMiles > 0) {
-    narrative += `Most of the course runs through dense forest canopy, but ${exposedLabels.join(' and ')} (${exposedMiles.toFixed(1)} mi exposed) will feel significantly hotter. `;
-  }
-
-  narrative += `Thunderstorm probability is moderate with ${storms.thunderstormDaysPerMonth} storm days per month historically \u2014 carry a lightweight rain layer. `;
-  narrative += `Air quality is historically good (avg AQI ${aqi.avgAQI}) with ${aqi.smokeRiskPct}% chance of elevated smoke. `;
-  narrative += `Wind is generally ${windRiskLabel.toLowerCase()} (${avgWind} mph avg) with the forest providing shelter on most sections.`;
+  const raceDateStr = `2026-${String(raceDate.month).padStart(2, '0')}-${String(raceDate.day).padStart(2, '0')}`;
 
   // Build output
   const weather = {
     fetchedAt: new Date().toISOString(),
     raceDate: raceDateStr,
-    dateWindow,
     dataYears: yearsBack,
-    nearestStation: {
-      name: 'NASA POWER grid point',
-      distanceMi: 0,
-    },
-    historical: {
-      temperature: { avgHighF, avgLowF, recordHighF, p90HighF },
-      humidity: { avgPct: avgRH, p90Pct: p90RH },
-      precipitation: {
-        probPct: precipProbPct,
-        avgInches: 0.16,
-        p90Inches: 0.90,
-        source: 'estimated',
-      },
-      wind: { avgMph: avgWind, p90Mph: p90Wind },
-      solarRadiation: { avgKwhM2Day: avgSolar },
-    },
-    wbgt: {
-      estimated: wbgtAvg,
-      p90: wbgtP90,
-      ...wbgtRisk,
-    },
-    storms,
-    aqi,
-    exposure: exposureSegments,
+    location: { lat, lng },
     riskSummary,
-    narrative,
+    heatStress: {
+      estimated: raceDayData.heatStress.estimated,
+      risk: raceDayData.heatStress.risk,
+      riskColor: raceDayData.heatStress.riskColor,
+      riskLabel: raceDayData.heatStress.riskLabel,
+    },
+    dailyAverages,
   };
 
   // Write output
-  const outPath = path.join(mapDir, 'data', 'weather.json');
+  const dataDir = path.join(mapDir, 'data');
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  const outPath = path.join(dataDir, 'weather.json');
   fs.writeFileSync(outPath, JSON.stringify(weather, null, 2));
   console.log(`\nWeather data written to: ${outPath}`);
-  console.log(`\nSummary:`);
-  console.log(`  Avg High: ${avgHighF}°F | Avg Low: ${avgLowF}°F | Record: ${recordHighF}°F`);
-  console.log(`  Humidity: ${avgRH}% avg | ${p90RH}% p90`);
-  console.log(`  Wind: ${avgWind} mph avg | ${p90Wind} mph p90`);
-  console.log(`  Solar: ${avgSolar} kWh/m²/day`);
-  console.log(`  WBGT: ${wbgtAvg}°F (${wbgtRisk.riskLabel}) | p90: ${wbgtP90}°F`);
+  console.log(`\nRace Day Summary (${raceDateStr}):`);
+  console.log(`  Avg High: ${raceDayData.temperature.avgHighF}\u00B0F | Avg Low: ${raceDayData.temperature.avgLowF}\u00B0F`);
+  console.log(`  Humidity: ${raceDayData.humidity.avgPct}%`);
+  console.log(`  Wind: ${raceDayData.wind.avgMph} mph`);
+  console.log(`  Precip: ${raceDayData.precipProbPct}% chance`);
+  console.log(`  AQI: ${raceDayAqi !== null ? raceDayAqi : 'N/A'}`);
+  console.log(`  Heat Stress: ${raceDayData.heatStress.estimated}\u00B0F (${raceDayData.heatStress.riskLabel})`);
+  console.log(`\nDaily Averages:`);
+  dailyAverages.forEach(d => {
+    console.log(`  ${d.dayLabel} ${d.date}${d.isRaceDay ? ' [RACE DAY]' : ''}: ${d.temperature.avgHighF}/${d.temperature.avgLowF}\u00B0F, ${d.precipProbPct}% rain, ${d.wind.avgMph}mph`);
+  });
 }
 
 main().catch(err => {

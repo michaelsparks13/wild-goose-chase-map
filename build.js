@@ -120,6 +120,33 @@ function buildDistancePicker(config) {
   return config.distancePicker;
 }
 
+// --- Build weather panel HTML ---
+function buildWeatherHtml(weather) {
+  if (!weather) return '';
+  return `<aside class="weather-panel" id="weatherPanel">
+  <div class="weather-panel-header" id="weatherPanelHeader" onclick="toggleWeatherPanel()">
+    <h3>Weather Intelligence</h3>
+    <button class="weather-toggle-btn" id="weatherToggleBtn" aria-label="Toggle weather panel">
+      <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="weather-panel-body" id="weatherPanelBody">
+    <div class="weather-risk-row" id="weatherRiskCards"></div>
+    <div id="weatherDaily"></div>
+    <div id="weatherCurrent">
+      <div class="weather-loading">Loading current conditions\u2026</div>
+    </div>
+    <div id="weatherRadar">
+      <div class="weather-radar-section">
+        <div class="weather-radar-title">Radar</div>
+        <div class="weather-radar-loading">Loading radar\u2026</div>
+      </div>
+    </div>
+    <div id="weatherExplainer"></div>
+  </div>
+</aside>`;
+}
+
 // --- Build CONFIG data block for JS ---
 function buildConfigData(config) {
   // Create a clean config object for the browser (no Node.js-only fields)
@@ -219,7 +246,7 @@ function buildMap(slug, templates) {
       .replace('{{INFO_BADGE_VALUE}}', config.infoBadgeValue || '')
       .replace('{{TOGGLE_BUTTONS}}', buildToggleButtons(config))
       .replace('{{STATS_HTML}}', config.statsHtml || '')
-      .replace('{{WEATHER_HTML}}', config.weatherHtml || '')
+      .replace('{{WEATHER_HTML}}', config.weatherHtml || buildWeatherHtml(config.weather))
       .replace('{{PROFILE_STATS}}', config.profileStats || '')
       .replace('{{COURSE_DESCRIPTION_HTML}}', config.courseDescriptionHtml || '');
   }
@@ -308,7 +335,7 @@ function buildEmbed(slug, templates) {
       .replace('{{INFO_BADGE_VALUE}}', config.infoBadgeValue || '')
       .replace('{{TOGGLE_BUTTONS}}', buildToggleButtons(config))
       .replace('{{STATS_HTML}}', config.statsHtml || '')
-      .replace('{{WEATHER_HTML}}', config.weatherHtml || '')
+      .replace('{{WEATHER_HTML}}', config.weatherHtml || buildWeatherHtml(config.weather))
       .replace('{{PROFILE_STATS}}', config.profileStats || '')
       .replace('{{COURSE_DESCRIPTION_HTML}}', config.courseDescriptionHtml || '');
   }
