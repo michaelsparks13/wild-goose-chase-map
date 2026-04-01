@@ -462,6 +462,8 @@
 @media (min-width: 1024px) {
   .map-weather-layout {
     flex-direction: row;
+    gap: 8px;
+    background: var(--bg-alt);
   }
   .map-main {
     overflow-y: auto;
@@ -471,9 +473,6 @@
     flex-shrink: 0;
     overflow-y: auto;
     background: var(--bg-alt);
-    box-shadow: -1px 0 0 var(--border), -6px 0 20px rgba(0,0,0,0.08);
-    position: relative;
-    z-index: 1;
   }
   .weather-toggle-btn {
     display: none;
