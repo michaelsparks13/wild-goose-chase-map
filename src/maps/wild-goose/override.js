@@ -380,19 +380,18 @@ function toggleTrails() {
         layout: {
           'symbol-placement': 'line',
           'text-field': ['get', 'name'],
-          'text-size': ['interpolate', ['linear'], ['zoom'], 13, 10, 16, 14, 20, 18],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 12, 9, 13, 11, 16, 14, 20, 16],
           'text-font': ['Noto Sans Medium'],
-          'text-max-angle': 30,
-          'text-padding': 10,
-          'text-offset': [0, -1.2]
+          'text-max-angle': 45,
+          'text-padding': 2,
+          'symbol-spacing': 150
         },
         paint: {
           'text-color': '#222',
           'text-halo-color': '#fff',
-          'text-halo-width': 2,
-          'text-opacity': ['interpolate', ['linear'], ['zoom'], 13, 0, 13.5, 1]
-        },
-        minzoom: 13
+          'text-halo-width': 1.5,
+          'text-opacity': ['interpolate', ['linear'], ['zoom'], 11.5, 0, 12, 1]
+        }
       });
     }
     map.setLayoutProperty('course-trails-line', 'visibility', 'visible');
