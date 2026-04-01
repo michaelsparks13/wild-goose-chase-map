@@ -26,11 +26,21 @@
     95: 'Thunderstorm', 96: 'Thunderstorm with hail', 99: 'Heavy thunderstorm'
   };
 
+  // --- Risk category SVG icons (Lucide-style, stroke-based) ---
+  function riskIcon(type, color) {
+    var icons = {
+      heat: '<path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/><circle cx="11.5" cy="17.5" r="1.5"/>',
+      storm: '<path d="M13 2L5 13h5l-2 9 8-11h-5z"/>',
+      air: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
+      wind: '<path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>'
+    };
+    return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (icons[type] || '') + '</svg>';
+  }
+
   // --- Weather condition SVG icons ---
   function weatherIcon(precipPct, size) {
     var s = size || 32;
     if (precipPct >= 60) {
-      // Heavy rain / thunderstorm
       return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 64 64">' +
         '<path d="M20 28c0-8.8 7.2-16 16-16 7.2 0 13.3 4.8 15.3 11.3C55.8 24.5 60 29.5 60 35.5c0 6.6-5.4 12-12 12H18c-5.5 0-10-4.5-10-10 0-4.8 3.4-8.8 8-9.8" fill="#9e9e9e"/>' +
         '<path d="M24 52l3-8" stroke="#64B5F6" stroke-width="2.5" stroke-linecap="round"/>' +
@@ -41,7 +51,6 @@
         '</svg>';
     }
     if (precipPct >= 40) {
-      // Rain
       return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 64 64">' +
         '<path d="M20 28c0-8.8 7.2-16 16-16 7.2 0 13.3 4.8 15.3 11.3C55.8 24.5 60 29.5 60 35.5c0 6.6-5.4 12-12 12H18c-5.5 0-10-4.5-10-10 0-4.8 3.4-8.8 8-9.8" fill="#bdbdbd"/>' +
         '<path d="M26 54l2-6" stroke="#64B5F6" stroke-width="2.5" stroke-linecap="round"/>' +
@@ -49,13 +58,11 @@
         '</svg>';
     }
     if (precipPct >= 25) {
-      // Cloudy
       return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 64 64">' +
         '<path d="M20 30c0-8.8 7.2-16 16-16 7.2 0 13.3 4.8 15.3 11.3C55.8 26.5 60 31.5 60 37.5c0 6.6-5.4 12-12 12H18c-5.5 0-10-4.5-10-10 0-4.8 3.4-8.8 8-9.8" fill="#bdbdbd"/>' +
         '</svg>';
     }
     if (precipPct >= 10) {
-      // Partly cloudy (sun + cloud)
       return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 64 64">' +
         '<circle cx="22" cy="22" r="10" fill="#FFB300"/>' +
         '<line x1="22" y1="6" x2="22" y2="10" stroke="#FFB300" stroke-width="2.5" stroke-linecap="round"/>' +
@@ -69,7 +76,6 @@
         '<path d="M28 36c0-6.6 5.4-12 12-12 5.4 0 10 3.6 11.5 8.5C54.8 33.4 58 37 58 41.5c0 5-4 9-9 9H26c-4.1 0-7.5-3.4-7.5-7.5 0-3.6 2.6-6.6 6-7.3" fill="#e0e0e0"/>' +
         '</svg>';
     }
-    // Sunny / clear
     return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 64 64">' +
       '<circle cx="32" cy="32" r="14" fill="#FFB300"/>' +
       '<line x1="32" y1="8" x2="32" y2="14" stroke="#FFB300" stroke-width="3" stroke-linecap="round"/>' +
@@ -113,14 +119,14 @@
 
     var cards = ['heat', 'storm', 'air', 'wind'];
     var labels = { heat: 'Heat Stress', storm: 'Storm Risk', air: 'Air Quality', wind: 'Wind' };
-    var html = '<div class="weather-risk-date">Expected Conditions \u2014 Race Day ' + formatRaceDate() + '</div>';
+    var html = '<div class="weather-risk-date">Expected Conditions \u2014 <strong>Race Day ' + formatRaceDate() + '</strong></div>';
     for (var i = 0; i < cards.length; i++) {
       var key = cards[i];
       var r = weather.riskSummary[key];
       if (!r) continue;
-      html += '<div class="weather-risk-card">' +
-        '<span class="risk-dot" style="background:' + r.color + '"></span>' +
-        '<div class="risk-value">' + r.label + '</div>' +
+      html += '<div class="weather-risk-card" style="border-top-color:' + r.color + '">' +
+        '<div class="risk-icon" style="background:' + r.color + '20">' + riskIcon(key, r.color) + '</div>' +
+        '<div class="risk-value" style="color:' + r.color + '">' + r.label + '</div>' +
         '<div class="risk-label">' + labels[key] + '</div>' +
         '<div class="risk-detail">' + r.detail + '</div>' +
         '</div>';
@@ -150,9 +156,9 @@
         '<div class="day-header">' + dateLabel + '</div>' +
         (d.isRaceDay ? '<div class="day-race-badge">Race Day</div>' : '') +
         '<div class="day-temp"><span class="day-temp-hi">' + d.temperature.avgHighF + '\u00B0</span>' +
-          '<span class="day-temp-sep"> | </span>' +
+          '<span class="day-temp-sep"> / </span>' +
           '<span class="day-temp-lo">' + d.temperature.avgLowF + '\u00B0F</span></div>' +
-        '<div class="day-icon">' + weatherIcon(d.precipProbPct, 36) + '</div>' +
+        '<div class="day-icon">' + weatherIcon(d.precipProbPct, 40) + '</div>' +
         '<div class="day-condition">' + conditionLabel(d.precipProbPct) + '</div>' +
         '<div class="day-precip">' +
           '<svg width="10" height="10" viewBox="0 0 16 16" style="vertical-align:-1px;margin-right:2px">' +
@@ -203,14 +209,13 @@
   // --- WMO code to SVG icon for current conditions ---
   function currentWeatherIcon(code, size) {
     var s = size || 40;
-    // Map WMO codes to precip-like categories for icon reuse
-    if (code >= 95) return weatherIcon(80, s);  // thunderstorm
-    if (code >= 61) return weatherIcon(60, s);  // rain
-    if (code >= 51) return weatherIcon(45, s);  // drizzle
-    if (code >= 45) return weatherIcon(30, s);  // fog (cloudy icon)
-    if (code === 3) return weatherIcon(30, s);  // overcast
-    if (code === 2) return weatherIcon(15, s);  // partly cloudy
-    if (code <= 1) return weatherIcon(0, s);    // clear/mainly clear
+    if (code >= 95) return weatherIcon(80, s);
+    if (code >= 61) return weatherIcon(60, s);
+    if (code >= 51) return weatherIcon(45, s);
+    if (code >= 45) return weatherIcon(30, s);
+    if (code === 3) return weatherIcon(30, s);
+    if (code === 2) return weatherIcon(15, s);
+    if (code <= 1) return weatherIcon(0, s);
     return weatherIcon(15, s);
   }
 
@@ -224,14 +229,14 @@
     var humidity = Math.round(current.relative_humidity_2m);
     var windSpeed = Math.round(current.wind_speed_10m * 10) / 10;
     var windDirection = windDir(current.wind_direction_10m);
-    var icon = currentWeatherIcon(current.weather_code, 44);
+    var icon = currentWeatherIcon(current.weather_code, 52);
 
     container.innerHTML = '<div class="weather-current-section">' +
-      '<div class="weather-current-title">Current Conditions at Course</div>' +
+      '<div class="weather-current-title"><span class="live-dot"></span>Current Conditions at Course</div>' +
       '<div class="weather-current-card">' +
         '<div class="weather-current-main">' +
           '<div class="weather-current-icon">' + icon + '</div>' +
-          '<div class="weather-current-temp">' + temp + '\u00B0F</div>' +
+          '<div class="weather-current-temp">' + temp + '<span class="temp-unit">\u00B0F</span></div>' +
           '<div class="weather-current-info">' +
             '<div class="weather-current-condition">' + condition + '</div>' +
             '<div class="weather-current-feels">Feels like ' + feelsLike + '\u00B0F</div>' +
@@ -261,7 +266,7 @@
     var container = document.getElementById('weatherCurrent');
     if (!container) return;
     container.innerHTML = '<div class="weather-current-section">' +
-      '<div class="weather-current-title">Current Conditions at Course</div>' +
+      '<div class="weather-current-title"><span class="live-dot"></span>Current Conditions at Course</div>' +
       '<div class="weather-current-error">Current conditions unavailable</div>' +
       '</div>';
   }
@@ -333,7 +338,7 @@
             }
           },
           layers: [
-            { id: 'osm', type: 'raster', source: 'osm-raster', paint: { 'raster-saturation': -0.5, 'raster-brightness-max': 0.7 } },
+            { id: 'osm', type: 'raster', source: 'osm-raster', paint: { 'raster-saturation': -0.6, 'raster-brightness-max': 0.65 } },
             { id: 'radar', type: 'raster', source: 'rainviewer', paint: { 'raster-opacity': 0.7 } }
           ]
         },

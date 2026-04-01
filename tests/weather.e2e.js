@@ -29,12 +29,12 @@ test.describe('Weather Intelligence - Wild Goose', () => {
     await expect(panel).toContainText('Wind');
   });
 
-  test('risk dots have inline color styling', async ({ page }) => {
-    await page.waitForSelector('.risk-dot', { timeout: 5000 });
-    const dots = page.locator('.risk-dot');
-    await expect(dots).toHaveCount(4);
-    const firstDot = dots.first();
-    await expect(firstDot).toHaveAttribute('style', /background:/);
+  test('risk icons have inline color styling', async ({ page }) => {
+    await page.waitForSelector('.risk-icon', { timeout: 5000 });
+    const icons = page.locator('.risk-icon');
+    await expect(icons).toHaveCount(4);
+    const firstIcon = icons.first();
+    await expect(firstIcon).toHaveAttribute('style', /background:/);
   });
 
   test('daily averages strip is rendered with 7 day cards', async ({ page }) => {
