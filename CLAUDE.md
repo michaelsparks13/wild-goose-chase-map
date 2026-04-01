@@ -4,6 +4,14 @@
 2. You must write automated tests for all code. Use **Vitest** for unit tests (JS logic, data transformations, coordinate helpers) and **Playwright** for end-to-end tests (map rendering, UI interactions, toggle behavior).
 3. You must compile the code and pass ALL tests before committing. Run `npx vitest run` and `npx playwright test` to verify.
 
+## Deployment Quality Bar
+**IMPORTANT:** Every deploy is reviewed by multiple automated coding agents (OpenAI Code, Claude Code, Gemini) and a human design executive at Airbnb. Deploys that fail this review are rolled back. Ensure every commit meets a very high standard for both code quality and design quality:
+- Clean, readable, well-structured code with no dead code, no hacks, no shortcuts
+- Consistent naming, formatting, and architecture patterns across the codebase
+- Polished visual design: correct spacing, alignment, color contrast, typography, and responsive behavior
+- Accessible and performant — no layout shifts, no render-blocking issues, no broken interactions
+- All edge cases handled; no console errors or warnings in production builds
+
 # False Summit Studio - Race Map Builder
 
 ## Business Overview
@@ -258,10 +266,15 @@ Every race map MUST match the visual identity of the race organizer's website. B
    - Primary and accent colors
    - Fonts/typography (heading font, body font)
    - Overall aesthetic (dark/light, modern/rustic, etc.)
-2. Update the map's CSS variables (`--primary`, `--bg`, `--bg-card`, etc.) to match
+2. Update the map's CSS variables (`--primary`, `--bg`, `--bg-card`, `--bg-alt`, etc.) to match
 3. Import any custom fonts (e.g., Google Fonts) used by the organizer
 4. Replace ALL hardcoded color values — including in canvas drawing code, SVG markers, and popup HTML
 5. The map should look like a natural extension of the organizer's website
+6. **IMPORTANT:** `--bg`, `--bg-card`, and `--bg-alt` must be three distinct colors for proper visual layering:
+   - `--bg` — page/panel chrome background (white `#ffffff` for light themes)
+   - `--bg-card` — card surfaces, map container, stats, profile sections (white `#ffffff` for light, slightly lighter than bg for dark)
+   - `--bg-alt` — recessed/page background, weather panel body, `.page-shell` (light grey `#f2f2f2` for light themes)
+   - If `--bg-card` and `--bg-alt` are the same value, the unified white container will be invisible against the page background
 
 **Example:** Steep Endurance uses green `#7ed321`, Teko headings, dark `#111111` backgrounds. Their Sleeping Giant map reflects this.
 
@@ -502,6 +515,152 @@ Every map page includes an **"Embed"** button in the header (next to the Map/Sim
 
 **Important:** The embed button and modal are automatically included for all maps via `shell.html`. For `skipSharedJs` maps (e.g., wild-goose), `build.js` injects `embed-modal.js` separately into the override JS block.
 
+### Weather Intelligence Panel
+
+Every race map should include a Weather Intelligence panel that shows historical climate data, live conditions, and radar. The feature is opt-in: maps without weather data render normally with no weather panel.
+
+**How to add weather to a map:**
+
+1. **Add the race date** to `RACE_DATES` in `scripts/fetch-weather.js`:
+   ```javascript
+   const RACE_DATES = {
+     'wild-goose': { month: 9, day: 19 },
+     'escarpment': { month: 7, day: 26 },
+     // add new race here
+   };
+   ```
+
+2. **Ensure the config exports `mapCenter`** as `[lng, lat]` — the script reads this for API queries.
+
+3. **Run the fetch script:**
+   ```bash
+   node scripts/fetch-weather.js <map-slug>
+   ```
+   This fetches 15 years of historical data from NASA POWER and Open-Meteo (no API keys needed) and writes `src/maps/<slug>/data/weather.json`.
+
+4. **Load weather data in config.js:**
+   ```javascript
+   const weatherData = fs.existsSync(path.join(__dirname, 'data/weather.json'))
+     ? loadJSON('data/weather.json') : null;
+   
+   module.exports = {
+     // ... other config
+     weather: weatherData,
+   };
+   ```
+
+5. **Build** — `node build.js` inlines `CONFIG.weather` into the HTML. The `{{WEATHER_HTML}}` placeholder in `map-view.html` renders the panel automatically via `buildWeatherHtml()`.
+
+**Architecture:**
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| Fetch script | `scripts/fetch-weather.js` | Build-time: fetches NASA POWER + Open-Meteo historical data, computes heat stress, writes `weather.json` |
+| Weather data | `src/maps/{slug}/data/weather.json` | Build-time JSON inlined into CONFIG |
+| Weather UI | `src/shared/weather-ui.js` | Runtime: renders risk cards, daily strip, fetches live conditions + radar |
+| Weather CSS | `src/shared/weather.css` | Panel layout, responsive breakpoints, all weather component styles |
+| HTML template | `src/templates/map-view.html` | Contains `{{WEATHER_HTML}}` placeholder inside `.map-weather-layout` |
+| Build integration | `build.js` | `buildWeatherHtml()` generates panel HTML; `buildConfigData()` inlines weather into CONFIG |
+| Tests | `tests/weather.test.js` | Vitest: heat stress calc, JSON schema, built HTML assertions, backward compat |
+
+**Data sources (all free, no API keys):**
+
+| API | URL | Data |
+|-----|-----|------|
+| NASA POWER | `https://power.larc.nasa.gov/api/temporal/daily/point` | Historical temp, humidity, wind, solar radiation (15 years) |
+| Open-Meteo Archive | `https://archive-api.open-meteo.com/v1/archive` | Historical daily precipitation |
+| Open-Meteo Air Quality | `https://air-quality-api.open-meteo.com/v1/air-quality` | Historical hourly US AQI (last 2 years) |
+| Open-Meteo Forecast | `https://api.open-meteo.com/v1/forecast` | Live current conditions (runtime fetch) |
+| RainViewer | `https://api.rainviewer.com/public/weather-maps.json` | Live radar tile timestamps (runtime fetch) |
+
+**weather.json schema:**
+```json
+{
+  "fetchedAt": "2026-03-31T22:59:25.841Z",
+  "raceDate": "2026-09-19",
+  "dataYears": 15,
+  "location": { "lat": 41.183, "lng": -74.432 },
+  "riskSummary": {
+    "heat": { "level": "moderate", "label": "Moderate", "color": "#F9A825", "detail": "71.5°F heat stress" },
+    "storm": { "level": "low", "label": "Low", "color": "#4CAF50", "detail": "20% rain chance" },
+    "air": { "level": "low", "label": "Good", "color": "#4CAF50", "detail": "Avg AQI 46" },
+    "wind": { "level": "low", "label": "Light", "color": "#4CAF50", "detail": "0.7 mph avg" }
+  },
+  "heatStress": { "estimated": 71.5, "risk": "moderate", "riskColor": "#F9A825", "riskLabel": "Moderate" },
+  "dailyAverages": [
+    {
+      "date": "2026-09-16",
+      "dayLabel": "Wed",
+      "isRaceDay": false,
+      "temperature": { "avgHighF": 76, "avgLowF": 54 },
+      "humidity": { "avgPct": 72 },
+      "wind": { "avgMph": 0.6 },
+      "precipProbPct": 13,
+      "aqi": { "avgAQI": 46 },
+      "heatStress": { "estimated": 72.8, "risk": "moderate", "riskColor": "#F9A825", "riskLabel": "Moderate" }
+    }
+  ]
+}
+```
+
+**Risk level thresholds and colors:**
+
+| Metric | Low | Moderate | High | Extreme |
+|--------|-----|----------|------|---------|
+| Heat Stress (°F) | < 65 | 65–73 | 73–82 | > 82 |
+| Color | `#4CAF50` | `#F9A825` | `#FF9800` | `#f44336` |
+| Storm (precip %) | ≤ 20% | 21–40% | > 40% | — |
+| Wind (mph) | ≤ 12 | 12–20 | > 20 | — |
+| AQI | ≤ 50 | 51–100 | > 100 | — |
+
+**Heat Stress Index calculation** (Stull 2011 wet bulb approximation):
+```javascript
+function estimateHeatStress(tempF, rhPct, solarRadWm2, windMph) {
+  var tempC = (tempF - 32) * 5 / 9;
+  var windMs = windMph * 0.44704;
+  var Tw = tempC * Math.atan(0.151977 * Math.sqrt(rhPct + 8.313659))
+    + Math.atan(tempC + rhPct) - Math.atan(rhPct - 1.676331)
+    + 0.00391838 * Math.pow(rhPct, 1.5) * Math.atan(0.023101 * rhPct) - 4.686035;
+  var Tg = 1.01 * tempC + 2.17 * (solarRadWm2 / 1000) - 0.28 * windMs + 3.2;
+  var wbgtC = 0.7 * Tw + 0.2 * Tg + 0.1 * tempC;
+  return Math.round((wbgtC * 9 / 5 + 32) * 10) / 10;
+}
+```
+
+**UI components rendered by `weather-ui.js`:**
+
+1. **Risk Summary Cards** — 4-card grid (heat, storm, air quality, wind). Each card has a colored `border-top` accent, a 28x28 tinted icon badge with category-specific SVG (thermometer, lightning, sun, wind), risk level label in the risk color, and detail text. Header splits "Expected Conditions" (muted) from "Race Day [date]" (primary). Cards use `box-shadow` instead of borders for depth, with hover lift effect.
+2. **Daily Averages Strip** — Horizontal scrollable strip of 7 gap-separated rounded cards (race day ±3 days). Each card shows date, high/low temp (slash-separated), weather icon (40px SVG based on precip %), condition label, and precipitation probability. Race day card is highlighted with a 2px primary-colored ring and badge.
+3. **Current Conditions** — Live-fetched from Open-Meteo every 10 minutes. Hero card with gradient background (`linear-gradient(135deg, bg-card, bg-alt)`), 2.4rem temperature with separate unit styling, pulsing green "live" dot in section title, 52px WMO weather icon, feels-like, humidity, wind. Fade-in animation on load.
+4. **Radar Mini-Map** — Embedded MapLibre GL map (200px height, 12px radius) with desaturated OSM raster base (saturation -0.6, brightness 0.65), RainViewer radar tile overlay (0.7 opacity), course location red dot, zoom controls, and color legend (100px wide, 8px height). Shadow-bounded instead of bordered.
+5. **Heat Stress Explainer** — Static text with primary-colored accent bar (`::before` pseudo-element) on the title.
+
+**Weather icon thresholds (precipitation %):**
+- 0–9%: Sunny (sun SVG)
+- 10–24%: Partly Cloudy (sun + cloud SVG)
+- 25–39%: Cloudy (cloud SVG)
+- 40–59%: Showers (cloud + 2 rain drops SVG)
+- 60%+: Rain Likely (cloud + 5 rain drops SVG)
+
+**Responsive layout:**
+- **Mobile (< 1024px):** Panel stacks above map (`order: -1`), collapsed by default on page load. Tap header to expand/collapse. Risk cards go 4-col, then 2-col below 600px. Hero temp drops to 2rem on small mobile.
+- **Desktop (≥ 1024px):** Side-by-side with map via `flex-direction: row` with `gap: 8px`. Layout container uses `background: var(--bg-alt)` so the gap reads as a subtle channel. Weather panel is 340px (380px on ≥1440px) with `background: var(--bg-alt)` and soft left edge shadow (`box-shadow: -1px 0 0 var(--border), -6px 0 20px rgba(0,0,0,0.08)`). `.map-main` uses `background: var(--bg-card)` so the map, stats, profile, and course description sit on a unified white surface distinct from the grey page/panel background.
+
+**Design principles (weather panel):**
+- **Shadows over borders** — Components use `box-shadow` for depth instead of `border: 1px solid`. Borders are reserved for intentional dividers only.
+- **Section title variety** — Each section has a distinct title treatment (gradient fade lines, pulsing live dot, accent bars) instead of uniform uppercase muted text.
+- **Animations** — `weather-fade-in` (opacity + translateY) on dynamically loaded content (current conditions, radar). `weather-pulse` for the live indicator dot.
+- **Typography minimum** — Nothing below 0.6rem. Risk labels 0.65rem, detail text 0.7rem, body 0.75rem.
+
+**Guard / backward compatibility:**
+- `weather-ui.js` wraps everything in an IIFE that checks `if (typeof CONFIG === 'undefined' || !CONFIG || !CONFIG.weather) return;` — no-op for maps without weather data.
+- `buildWeatherHtml()` returns empty string when `config.weather` is null, so the `{{WEATHER_HTML}}` placeholder resolves to nothing.
+- `weather.css` is always included (shared CSS) but styles are scoped to `.weather-*` classes, so they're harmless when the panel doesn't exist.
+
+**For skipSharedJs maps** (e.g., wild-goose): `build.js` separately injects `weather-ui.js` into the override JS block so the weather panel still works even though shared JS modules aren't concatenated.
+
+**Embed builds** also include `weather-ui.js` and render the weather panel via the same `buildWeatherHtml()` / `{{WEATHER_HTML}}` mechanism.
+
 ## Race Map Business Context
 This project serves as a template for building custom race maps. Key selling points:
 - Interactive loop selection with elevation profiles
@@ -626,6 +785,23 @@ Run `node build.js` to generate `dist/maps/[race-name]/index.html`.
    - Distance, elevation gain, trail miles, time limit
    - Grid layout, mobile responsive
 
+### Step 5b: Weather Intelligence
+
+After the map config is created with `mapCenter` defined:
+
+1. Add the race date to `RACE_DATES` in `scripts/fetch-weather.js`
+2. Run `node scripts/fetch-weather.js <slug>` to generate `src/maps/<slug>/data/weather.json`
+3. Load weather data in `config.js`:
+   ```javascript
+   const weatherData = fs.existsSync(path.join(__dirname, 'data/weather.json'))
+     ? loadJSON('data/weather.json') : null;
+   module.exports = { /* ... */ weather: weatherData };
+   ```
+4. Rebuild — the weather panel automatically appears beside the map on desktop and above it (collapsed) on mobile
+5. Verify: risk cards render, daily strip shows 7 days, current conditions load, radar mini-map displays
+
+See "Weather Intelligence Panel" in Common Tasks for full architecture and data schema.
+
 ### Step 6: Information to Request from User
 
 Always ask the user for:
@@ -655,6 +831,8 @@ Always ask the user for:
    - 3D terrain toggle functions
    - Elevation profile renders
    - Landmarks are clickable
+   - Weather panel renders (risk cards, daily strip, current conditions, radar)
+   - Weather panel collapses on mobile, side-by-side on desktop
    - Mobile responsive
 
 2. Provide to user:
@@ -768,9 +946,11 @@ Use `['Noto Sans Medium']` for all text layers. Glyphs are hosted by Protomaps.
 ├── src/
 │   ├── shared/                   # Shared CSS + JS modules
 │   │   ├── base.css, layout.css, simulator.css, responsive.css, maplibre-overrides.css
+│   │   ├── weather.css           # Weather panel layout + responsive styles
 │   │   ├── embed.css             # Embed-specific CSS (compact layout, URL param overrides)
 │   │   ├── coord-helpers.js, map-init.js, map-layers.js, map-toggles.js
 │   │   ├── elevation-profile.js, view-switch.js, sim-engine.js, sim-renderers.js
+│   │   ├── weather-ui.js         # Weather panel runtime (risk cards, live conditions, radar)
 │   │   ├── embed-modal.js        # Embed code modal (copy iframe snippet)
 │   │   ├── embed-params.js       # URL param parsing + postMessage API for embeds
 │   │   └── init.js               # Entry point (calls initMap, binds events)
@@ -783,6 +963,10 @@ Use `['Noto Sans Medium']` for all text layers. Glyphs are hosted by Protomaps.
 │       ├── escarpment/config.js + data/
 │       ├── sleeping-giant/config.js + data/
 │       └── wild-goose/config.js + override.js + override.css + data/
+├── scripts/
+│   └── fetch-weather.js          # Fetches historical weather data → weather.json
+├── tests/
+│   └── weather.test.js           # Vitest: heat stress calc, JSON schema, HTML assertions
 ├── maps/                         # Unmigrated maps (GPX data for future builds)
 │   ├── rock-the-ridge/data/
 │   ├── manitous-revenge/data/
