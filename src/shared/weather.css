@@ -316,7 +316,17 @@
   overflow: hidden;
 }
 .weather-radar-map .maplibregl-ctrl-attrib { display: none; }
-.weather-radar-map .maplibregl-canvas { border-radius: var(--radius); }
+.weather-radar-map .maplibregl-canvas { border-radius: var(--radius); cursor: grab; }
+.weather-radar-map .maplibregl-canvas:active { cursor: grabbing; }
+.weather-radar-map .maplibregl-ctrl-top-right { top: 4px; right: 4px; }
+.weather-radar-map .maplibregl-ctrl-group {
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.weather-radar-map .maplibregl-ctrl-group button {
+  width: 26px;
+  height: 26px;
+}
 .weather-radar-meta {
   display: flex;
   justify-content: space-between;

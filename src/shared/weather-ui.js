@@ -322,13 +322,13 @@
               type: 'raster',
               tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
               tileSize: 256,
-              maxzoom: 6,
+              maxzoom: 9,
               attribution: '&copy; OpenStreetMap'
             },
             'rainviewer': {
               type: 'raster',
               tiles: [tileUrl],
-              maxzoom: 6,
+              maxzoom: 9,
               tileSize: 256
             }
           },
@@ -339,10 +339,12 @@
         },
         center: mapCenter,
         zoom: 6,
-        maxZoom: 6,
-        interactive: false,
+        minZoom: 3,
+        maxZoom: 9,
         attributionControl: false
       });
+
+      radarMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
       // Add a dot for the course location
       radarMap.on('load', function() {
