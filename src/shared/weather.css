@@ -18,6 +18,7 @@
 .map-main {
   flex: 1;
   min-width: 0;
+  background: var(--bg-card);
 }
 
 /* Weather panel */
