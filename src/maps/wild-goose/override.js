@@ -130,6 +130,8 @@ function initMap() {
       }
       (function(loopId, loopObj) {
         map.on('click', loopId, function(e) {
+          var t = e.originalEvent && e.originalEvent.target;
+          if (t && t.closest && t.closest('.turn-marker, .hq-marker, .aid-marker')) return;
           var popupColor = loopObj.pattern === 'checkered' ? '#333' : loopObj.color;
           new maplibregl.Popup({ offset: 12 }).setLngLat(e.lngLat).setHTML('<strong style="color:' + popupColor + '">' + loopObj.label + ' Loop</strong><br><span style="color:#666">' + loopObj.miles + ' mi · ' + loopObj.gain + "' gain</span>").addTo(map);
         });

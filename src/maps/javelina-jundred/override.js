@@ -177,6 +177,8 @@ function initMap() {
       // Click popup
       (function(loopId, loopObj) {
         map.on('click', loopId, function(e) {
+          var t = e.originalEvent && e.originalEvent.target;
+          if (t && t.closest && t.closest('.photo-marker, .hq-marker, .aid-marker')) return;
           new maplibregl.Popup({ offset: 12 }).setLngLat(e.lngLat).setHTML(
             '<strong style="color:' + loopObj.color + '">' + loopObj.label + '</strong><br>' +
             '<span style="color:#a0b4c0">' + loopObj.miles + ' mi \u00b7 ' + loopObj.gain + '\' gain</span>'
