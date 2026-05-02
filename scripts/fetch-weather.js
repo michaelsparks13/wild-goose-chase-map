@@ -32,6 +32,7 @@ const RACE_DATES = {
   'sleeping-giant': { month: 10, day: 12 },
   'golden-leaf': { month: 9, day: 27 },
   'manitous-revenge': { month: 7, day: 19 },
+  'tinman': { month: 6, day: 27 },
 };
 const raceDate = RACE_DATES[slug] || { month: 9, day: 1 };
 

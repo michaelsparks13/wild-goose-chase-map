@@ -1,0 +1,221 @@
+/* Tupper Lake Tinman - Override CSS */
+/* Three run-course distances with race cards, aid station markers, and scrubber */
+
+/* ═══ HEADER OVERRIDES ═══ */
+.header { background: var(--bg); padding: 10px 16px; border-bottom: 3px solid var(--primary); }
+.header-left h1 {
+  font-size: 0.95rem;
+  font-family: var(--heading-family);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.header-left .subtitle a { color: var(--primary-dark); }
+
+/* ═══ HQ BADGE ═══ */
+.hq-badge {
+  position: absolute; top: 10px; left: 10px; z-index: 10;
+  background: var(--bg); border-radius: var(--radius);
+  padding: 6px 10px; box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 6px;
+}
+.hq-badge .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); border: 1px solid var(--text); }
+.hq-badge .text { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.04em; }
+
+/* ═══ MAP BUTTONS ═══ */
+.map-btns {
+  position: absolute; top: 10px; right: 48px; z-index: 10;
+  display: flex; gap: 6px;
+}
+.trail-btn {
+  background: var(--bg); border: none; border-radius: var(--radius);
+  padding: 8px 10px; font-size: 0.7rem; font-weight: 500;
+  font-family: inherit; color: var(--text-secondary);
+  cursor: pointer; box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 4px; transition: all 0.15s;
+}
+.trail-btn:active { transform: scale(0.96); }
+.trail-btn.active { background: var(--primary); color: var(--text); font-weight: 600; }
+
+/* ═══ CONTROLS ═══ */
+.controls {
+  background: var(--bg-card);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.section-label {
+  font-size: 0.6rem; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+  font-family: var(--heading-family);
+}
+.loop-toggles {
+  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px;
+  margin-bottom: 0; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.loop-toggles::-webkit-scrollbar { display: none; }
+.loop-toggle {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-radius: var(--radius);
+  background: var(--bg-alt); border: 2px solid transparent;
+  cursor: pointer; user-select: none; transition: all 0.15s; flex-shrink: 0;
+}
+.loop-toggle:active { transform: scale(0.98); }
+.loop-toggle.active {
+  border-color: var(--loop-color); background: var(--bg);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.loop-toggle .swatch { width: 12px; height: 12px; border-radius: 3px; }
+.loop-toggle .info { text-align: left; }
+.loop-toggle .name { font-size: 0.75rem; font-weight: 600; color: var(--text); }
+.loop-toggle .stats { font-size: 0.65rem; color: var(--text-secondary); }
+
+/* ═══ RACE CARDS ═══ */
+.cards-section { padding: 16px; background: var(--bg-card); }
+.cards-section h3 {
+  font-size: 0.65rem; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+  font-family: var(--heading-family);
+}
+.race-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.race-card {
+  background: var(--bg); border-radius: var(--radius); padding: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
+  cursor: pointer; transition: all 0.15s; border: 2px solid transparent;
+}
+.race-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.04);
+}
+.race-card:active { transform: scale(0.98); }
+.race-card.active { border-color: var(--primary); box-shadow: 0 2px 8px rgba(245,197,24,0.2), 0 0 0 1px rgba(245,197,24,0.15); }
+.race-card .name { font-weight: 700; font-size: 0.9rem; color: var(--text); font-family: var(--heading-family); letter-spacing: 0.02em; text-transform: uppercase; }
+.race-card .details { font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.race-card .dots { display: flex; gap: 3px; margin-top: 8px; }
+.race-card .dot { width: 6px; height: 6px; border-radius: 2px; }
+
+/* ═══ COURSE INFO SECTION ═══ */
+.course-info { padding: 16px; background: var(--bg-card); }
+.course-info h3 {
+  font-size: 0.65rem; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+  font-family: var(--heading-family);
+}
+.course-description p { font-size: 0.85rem; line-height: 1.55; color: var(--text-secondary); margin: 0 0 10px; }
+.course-description p:last-child { margin-bottom: 0; }
+.course-description strong { color: var(--text); }
+
+/* ═══ HQ + AID MARKERS ═══ */
+.hq-marker { width: 30px; height: 30px; cursor: pointer; }
+.hq-marker svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25)); }
+.aid-marker { width: 24px; height: 24px; cursor: pointer; }
+.aid-marker svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
+
+/* ═══ FOOTER ═══ */
+.footer a { color: var(--primary-dark); }
+
+/* ═══ SIM PANEL ORDERING ═══ */
+.sim-container { background: var(--bg); }
+.sim-panel { display: contents; }
+.sim-panel .sim-races { order: 1; }
+.sim-panel .goal-time-bar { order: 2; }
+.sim-visual { order: 3; }
+.sim-panel .scrubber { order: 4; }
+.sim-panel .sim-clock { order: 5; }
+.sim-panel .sim-stats { order: 6; }
+
+/* ═══ COURSE MAP (dark theme) ═══ */
+.course-map-wrap { background: #1a1a1a; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+/* ═══ TERRAIN (dark theme) ═══ */
+.terrain-wrap { position: relative; background: #1a1a1a; }
+#simTerrain { width: 100%; height: 40px; display: block; }
+
+/* ═══ RUNNER INFO ═══ */
+.runner-info {
+  position: absolute; top: 12px; left: 12px; pointer-events: none;
+}
+.runner-ele {
+  font-size: 1.8rem; font-weight: 700; color: #fff; line-height: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  font-family: var(--heading-family);
+}
+.runner-meta { font-size: 0.7rem; color: rgba(255,255,255,0.7); margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+/* ═══ LOOP PILL ═══ */
+.loop-pill {
+  display: inline-block; margin-top: 4px;
+  padding: 2px 8px; border-radius: 10px;
+  font-size: 0.6rem; font-weight: 700;
+  border: 1px solid; background: rgba(0,0,0,0.3);
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+
+/* ═══ SCRUBBER SEGMENTS ═══ */
+.scrub-segs { position: absolute; top: 0; left: 0; height: 100%; display: flex; width: 100%; }
+.scrub-seg { height: 100%; }
+.scrub-hq { position: absolute; top: 0; left: 0; right: 0; height: 36px; pointer-events: none; }
+
+/* ═══ SCRUBBER (yellow accents) ═══ */
+.play-btn { background: var(--primary); color: var(--text); }
+.play-btn:active { background: var(--primary-dark); }
+.scrub-handle { background: var(--primary); box-shadow: 0 2px 6px rgba(245,197,24,0.5); }
+.speed-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+/* ═══ GOAL INPUT ═══ */
+.goal-input:focus { border-color: var(--primary); }
+.goal-pace strong { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ═══ FINISH TIME ═══ */
+.clock-finish { margin-top: 8px; font-size: 0.8rem; color: var(--text-secondary); }
+#finishTime { color: var(--primary-dark); font-variant-numeric: tabular-nums; }
+.clock-time { font-variant-numeric: tabular-nums; }
+
+/* ═══ SIM RACE PICKER ═══ */
+.sim-races {
+  display: flex; gap: 6px; padding: 12px 16px;
+  overflow-x: auto; background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: none;
+}
+.sim-races::-webkit-scrollbar { display: none; }
+.sim-race-btn {
+  padding: 8px 14px; border-radius: 8px; background: var(--bg-alt);
+  border: 2px solid transparent; font-family: var(--heading-family);
+  font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);
+  cursor: pointer; white-space: nowrap; transition: all 0.15s;
+  letter-spacing: 0.03em; text-transform: uppercase;
+}
+.sim-race-btn:active { transform: scale(0.97); }
+.sim-race-btn.active {
+  border-color: var(--primary); background: var(--bg); color: var(--text);
+}
+
+/* ═══ RESPONSIVE OVERRIDES ═══ */
+@media (min-width: 768px) {
+  .controls { display: flex; align-items: flex-start; gap: 24px; }
+  .controls > div:first-child { flex: 1; }
+  .cards-section { padding: 24px; }
+  .race-cards { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .course-info { padding: 24px; }
+  #simTerrain { height: 50px; }
+}
+
+@media (min-width: 1024px) {
+  .sim-panel {
+    display: flex; flex-direction: column;
+    width: 360px; flex-shrink: 0;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+  .sim-panel .sim-races { flex-wrap: wrap; overflow-x: visible; }
+  .sim-panel .scrubber { border-bottom: 1px solid var(--border); }
+  .sim-panel .sim-clock { padding: 12px 16px; }
+  .sim-panel .sim-clock .clock-time { font-size: 1.4rem; }
+  .sim-panel .sim-clock .clock-label { font-size: 0.55rem; }
+  .sim-panel .sim-stats { grid-template-columns: repeat(3, 1fr); }
+  .sim-visual .course-map-wrap { flex: 1; min-height: 0; }
+  #courseMapCanvas { height: 100%; }
+  #simTerrain { height: 60px; }
+}
+
+@media (min-width: 1440px) {
+  .sim-panel { width: 400px; }
+}

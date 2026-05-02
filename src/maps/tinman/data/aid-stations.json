@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Tupper Lake History Museum",
+    "miles": [
+      1.31,
+      5.12
+    ],
+    "lng": -74.451136,
+    "lat": 44.225088
+  },
+  {
+    "name": "Sunmount",
+    "miles": [
+      2.1,
+      4.35
+    ],
+    "lng": -74.436237,
+    "lat": 44.226817
+  },
+  {
+    "name": "Dugal Rd turnaround",
+    "miles": [
+      3.22
+    ],
+    "lng": -74.42184,
+    "lat": 44.23448
+  },
+  {
+    "name": "Tupper Lake Civic Center",
+    "miles": [
+      6.2,
+      12.17
+    ],
+    "lng": -74.46037,
+    "lat": 44.232908
+  },
+  {
+    "name": "Train Station",
+    "miles": [
+      7.26,
+      11.11
+    ],
+    "lng": -74.478564,
+    "lat": 44.2411
+  },
+  {
+    "name": "N Little Wolf Turnaround",
+    "miles": [
+      9.02
+    ],
+    "lng": -74.478567,
+    "lat": 44.258025
+  },
+  {
+    "name": "S Little Wolf",
+    "miles": [
+      10.27
+    ],
+    "lng": -74.481084,
+    "lat": 44.249215
+  }
+]
