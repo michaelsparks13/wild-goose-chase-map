@@ -1,0 +1,83 @@
+[
+  {
+    "name": "Turn right onto Boyer Avenue",
+    "mile": 0.03,
+    "coords": [-74.457537, 44.228058],
+    "pano": "H3Z_ClxiBAJECBtSj3-Yig",
+    "yaw": 116.16,
+    "pitch": 19.56,
+    "bearingAfter": 171
+  },
+  {
+    "name": "Turn left onto East Park Street",
+    "mile": 0.42,
+    "coords": [-74.456861, 44.224572],
+    "pano": "vK87NCNW1jRk4UDFDxGEqg",
+    "yaw": 137.24,
+    "pitch": 9.37,
+    "bearingAfter": 82
+  },
+  {
+    "name": "Old Wawbeek / Dugal Loop Entry",
+    "mile": 2.15,
+    "coords": [-74.429089, 44.234926],
+    "pano": "aW84qtHD_VBgwzlvZuvSOg",
+    "yaw": 98.82,
+    "pitch": 6.01,
+    "bearingAfter": 119
+  },
+  {
+    "name": "Turn left onto Pleasant Avenue",
+    "mile": 4.44,
+    "coords": [-74.457537, 44.228058],
+    "pano": "iR9cgLQXuu2GYkVzJwi3uw",
+    "yaw": 334.81,
+    "pitch": 18.51,
+    "bearingAfter": 262
+  },
+  {
+    "name": "Turn left onto Chemical Street",
+    "mile": 4.62,
+    "coords": [-74.462567, 44.238488],
+    "pano": "hdp2J3ubGHj7-GGBdKRCjw",
+    "yaw": 265.99,
+    "pitch": 9.34,
+    "bearingAfter": 201
+  },
+  {
+    "name": "Turn left onto McLaughlin Avenue",
+    "mile": 5.02,
+    "coords": [-74.462567, 44.238488],
+    "pano": "LBT7s8B1gdB50CnSDsmSNg",
+    "yaw": 14.53,
+    "pitch": 4.66,
+    "bearingAfter": 285
+  },
+  {
+    "name": "Turn right onto Main Street",
+    "mile": 6.67,
+    "coords": [-74.47941, 44.240725],
+    "pano": "FXpF_L3JMYHMvNk_xrHzYQ",
+    "yaw": 260.01,
+    "pitch": 24.74,
+    "bearingAfter": 327
+  },
+  {
+    "name": "Tinman Turnaround — Wolf Pond Road",
+    "mile": 8.29,
+    "coords": [-74.471396, 44.250555],
+    "pano": "AlGc8rKntBziWDekY_bj3w",
+    "yaw": 331.20,
+    "pitch": -0.24,
+    "bearingAfter": 330
+  },
+  {
+    "name": "Turn left onto Fuller Avenue",
+    "mile": 9.32,
+    "coords": [-74.481567, 44.249212],
+    "pano": "rmgStNEYvH8pcB34HoPq6g",
+    "yaw": 255.91,
+    "pitch": 16.51,
+    "bearingAfter": 180
+  }
+]
