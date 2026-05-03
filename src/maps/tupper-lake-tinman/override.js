@@ -72,6 +72,51 @@ function streetviewArrowAngle(turn) {
   return normalizeAngle(turn.bearingAfter - turn.yaw);
 }
 
+// Builds the inner-HTML for a Street View popup. Kept as a single function
+// (not interpolated inline at marker-creation time) so the structure is easy
+// to test from the built HTML and easy to evolve.
+function buildStreetviewPopupHtml(turn) {
+  var thumbUrl =
+    'https://streetviewpixels-pa.googleapis.com/v1/thumbnail' +
+    '?cb_client=maps_sv.tactile&w=720&h=400' +
+    '&panoid=' + encodeURIComponent(turn.pano) +
+    '&yaw=' + turn.yaw +
+    '&pitch=' + turn.pitch;
+
+  var mapsUrl =
+    'https://www.google.com/maps/@?api=1&map_action=pano' +
+    '&pano=' + encodeURIComponent(turn.pano) +
+    '&heading=' + turn.yaw +
+    '&pitch=' + turn.pitch;
+
+  var rotateDeg = streetviewArrowAngle(turn);
+
+  // Chevron geometry: 48x48 viewBox, point-up at 0deg. Stem + V head.
+  var chevronSvg =
+    '<svg viewBox="0 0 48 48" aria-hidden="true">' +
+      '<path d="M24 6 L24 40 M10 22 L24 6 L38 22" ' +
+        'fill="none" stroke="#1a1a1a" stroke-width="7" ' +
+        'stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="M24 6 L24 40 M10 22 L24 6 L38 22" ' +
+        'fill="none" stroke="#F5C518" stroke-width="4.5" ' +
+        'stroke-linecap="round" stroke-linejoin="round"/>' +
+    '</svg>';
+
+  return (
+    '<div class="streetview-popup-inner">' +
+      '<div class="streetview-title">' + turn.name + '</div>' +
+      '<div class="streetview-meta">MILE ' + turn.mile.toFixed(2) + '</div>' +
+      '<div class="streetview-photo-wrap">' +
+        '<img class="streetview-photo" src="' + thumbUrl + '" alt="Street View at ' + turn.name + '" loading="lazy">' +
+        '<div class="streetview-arrow" style="transform: translate(-50%, 0) rotate(' + rotateDeg.toFixed(2) + 'deg)">' +
+          chevronSvg +
+        '</div>' +
+      '</div>' +
+      '<a class="streetview-link" href="' + mapsUrl + '" target="_blank" rel="noopener">Open in Google Maps →</a>' +
+    '</div>'
+  );
+}
+
 var map;
 var aidOn = false;
 var terrain3D = false;

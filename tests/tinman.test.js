@@ -342,7 +342,7 @@ describe('Tinman map features', () => {
 
   it('does not contain wild-goose turn markers', () => {
     expect(html).not.toContain('var TURNS = [');
-    expect(html).not.toContain('streetviewpixels-pa');
+    expect(html).not.toContain('Nr-Rvka4ohEaY8AjwC0gsQ'); // Warwick Turnpike pano (wild-goose)
   });
 });
 

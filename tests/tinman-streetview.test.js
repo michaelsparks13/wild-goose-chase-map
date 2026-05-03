@@ -137,6 +137,25 @@ describe('override.js exposes the rotation helpers', () => {
   });
 });
 
+describe('buildStreetviewPopupHtml structure', () => {
+  it('main HTML contains buildStreetviewPopupHtml definition', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    expect(html).toMatch(/function\s+buildStreetviewPopupHtml\s*\(/);
+  });
+
+  it('main HTML uses streetviewpixels-pa.googleapis.com thumbnail endpoint', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    expect(html).toContain('streetviewpixels-pa.googleapis.com/v1/thumbnail');
+  });
+
+  it('popup HTML wires the chevron transform to streetviewArrowAngle', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    // The helper should compute rotate(...deg) using streetviewArrowAngle
+    expect(html).toMatch(/streetviewArrowAngle\s*\(/);
+    expect(html).toMatch(/rotate\(/);
+  });
+});
+
 describe('Street View toggle button', () => {
   it('button exists in main HTML between aid and 3D', () => {
     const html = readFileSync(distHtmlPath, 'utf-8');
