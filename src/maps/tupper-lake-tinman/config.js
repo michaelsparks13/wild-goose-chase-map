@@ -177,6 +177,7 @@ module.exports = {
     <div class="hq-badge"><div class="dot"></div><div class="text">RUN START</div></div>
     <div class="map-btns">
       <button class="trail-btn" id="aidBtn" onclick="toggleAid()">Aid Stations</button>
+      <button class="trail-btn" id="streetviewBtn" onclick="toggleStreetview()">Street View</button>
       <button class="trail-btn" id="terrainBtn" onclick="toggle3D()">3D</button>
     </div>
     <div class="course-legend" aria-label="Course direction legend">

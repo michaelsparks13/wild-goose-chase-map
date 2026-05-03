@@ -71,3 +71,27 @@ describe('build inlines STREETVIEW_TURNS', () => {
     });
   });
 });
+
+describe('Street View toggle button', () => {
+  it('button exists in main HTML between aid and 3D', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    const aidIdx = html.indexOf('id="aidBtn"');
+    const svIdx = html.indexOf('id="streetviewBtn"');
+    const terrainIdx = html.indexOf('id="terrainBtn"');
+    expect(aidIdx).toBeGreaterThan(-1);
+    expect(svIdx).toBeGreaterThan(-1);
+    expect(terrainIdx).toBeGreaterThan(-1);
+    expect(svIdx).toBeGreaterThan(aidIdx);
+    expect(svIdx).toBeLessThan(terrainIdx);
+  });
+
+  it('button label is "Street View"', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    expect(html).toMatch(/id="streetviewBtn"[^>]*>Street View</);
+  });
+
+  it('button onclick wires to toggleStreetview', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    expect(html).toMatch(/id="streetviewBtn"[^>]*onclick="toggleStreetview\(\)"/);
+  });
+});
