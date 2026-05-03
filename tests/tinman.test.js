@@ -341,7 +341,7 @@ describe('Tinman map features', () => {
   });
 
   it('does not contain wild-goose turn markers', () => {
-    expect(html).not.toContain('TURNS = [');
+    expect(html).not.toContain('var TURNS = [');
     expect(html).not.toContain('streetviewpixels-pa');
   });
 });

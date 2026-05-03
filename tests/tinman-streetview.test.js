@@ -38,3 +38,36 @@ describe('streetview.json schema', () => {
     expect(new Set(miles).size).toBe(miles.length);
   });
 });
+
+const distHtmlPath = resolve(__dirname, '../dist/maps/tupper-lake-tinman/index.html');
+const embedHtmlPath = resolve(__dirname, '../dist/embed/tupper-lake-tinman/index.html');
+
+describe('build inlines STREETVIEW_TURNS', () => {
+  it('main HTML defines STREETVIEW_TURNS as an array', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    expect(html).toMatch(/var STREETVIEW_TURNS\s*=\s*\[/);
+  });
+
+  it('embed HTML defines STREETVIEW_TURNS', () => {
+    const html = readFileSync(embedHtmlPath, 'utf-8');
+    expect(html).toMatch(/var STREETVIEW_TURNS\s*=\s*\[/);
+  });
+
+  it('inlined data includes all 9 pano IDs', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    const panos = [
+      'H3Z_ClxiBAJECBtSj3-Yig',
+      'vK87NCNW1jRk4UDFDxGEqg',
+      'aW84qtHD_VBgwzlvZuvSOg',
+      'iR9cgLQXuu2GYkVzJwi3uw',
+      'hdp2J3ubGHj7-GGBdKRCjw',
+      'LBT7s8B1gdB50CnSDsmSNg',
+      'FXpF_L3JMYHMvNk_xrHzYQ',
+      'AlGc8rKntBziWDekY_bj3w',
+      'rmgStNEYvH8pcB34HoPq6g',
+    ];
+    panos.forEach((pano) => {
+      expect(html, `pano ${pano} should be inlined`).toContain(pano);
+    });
+  });
+});

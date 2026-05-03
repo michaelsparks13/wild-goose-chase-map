@@ -18,6 +18,7 @@ const sprintTurns = loadJSON('data/sprint-turnarounds.json');
 const olympicTurns = loadJSON('data/olympic-turnarounds.json');
 const tinmanTurns = loadJSON('data/tinman-turnarounds.json');
 const aidStationsRaw = loadJSON('data/aid-stations.json');
+const streetviewTurns = loadJSON('data/streetview.json');
 const weatherData = fs.existsSync(path.join(__dirname, 'data/weather.json'))
   ? loadJSON('data/weather.json') : null;
 
@@ -115,6 +116,8 @@ var loopCoordDistances = {};
     loopCoordDistances[id] = dists;
   }
 })();
+
+var STREETVIEW_TURNS = ${JSON.stringify(streetviewTurns)};
 
 `;
 
