@@ -257,21 +257,149 @@ function getCoordAtDist(targetMile, loopId) {
   return coords[coords.length - 1];
 }
 
-// Build the course-line slice for a single direction step. We walk the loop's
-// coordinates between step[idx].mile and the next step's mile, prepending and
-// appending the exact interpolated endpoints so the highlighted segment lines
-// up with the underlying course geometry pixel-perfectly.
+// Snap each step's `location` to the nearest point on the loop's actual
+// coordinate line, then return the cumulative mile of that projection.
 //
-// Out-and-back routes have one continuous coordinate array per loop, so a
-// simple mile-range slice always produces a contiguous segment.
+// Why we don't trust step.mile directly: OSRM emits the step list against
+// one routing graph, but the geojson is later road-snapped (see
+// scripts/snap-tinman-to-roads.js). Cumulative miles drift in the snap
+// process, so step.mile no longer matches the position of the same
+// physical intersection on the rendered route.
+//
+// Out-and-back routes pass through the same intersection twice. To keep
+// step ordering monotonic we always search forward from the previous
+// step's snapped mile, so the second pass finds the second occurrence.
+function distSqPointToSegment(p, a, b) {
+  var midLat = (p[1] + a[1] + b[1]) / 3;
+  var cosLat = Math.cos(midLat * Math.PI / 180);
+  var ax = a[0] * cosLat, ay = a[1];
+  var bx = b[0] * cosLat, by = b[1];
+  var px = p[0] * cosLat, py = p[1];
+  var dx = bx - ax, dy = by - ay;
+  var len2 = dx * dx + dy * dy;
+  if (len2 === 0) return { d2: (px - ax) * (px - ax) + (py - ay) * (py - ay), t: 0 };
+  var t = ((px - ax) * dx + (py - ay) * dy) / len2;
+  if (t < 0) t = 0; else if (t > 1) t = 1;
+  var cx = ax + t * dx, cy = ay + t * dy;
+  return { d2: (px - cx) * (px - cx) + (py - cy) * (py - cy), t: t };
+}
+
+// SNAPPED_STEP_MILES[raceId][i] = snapped cumulative mile for steps[i].
+// SNAPPED_STEP_COORDS[raceId][i] = the projected [lng,lat] on the route.
+// Computed once at script init from DIRECTIONS + loopCoordDistances; the
+// rest of the highlight code reads from these arrays instead of step.mile.
+var SNAPPED_STEP_MILES = {};
+var SNAPPED_STEP_COORDS = {};
+(function precomputeSnappedSteps() {
+  Object.keys(DIRECTIONS || {}).forEach(function(raceId) {
+    var steps = DIRECTIONS[raceId] || [];
+    var loopId = RACES[raceId].loops[0];
+    var coords = LOOPS[loopId].geojson.geometry.coordinates;
+    var dists = loopCoordDistances[loopId];
+    var totalMi = dists[dists.length - 1];
+    var miles = new Array(steps.length);
+    var pts = new Array(steps.length);
+    var cursorMile = 0;
+    // Allow the next step to snap slightly *before* the previous one
+    // (within a foot) — protects against tiny coord-rounding wobbles at
+    // intersections that two consecutive steps share.
+    var EPS_BACKTRACK = 1 / 5280;
+    // ~150 ft tolerance for "this segment IS the right one." Out-and-back
+    // routes pass identical intersections twice; without this we'd always
+    // pick the globally-closest match (often the return pass with an
+    // exact-coordinate match) even when an acceptable earlier match exists.
+    // 150 ft covers OSRM rounding plus the small offsets the snap script
+    // introduces around intersections.
+    var GOOD_MATCH_FT = 150;
+    var GOOD_MATCH_DEG = GOOD_MATCH_FT / 364000;
+    var GOOD_MATCH_DEG2 = GOOD_MATCH_DEG * GOOD_MATCH_DEG;
+
+    for (var i = 0; i < steps.length; i++) {
+      var s = steps[i];
+      if (i === 0 && s.type === 'depart') {
+        miles[i] = 0;
+        pts[i] = coords[0];
+        cursorMile = 0;
+        continue;
+      }
+      if (i === steps.length - 1 && s.type === 'arrive') {
+        miles[i] = totalMi;
+        pts[i] = coords[coords.length - 1];
+        continue;
+      }
+      if (!s.location) {
+        miles[i] = cursorMile;
+        pts[i] = coords[0];
+        continue;
+      }
+      // Two trackers: the FIRST forward segment whose perpendicular distance
+      // is within tolerance ("first good match" — what the runner actually
+      // wants), and the globally-closest forward segment as a fallback when
+      // the location is genuinely off-route (e.g., 200 ft north of the
+      // closest snapped centerline).
+      var firstGood = null;
+      var bestOverall = { d2: Infinity, mile: cursorMile, point: s.location };
+      var minMile = cursorMile - EPS_BACKTRACK;
+      for (var j = 1; j < coords.length; j++) {
+        if (dists[j] < minMile) continue;
+        var r = distSqPointToSegment(s.location, coords[j - 1], coords[j]);
+        var ax = coords[j - 1][0], ay = coords[j - 1][1];
+        var bx = coords[j][0],     by = coords[j][1];
+        var snapMile = dists[j - 1] + r.t * (dists[j] - dists[j - 1]);
+        if (snapMile < minMile) snapMile = minMile;
+        var snapPt = [ax + r.t * (bx - ax), ay + r.t * (by - ay)];
+        if (r.d2 < bestOverall.d2) {
+          bestOverall = { d2: r.d2, mile: snapMile, point: snapPt };
+        }
+        if (firstGood == null && r.d2 <= GOOD_MATCH_DEG2) {
+          firstGood = { d2: r.d2, mile: snapMile, point: snapPt };
+        }
+      }
+      var winner = firstGood || bestOverall;
+      miles[i] = winner.mile;
+      pts[i] = winner.point;
+      cursorMile = winner.mile;
+    }
+    SNAPPED_STEP_MILES[raceId] = miles;
+    SNAPPED_STEP_COORDS[raceId] = pts;
+  });
+})();
+
+// Build the course-line slice for a single direction step. The slice runs
+// from the snapped position of step[idx] to the snapped position of
+// step[idx+1], so the highlighted segment lines up exactly with the road
+// the runner is on between those two turns.
+//
+// Special case: when consecutive steps share an intersection (a tiny spur
+// road like Dugal that the geojson doesn't include separately), the
+// step→next segment is degenerate. Fall back to the previous-step→this
+// segment so the runner sees the road they were just on. Same for the
+// final 'arrive' step, which shares its location with the U-turn before.
 function stepSegmentCoords(raceId, stepIdx) {
   var steps = (DIRECTIONS && DIRECTIONS[raceId]) || [];
   if (stepIdx < 0 || stepIdx >= steps.length) return [];
   var loopId = RACES[raceId].loops[0];
   var coords = LOOPS[loopId].geojson.geometry.coordinates;
   var dists = loopCoordDistances[loopId];
-  var startMile = steps[stepIdx].mile;
-  var endMile = (stepIdx + 1 < steps.length) ? steps[stepIdx + 1].mile : dists[dists.length - 1];
+  var snapMiles = SNAPPED_STEP_MILES[raceId] || [];
+  var totalMi = dists[dists.length - 1];
+  function snappedAt(i) {
+    if (i < 0) return 0;
+    if (i >= steps.length) return totalMi;
+    return (snapMiles[i] != null) ? snapMiles[i] : steps[i].mile;
+  }
+  var startMile = snappedAt(stepIdx);
+  var endMile = snappedAt(stepIdx + 1);
+  // Less than ~50 ft between snapped points = effectively the same point.
+  // Show the road INTO the turn instead so the runner has visual context.
+  var DEGENERATE_MI = 50 / 5280;
+  if (endMile - startMile < DEGENERATE_MI && stepIdx > 0) {
+    var prevMile = snappedAt(stepIdx - 1);
+    if (startMile - prevMile >= DEGENERATE_MI) {
+      endMile = startMile;
+      startMile = prevMile;
+    }
+  }
   if (endMile < startMile) endMile = startMile;
   var segment = [getCoordAtDist(startMile, loopId)];
   for (var j = 0; j < dists.length; j++) {
@@ -849,12 +977,13 @@ function setActiveStep(idx, opts) {
     geometry: { type: 'LineString', coordinates: segCoords }
   });
 
-  // Pin: prefer the step's own location (the OSRM maneuver coordinate) so
-  // turns line up with the road junction. Fall back to segment start if the
-  // step lacks coordinates (rare — only synthetic 'arrive' steps).
-  var pinLoc = (step.location && step.location.length === 2)
-    ? step.location
-    : (segCoords[0] || null);
+  // Pin: use the route-snapped projection of step.location so the badge
+  // sits ON the rendered course (locations are sometimes a few feet off
+  // the snapped centerline). Fall back to segment start as a last resort.
+  var snapPts = SNAPPED_STEP_COORDS[currentRaceId];
+  var pinLoc = (snapPts && snapPts[idx])
+    ? snapPts[idx]
+    : (step.location && step.location.length === 2 ? step.location : (segCoords[0] || null));
   if (pinLoc) {
     map.getSource('dir-active-pin').setData({
       type: 'FeatureCollection',
@@ -1102,15 +1231,24 @@ function renderDirections(raceId) {
   var listEl = getEl('directionsList');
   if (!listEl) return;
   var color = LOOPS[race.loops[0]].color;
+  var snapMiles = SNAPPED_STEP_MILES[raceId] || [];
   var html = '';
   for (var i = 0; i < steps.length; i++) {
     var s = steps[i];
+    // Display the route-snapped mile so runners read an accurate position
+    // on the rendered course. step.mile is OSRM's claim against a stale
+    // routing graph and can drift by multiple miles.
+    var displayMile = snapMiles[i] != null ? snapMiles[i] : s.mile;
+    // Distance to the next turn, computed from snapped miles for the same
+    // accuracy reason.
+    var nextSnap = (i + 1 < steps.length && snapMiles[i + 1] != null) ? snapMiles[i + 1] : null;
+    var legMi = (nextSnap != null) ? Math.max(0, nextSnap - displayMile) : 0;
     html += '<li class="dir-step" data-step-idx="' + i + '" tabindex="0" role="button" ' +
       'aria-label="Step ' + (i + 1) + ': ' + s.instruction.replace(/"/g, '&quot;') + '">' +
-      '<span class="dir-mile">' + s.mile.toFixed(1) + '</span>' +
+      '<span class="dir-mile">' + displayMile.toFixed(1) + '</span>' +
       '<span class="dir-icon" style="color:' + color + '">' + maneuverIcon(s.type, s.modifier) + '</span>' +
       '<span class="dir-text"><span class="dir-instr">' + s.instruction + '</span>' +
-        (s.distMi > 0 ? '<span class="dir-dist">' + formatStepDistance(s.distMi) + '</span>' : '') +
+        (legMi > 0 ? '<span class="dir-dist">' + formatStepDistance(legMi) + '</span>' : '') +
       '</span>' +
     '</li>';
   }
@@ -1248,7 +1386,13 @@ function drawCombined(loopSeq, title) {
   if (activeStepIdx >= 0 && DIRECTIONS && DIRECTIONS[currentRaceId]) {
     var activeStep = DIRECTIONS[currentRaceId][activeStepIdx];
     if (activeStep && loopSeq.indexOf(RACES[currentRaceId].loops[0]) >= 0) {
-      var mileX = xS(activeStep.mile);
+      // Use the snapped mile (matches the segment + pin), not the OSRM
+      // step.mile which can be offset by miles from the rendered route.
+      var snapMiles = SNAPPED_STEP_MILES[currentRaceId];
+      var activeMile = (snapMiles && snapMiles[activeStepIdx] != null)
+        ? snapMiles[activeStepIdx]
+        : activeStep.mile;
+      var mileX = xS(activeMile);
       ctx.strokeStyle = 'rgba(245,197,24,0.95)';
       ctx.lineWidth = 1.5;
       ctx.setLineDash([3, 3]);
@@ -1260,10 +1404,10 @@ function drawCombined(loopSeq, title) {
       // Find the elevation at the active mile by linear-interpolating allPts.
       var ae = null;
       for (var ap = 1; ap < allPts.length; ap++) {
-        if (allPts[ap].d >= activeStep.mile) {
+        if (allPts[ap].d >= activeMile) {
           var p0 = allPts[ap - 1], p1 = allPts[ap];
           var dr = p1.d - p0.d;
-          var t = dr > 0 ? (activeStep.mile - p0.d) / dr : 0;
+          var t = dr > 0 ? (activeMile - p0.d) / dr : 0;
           ae = p0.e + (p1.e - p0.e) * t;
           break;
         }

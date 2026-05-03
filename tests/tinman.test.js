@@ -423,7 +423,7 @@ describe('Tinman interactive directions', () => {
   it('renderDirections resets active step to 0 every render', () => {
     const idx = html.indexOf('function renderDirections');
     expect(idx).toBeGreaterThan(0);
-    const block = html.substr(idx, 3000);
+    const block = html.substr(idx, 5000);
     expect(block).toContain('setActiveStep(0,');
     expect(block).toContain('currentRaceId = raceId');
   });
@@ -460,6 +460,99 @@ describe('Tinman interactive directions', () => {
 
   it('respects prefers-reduced-motion for transitions and smooth scroll', () => {
     expect(html).toContain('prefers-reduced-motion: reduce');
+  });
+});
+
+describe('Tinman directions–route alignment', () => {
+  // Step `mile` values are emitted by OSRM against a routing graph that the
+  // snapped geojson no longer matches exactly, so the runtime walks each
+  // step.location forward through the route and uses the snapped mile for
+  // segment highlighting, the active pin, and the displayed mileage. These
+  // tests pin both the runtime hook AND the underlying data quality so the
+  // highlight stays correct even if either source drifts.
+
+  it('declares the precomputed snapped step arrays', () => {
+    expect(html).toContain('SNAPPED_STEP_MILES');
+    expect(html).toContain('SNAPPED_STEP_COORDS');
+    expect(html).toContain('precomputeSnappedSteps');
+  });
+
+  it('stepSegmentCoords reads from SNAPPED_STEP_MILES, not the stale step.mile', () => {
+    const idx = html.indexOf('function stepSegmentCoords');
+    expect(idx).toBeGreaterThan(0);
+    const block = html.substr(idx, 1500);
+    expect(block).toContain('SNAPPED_STEP_MILES[raceId]');
+  });
+
+  it('active pin uses the snapped projection of step.location', () => {
+    expect(html).toContain('SNAPPED_STEP_COORDS[currentRaceId]');
+  });
+
+  it('elevation marker uses the snapped active mile, not step.mile', () => {
+    const idx = html.indexOf('Active-step marker');
+    expect(idx).toBeGreaterThan(0);
+    const block = html.substr(idx, 2000);
+    expect(block).toContain('SNAPPED_STEP_MILES[currentRaceId]');
+    expect(block).toContain('var activeMile');
+  });
+
+  it('rendered list mile column shows the snapped mile, not step.mile', () => {
+    const idx = html.indexOf('function renderDirections');
+    expect(idx).toBeGreaterThan(0);
+    const block = html.substr(idx, 6000);
+    expect(block).toContain('var displayMile = snapMiles[i]');
+    expect(block).toContain("displayMile.toFixed(1)");
+  });
+
+  // Data-quality check that doubles as documentation of the alignment
+  // contract: if any step.location drifts off the route by more than ~250 ft
+  // the highlight will look obviously wrong on the map. 250 ft is a generous
+  // ceiling — almost every Tinman step sits ON the route within a foot or
+  // two; the worst real point is ~204 ft (an OSRM intersection coord that
+  // sits a half-block off the snapped centerline).
+  function flatten(fc) {
+    const coords = [];
+    for (let i = 0; i < fc.features.length; i++) {
+      const c = fc.features[i].geometry.coordinates;
+      const startAt = (coords.length && i > 0) ? 1 : 0;
+      for (let j = startAt; j < c.length; j++) coords.push(c[j]);
+    }
+    return coords;
+  }
+  function distFtPointToSegment(p, a, b) {
+    const midLat = (p[1] + a[1] + b[1]) / 3;
+    const cosLat = Math.cos((midLat * Math.PI) / 180);
+    const ax = a[0] * cosLat, ay = a[1];
+    const bx = b[0] * cosLat, by = b[1];
+    const px = p[0] * cosLat, py = p[1];
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    let t = 0;
+    if (len2 > 0) t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
+    const cx = ax + t * dx, cy = ay + t * dy;
+    const d = Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy));
+    return d * 364000; // degrees → feet (lat at 1° ≈ 364,000 ft)
+  }
+  function offRouteFt(coords, target) {
+    let best = Infinity;
+    for (let i = 1; i < coords.length; i++) {
+      const d = distFtPointToSegment(target, coords[i - 1], coords[i]);
+      if (d < best) best = d;
+    }
+    return best;
+  }
+
+  it('every step.location sits within 250 ft of the snapped route', () => {
+    for (const slug of ['sprint', 'olympic', 'tinman']) {
+      const geo = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tinman/data/${slug}.geojson`), 'utf-8'));
+      const steps = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tinman/data/${slug}-steps.json`), 'utf-8'));
+      const coords = flatten(geo);
+      for (const s of steps) {
+        if (!s.location) continue;
+        const off = offRouteFt(coords, s.location);
+        expect(off, `${slug} step ${s.n} (${s.instruction}) is ${off.toFixed(0)} ft off the route`).toBeLessThan(250);
+      }
+    }
   });
 });
 
