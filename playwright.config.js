@@ -12,6 +12,23 @@ export default defineConfig({
     reuseExistingServer: true,
   },
   projects: [
-    { name: 'chromium', use: { browserName: 'chromium' } },
+    {
+      name: 'chromium',
+      use: {
+        browserName: 'chromium',
+        // Force software WebGL so MapLibre can paint in headless CI / sandboxed
+        // environments where the default SwiftShader threading sometimes fails
+        // with "BindToCurrentSequence failed". These flags are no-ops on hosts
+        // with real GPU acceleration.
+        launchOptions: {
+          args: [
+            '--use-angle=swiftshader',
+            '--enable-unsafe-swiftshader',
+            '--ignore-gpu-blocklist',
+            '--disable-gpu-sandbox',
+          ],
+        },
+      },
+    },
   ],
 });

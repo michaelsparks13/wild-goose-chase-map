@@ -62,6 +62,23 @@ var terrain3D = false;
 var aidMarkers = [];
 var loopTurnMarkers = { sprint: [], olympic: [], tinman: [] };
 
+// ─── Interactive directions state ───
+// `currentRaceId` mirrors the race that renderDirections last drew. It's the
+// authoritative source for which step list lives in the DOM.
+// `activeStepIdx` is -1 when no step is selected (initial state before
+// renderDirections runs); >=0 when a specific step is highlighted.
+// `dirMode` selects the interaction model: 'click' = bidirectional click-to-
+// activate; 'scrub' = scroll-driven active step (IntersectionObserver).
+var currentRaceId = 'tinman';
+var activeStepIdx = -1;
+var dirMode = (function() {
+  try {
+    var saved = localStorage.getItem('tinman.dirMode');
+    return (saved === 'scrub' || saved === 'click') ? saved : 'click';
+  } catch (e) { return 'click'; }
+})();
+var stepObserver = null;
+
 // ═══════════════════════════════════════════════════════════
 // VIEW SWITCHING
 // ═══════════════════════════════════════════════════════════
@@ -240,21 +257,64 @@ function getCoordAtDist(targetMile, loopId) {
   return coords[coords.length - 1];
 }
 
+// Build the course-line slice for a single direction step. We walk the loop's
+// coordinates between step[idx].mile and the next step's mile, prepending and
+// appending the exact interpolated endpoints so the highlighted segment lines
+// up with the underlying course geometry pixel-perfectly.
+//
+// Out-and-back routes have one continuous coordinate array per loop, so a
+// simple mile-range slice always produces a contiguous segment.
+function stepSegmentCoords(raceId, stepIdx) {
+  var steps = (DIRECTIONS && DIRECTIONS[raceId]) || [];
+  if (stepIdx < 0 || stepIdx >= steps.length) return [];
+  var loopId = RACES[raceId].loops[0];
+  var coords = LOOPS[loopId].geojson.geometry.coordinates;
+  var dists = loopCoordDistances[loopId];
+  var startMile = steps[stepIdx].mile;
+  var endMile = (stepIdx + 1 < steps.length) ? steps[stepIdx + 1].mile : dists[dists.length - 1];
+  if (endMile < startMile) endMile = startMile;
+  var segment = [getCoordAtDist(startMile, loopId)];
+  for (var j = 0; j < dists.length; j++) {
+    if (dists[j] > startMile && dists[j] < endMile) segment.push(coords[j]);
+  }
+  segment.push(getCoordAtDist(endMile, loopId));
+  return segment;
+}
+
+// Empty placeholders so the GeoJSON sources can be created up front; setData()
+// replaces them whenever the active step changes.
+var EMPTY_LINE = { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } };
+var EMPTY_POINT = { type: 'FeatureCollection', features: [] };
+
 // ═══════════════════════════════════════════════════════════
 // MAP VIEW
 // ═══════════════════════════════════════════════════════════
 function initMap() {
-  map = new maplibregl.Map({
-    container: 'map',
-    style: BASEMAP_STYLE,
-    center: CONFIG.mapCenter,
-    zoom: 13,
-    pitch: 0,
-    bearing: 0,
-    antialias: true,
-    attributionControl: false,
-    preserveDrawingBuffer: true
-  });
+  // The directions list, race cards, and elevation profile are all DOM/canvas
+  // surfaces with no map dependency. Rendering them up front means the page
+  // still functions when WebGL is unavailable (corporate firewalls, headless
+  // browsers, ancient hardware) — the runner just loses the line glow on the
+  // map, not the list of turns.
+  initDomOnly();
+
+  try {
+    map = new maplibregl.Map({
+      container: 'map',
+      style: BASEMAP_STYLE,
+      center: CONFIG.mapCenter,
+      zoom: 13,
+      pitch: 0,
+      bearing: 0,
+      antialias: true,
+      attributionControl: false,
+      preserveDrawingBuffer: true
+    });
+  } catch (e) {
+    // WebGL constructor throws (e.g. headless Chromium without ANGLE). The
+    // DOM is already populated; bail out so the rest of initMap doesn't fault.
+    console.warn('Map initialization failed (WebGL likely unavailable):', e && e.message);
+    return;
+  }
 
   map.addControl(new maplibregl.AttributionControl({ compact: true }));
   map.once('load', function() {
@@ -394,6 +454,7 @@ function initMap() {
     addMileMarkers();
     registerTurnIcons();
     addTurnArrowLayers();
+    addDirectionsHighlightLayers();
 
     var el = document.createElement('div');
     el.className = 'hq-marker';
@@ -455,11 +516,32 @@ function initMap() {
     // would crop the northern leg out to N. Little Wolf Pond.
     fitVisibleLoopsToView();
 
-    drawProfile('tinman');
-    buildCards();
-    renderDirections('tinman');
-    document.querySelectorAll('.race-card').forEach(function(c) { c.classList.toggle('active', c.dataset.race === 'tinman'); });
+    // Apply the active-step highlight to the map now that the highlight
+    // sources/layers exist. The DOM list was already populated by initDomOnly
+    // before the map booted, so activeStepIdx is already 0.
+    setActiveStep(activeStepIdx >= 0 ? activeStepIdx : 0, {
+      fitCamera: false,
+      scrollList: false,
+      smooth: false
+    });
   });
+}
+
+// Render every DOM/canvas surface that doesn't require the map. Safe to call
+// before maplibre is constructed (or at all, if WebGL is unavailable).
+function initDomOnly() {
+  buildCards();
+  drawProfile('tinman');
+  renderDirections('tinman');
+  document.querySelectorAll('.race-card').forEach(function(c) {
+    c.classList.toggle('active', c.dataset.race === 'tinman');
+  });
+
+  // Hydrate the saved interaction mode AFTER the list exists so the
+  // IntersectionObserver in scrub mode has elements to attach to.
+  var savedMode = dirMode;
+  dirMode = 'click';
+  setDirMode(savedMode);
 }
 
 // Fit the map viewport to the bounding box of every currently-visible loop.
@@ -580,7 +662,309 @@ function addTurnArrowLayers() {
       layout: commonLayout,
       paint: { 'icon-opacity': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.95] }
     });
+
+    // Make the existing turn-badge layers clickable so the runner can pick a
+    // step from the map directly (bidirectional sync with the directions list).
+    (function(id) {
+      var enter = function() { map.getCanvas().style.cursor = 'pointer'; };
+      var leave = function() { map.getCanvas().style.cursor = ''; };
+      var pick = function(e) {
+        if (!e.features || !e.features.length) return;
+        var f = e.features[0];
+        var mile = f.properties && f.properties.mile;
+        if (mile == null) return;
+        // Find the directions step closest to this badge by mile. Badges dedupe
+        // by ~25m so multiple steps may map to one badge — we prefer the first.
+        var steps = (DIRECTIONS && DIRECTIONS[currentRaceId]) || [];
+        var bestIdx = -1, bestDelta = Infinity;
+        for (var i = 0; i < steps.length; i++) {
+          var d = Math.abs(steps[i].mile - mile);
+          if (d < bestDelta) { bestDelta = d; bestIdx = i; }
+        }
+        if (bestIdx >= 0) setActiveStep(bestIdx, { fitCamera: false, scrollList: true });
+      };
+      map.on('mouseenter', id + '-turn-badges', enter);
+      map.on('mouseleave', id + '-turn-badges', leave);
+      map.on('click', id + '-turn-badges', pick);
+      map.on('mouseenter', id + '-turn-badges-minor', enter);
+      map.on('mouseleave', id + '-turn-badges-minor', leave);
+      map.on('click', id + '-turn-badges-minor', pick);
+    })(id);
   });
+}
+
+// ═══════════════════════════════════════════════════════════
+// INTERACTIVE DIRECTIONS — highlight layers
+// One pair of layers (segment + numbered pin) services every race; switching
+// races just calls setActiveStep with a fresh index, which rewrites the source
+// data in place. Painting once and mutating data avoids leaking layers when
+// the runner toggles between Sprint / Olympic / Tinman.
+// ═══════════════════════════════════════════════════════════
+function addDirectionsHighlightLayers() {
+  map.addSource('dir-active-segment', { type: 'geojson', data: EMPTY_LINE });
+  map.addSource('dir-active-pin', { type: 'geojson', data: EMPTY_POINT });
+
+  // Soft halo behind the highlight so it lifts off the dimmed course beneath.
+  map.addLayer({
+    id: 'dir-active-segment-halo',
+    type: 'line',
+    source: 'dir-active-segment',
+    paint: {
+      'line-color': '#F5C518',
+      'line-width': ['interpolate', ['linear'], ['zoom'], 12, 8, 17, 18],
+      'line-opacity': 0.35,
+      'line-blur': 3
+    },
+    layout: { 'line-cap': 'round', 'line-join': 'round' }
+  });
+  // Solid bright accent line in brand yellow over the dimmed course.
+  map.addLayer({
+    id: 'dir-active-segment-line',
+    type: 'line',
+    source: 'dir-active-segment',
+    paint: {
+      'line-color': '#F5C518',
+      'line-width': ['interpolate', ['linear'], ['zoom'], 12, 4, 17, 8],
+      'line-opacity': 1
+    },
+    layout: { 'line-cap': 'round', 'line-join': 'round' }
+  });
+
+  // Active-step pin: a labeled circle drawn ABOVE the existing turn chevrons.
+  // We use circle + symbol layers (rather than a maplibre Marker) so we can
+  // animate it implicitly when the data changes.
+  map.addLayer({
+    id: 'dir-active-pin-halo',
+    type: 'circle',
+    source: 'dir-active-pin',
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 12, 18, 17, 28],
+      'circle-color': '#F5C518',
+      'circle-opacity': 0.18,
+      'circle-blur': 0.6
+    }
+  });
+  map.addLayer({
+    id: 'dir-active-pin-circle',
+    type: 'circle',
+    source: 'dir-active-pin',
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 12, 11, 17, 16],
+      'circle-color': '#1a1a1a',
+      'circle-stroke-color': '#F5C518',
+      'circle-stroke-width': 3
+    }
+  });
+  map.addLayer({
+    id: 'dir-active-pin-label',
+    type: 'symbol',
+    source: 'dir-active-pin',
+    layout: {
+      'text-field': ['get', 'label'],
+      'text-font': ['Noto Sans Medium'],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 12, 11, 17, 15],
+      'text-allow-overlap': true,
+      'text-ignore-placement': true
+    },
+    paint: { 'text-color': '#ffffff' }
+  });
+}
+
+// Dim the non-active course while a step is highlighted. Reaches into the
+// existing course paint properties rather than introducing new layers, so the
+// dim/restore cycle is symmetric with toggleLoop.
+function setCourseDimmed(dimmed) {
+  if (!map) return;
+  var loopIds = ['sprint', 'olympic', 'tinman'];
+  var phaseSuffixes = ['-out', '-out-halo', '-back', '-back-halo'];
+  var fullOpacity = {
+    '-out': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 1],
+    '-out-halo': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.4],
+    '-back': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 1],
+    '-back-halo': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.35]
+  };
+  var dimOpacity = {
+    '-out': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.32],
+    '-out-halo': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.18],
+    '-back': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.32],
+    '-back-halo': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.15]
+  };
+  loopIds.forEach(function(lid) {
+    phaseSuffixes.forEach(function(suf) {
+      var layerId = lid + suf;
+      if (!map.getLayer(layerId)) return;
+      map.setPaintProperty(layerId, 'line-opacity', dimmed ? dimOpacity[suf] : fullOpacity[suf]);
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// INTERACTIVE DIRECTIONS — active-step state machine
+// ═══════════════════════════════════════════════════════════
+
+// Set / clear the highlighted step. opts:
+//   fitCamera (bool) — fly map viewport to fit the active segment
+//   scrollList (bool) — scroll the directions list so active step is visible
+//   smooth (bool) — use easeTo / smooth scroll (default true)
+//
+// Two independent halves: a DOM/profile pass that always runs, and a map pass
+// that runs only once the highlight sources have been added inside the
+// MapLibre load handler. Splitting this way means the directions list and the
+// elevation marker work even when WebGL fails (corporate firewall, headless
+// browser, very old hardware) — the user just doesn't see the line glow.
+function setActiveStep(idx, opts) {
+  opts = opts || {};
+  var smooth = opts.smooth !== false;
+  var steps = (DIRECTIONS && DIRECTIONS[currentRaceId]) || [];
+  if (!steps.length) {
+    activeStepIdx = -1;
+    syncListActiveDom(-1, opts);
+    if (map) {
+      var segSrcEmpty = map.getSource('dir-active-segment');
+      if (segSrcEmpty) segSrcEmpty.setData(EMPTY_LINE);
+      var pinSrcEmpty = map.getSource('dir-active-pin');
+      if (pinSrcEmpty) pinSrcEmpty.setData(EMPTY_POINT);
+      setCourseDimmed(false);
+    }
+    drawProfileFromVisible();
+    return;
+  }
+  if (idx < 0) idx = 0;
+  if (idx > steps.length - 1) idx = steps.length - 1;
+  activeStepIdx = idx;
+
+  // DOM + profile updates run unconditionally so the list highlight + the
+  // elevation marker stay in sync even if the map never loaded.
+  syncListActiveDom(idx, opts);
+  drawProfileFromVisible();
+
+  // Map updates require the highlight sources, which are added in the load
+  // handler. Outside of that handler we silently no-op.
+  if (!map || !map.getSource('dir-active-segment')) return;
+
+  var step = steps[idx];
+  var segCoords = stepSegmentCoords(currentRaceId, idx);
+  map.getSource('dir-active-segment').setData({
+    type: 'Feature', properties: {},
+    geometry: { type: 'LineString', coordinates: segCoords }
+  });
+
+  // Pin: prefer the step's own location (the OSRM maneuver coordinate) so
+  // turns line up with the road junction. Fall back to segment start if the
+  // step lacks coordinates (rare — only synthetic 'arrive' steps).
+  var pinLoc = (step.location && step.location.length === 2)
+    ? step.location
+    : (segCoords[0] || null);
+  if (pinLoc) {
+    map.getSource('dir-active-pin').setData({
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        properties: { label: String(step.n) },
+        geometry: { type: 'Point', coordinates: pinLoc }
+      }]
+    });
+  }
+
+  setCourseDimmed(true);
+
+  if (opts.fitCamera && segCoords.length) {
+    var minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+    for (var k = 0; k < segCoords.length; k++) {
+      if (segCoords[k][0] < minLng) minLng = segCoords[k][0];
+      if (segCoords[k][0] > maxLng) maxLng = segCoords[k][0];
+      if (segCoords[k][1] < minLat) minLat = segCoords[k][1];
+      if (segCoords[k][1] > maxLat) maxLat = segCoords[k][1];
+    }
+    map.fitBounds([[minLng, minLat], [maxLng, maxLat]], {
+      padding: { top: 80, right: 60, bottom: 80, left: 60 },
+      duration: smooth ? 600 : 0,
+      maxZoom: 16
+    });
+  }
+}
+
+function syncListActiveDom(idx, opts) {
+  opts = opts || {};
+  var listEl = getEl('directionsList');
+  if (!listEl) return;
+  var children = listEl.children;
+  for (var i = 0; i < children.length; i++) {
+    children[i].classList.toggle('active', i === idx);
+  }
+  if (opts.scrollList) {
+    var activeEl = listEl.querySelector('.dir-step.active');
+    if (activeEl) {
+      // 'nearest' avoids jumping the page when the step is already visible.
+      activeEl.scrollIntoView({ block: 'nearest', behavior: opts.smooth === false ? 'auto' : 'smooth' });
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODE TOGGLE — Click vs Scrub
+// ═══════════════════════════════════════════════════════════
+function setDirMode(mode) {
+  if (mode !== 'click' && mode !== 'scrub') return;
+  if (mode === dirMode) return;
+  dirMode = mode;
+  try { localStorage.setItem('tinman.dirMode', mode); } catch (e) { /* private mode */ }
+  document.querySelectorAll('.dir-mode-btn').forEach(function(btn) {
+    var on = btn.getAttribute('data-mode') === mode;
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  var section = getEl('directionsSection');
+  if (section) section.classList.toggle('mode-scrub', mode === 'scrub');
+
+  if (mode === 'scrub') {
+    // Scrub mode is meaningless when the list is collapsed.
+    if (section && !section.classList.contains('expanded')) toggleDirections();
+    attachScrubObserver();
+  } else {
+    detachScrubObserver();
+  }
+}
+
+function attachScrubObserver() {
+  detachScrubObserver();
+  var listEl = getEl('directionsList');
+  if (!listEl) return;
+  var items = listEl.querySelectorAll('.dir-step');
+  if (!items.length) return;
+
+  // We want the step nearest the TOP of the scroll viewport to be active —
+  // the "you're reading this one right now" step. Tightening rootMargin to
+  // a thin band at the top gives that effect without flicker.
+  stepObserver = new IntersectionObserver(function(entries) {
+    if (dirMode !== 'scrub') return;
+    var best = null, bestRatio = 0;
+    entries.forEach(function(entry) {
+      if (entry.intersectionRatio > bestRatio) {
+        bestRatio = entry.intersectionRatio;
+        best = entry.target;
+      }
+    });
+    if (best) {
+      var idx = parseInt(best.getAttribute('data-step-idx'), 10);
+      if (!isNaN(idx) && idx !== activeStepIdx) {
+        // No scroll, no camera fit — the user IS the camera in scrub mode.
+        setActiveStep(idx, { fitCamera: false, scrollList: false, smooth: false });
+      }
+    }
+  }, {
+    root: listEl,
+    rootMargin: '0px 0px -70% 0px',
+    threshold: [0, 0.25, 0.5, 0.75, 1]
+  });
+  items.forEach(function(it) { stepObserver.observe(it); });
+}
+
+function detachScrubObserver() {
+  if (stepObserver) {
+    stepObserver.disconnect();
+    stepObserver = null;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -634,6 +1018,11 @@ function drawProfileFromVisible() {
 
 function selectRace(raceId) {
   var race = RACES[raceId];
+  currentRaceId = raceId;
+  // Switching races feels like a fresh study session — drop any prior step
+  // selection so the user starts at step 1 of the new course every time.
+  detachScrubObserver();
+  activeStepIdx = -1;
   for (var id in LOOPS) {
     var show = (race.loops.indexOf(id) >= 0);
     LOOPS[id].visible = show;
@@ -642,6 +1031,7 @@ function selectRace(raceId) {
   }
   fitVisibleLoopsToView();
   drawProfile(raceId);
+  // renderDirections rebuilds the step list and re-anchors activeStepIdx to 0.
   renderDirections(raceId);
   document.querySelectorAll('.race-card').forEach(function(c) { c.classList.toggle('active', c.dataset.race === raceId); });
 }
@@ -704,6 +1094,7 @@ function formatStepDistance(distMi) {
 function renderDirections(raceId) {
   var steps = (typeof DIRECTIONS !== 'undefined' && DIRECTIONS[raceId]) || [];
   var race = RACES[raceId];
+  currentRaceId = raceId;
   var labelEl = getEl('directionsRaceLabel');
   if (labelEl) labelEl.textContent = race.name + ' Run · ' + race.miles + ' mi';
   var countEl = getEl('directionsCount');
@@ -714,7 +1105,8 @@ function renderDirections(raceId) {
   var html = '';
   for (var i = 0; i < steps.length; i++) {
     var s = steps[i];
-    html += '<li class="dir-step">' +
+    html += '<li class="dir-step" data-step-idx="' + i + '" tabindex="0" role="button" ' +
+      'aria-label="Step ' + (i + 1) + ': ' + s.instruction.replace(/"/g, '&quot;') + '">' +
       '<span class="dir-mile">' + s.mile.toFixed(1) + '</span>' +
       '<span class="dir-icon" style="color:' + color + '">' + maneuverIcon(s.type, s.modifier) + '</span>' +
       '<span class="dir-text"><span class="dir-instr">' + s.instruction + '</span>' +
@@ -723,6 +1115,44 @@ function renderDirections(raceId) {
     '</li>';
   }
   setHtml(listEl, html);
+
+  // Bind interaction to each step. Click + keyboard for accessibility.
+  var listChildren = listEl.children;
+  for (var c = 0; c < listChildren.length; c++) {
+    (function(el, idx) {
+      el.addEventListener('click', function() {
+        // Camera fit only fires in click mode — in scrub mode the user is
+        // driving the highlight via scroll and an unsolicited fly-to is jarring.
+        setActiveStep(idx, { fitCamera: dirMode === 'click', scrollList: false });
+      });
+      el.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setActiveStep(idx, { fitCamera: dirMode === 'click', scrollList: false });
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+          e.preventDefault();
+          var next = Math.min(steps.length - 1, idx + 1);
+          setActiveStep(next, { fitCamera: dirMode === 'click', scrollList: true });
+          var nextEl = listEl.querySelector('[data-step-idx="' + next + '"]');
+          if (nextEl) nextEl.focus();
+        } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          var prev = Math.max(0, idx - 1);
+          setActiveStep(prev, { fitCamera: dirMode === 'click', scrollList: true });
+          var prevEl = listEl.querySelector('[data-step-idx="' + prev + '"]');
+          if (prevEl) prevEl.focus();
+        }
+      });
+    })(listChildren[c], c);
+  }
+
+  // Always reset to step 1 when a race is rendered (covers initial load AND
+  // race switches). Skip camera-fit on the initial render so the load-time
+  // fitVisibleLoopsToView() call wins.
+  setActiveStep(0, { fitCamera: false, scrollList: false, smooth: false });
+
+  // Re-attach the IntersectionObserver if scrub mode was active before.
+  if (dirMode === 'scrub') attachScrubObserver();
 }
 
 function toggleDirections() {
@@ -808,6 +1238,46 @@ function drawCombined(loopSeq, title) {
     ctx.moveTo(xS(pts[0].d), yS(pts[0].e));
     for (var i = 1; i < pts.length; i++) ctx.lineTo(xS(pts[i].d), yS(pts[i].e));
     ctx.strokeStyle = seg.color; ctx.lineWidth = 2.25; ctx.stroke();
+  }
+
+  // Active-step marker: a thin yellow vertical line + small dot at the step's
+  // mile so the elevation profile syncs with the highlighted map segment. We
+  // only draw when the active step belongs to the loop currently shown — this
+  // sidesteps the case where a Sprint-step active index is somehow held while
+  // the Tinman profile is on screen.
+  if (activeStepIdx >= 0 && DIRECTIONS && DIRECTIONS[currentRaceId]) {
+    var activeStep = DIRECTIONS[currentRaceId][activeStepIdx];
+    if (activeStep && loopSeq.indexOf(RACES[currentRaceId].loops[0]) >= 0) {
+      var mileX = xS(activeStep.mile);
+      ctx.strokeStyle = 'rgba(245,197,24,0.95)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(mileX, mt);
+      ctx.lineTo(mileX, H - mb);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // Find the elevation at the active mile by linear-interpolating allPts.
+      var ae = null;
+      for (var ap = 1; ap < allPts.length; ap++) {
+        if (allPts[ap].d >= activeStep.mile) {
+          var p0 = allPts[ap - 1], p1 = allPts[ap];
+          var dr = p1.d - p0.d;
+          var t = dr > 0 ? (activeStep.mile - p0.d) / dr : 0;
+          ae = p0.e + (p1.e - p0.e) * t;
+          break;
+        }
+      }
+      if (ae == null) ae = allPts[allPts.length - 1].e;
+      var mileY = yS(ae);
+      ctx.fillStyle = '#F5C518';
+      ctx.strokeStyle = '#1a1a1a';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(mileX, mileY, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
   }
 }
 

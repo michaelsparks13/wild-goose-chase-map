@@ -350,6 +350,119 @@ describe('Tinman simulator', () => {
   });
 });
 
+describe('Tinman interactive directions', () => {
+  it('renders the Click vs Scrub mode toggle in the directions header', () => {
+    expect(html).toContain('class="dir-mode-toggle"');
+    expect(html).toContain('data-mode="click"');
+    expect(html).toContain('data-mode="scrub"');
+    expect(html).toContain("setDirMode('click')");
+    expect(html).toContain("setDirMode('scrub')");
+  });
+
+  it('header is a div wrapper (not button-in-button) with a separate toggle button', () => {
+    // The old <button class="directions-header"> would have nested buttons inside,
+    // which is invalid HTML. The new structure wraps in a div and isolates the
+    // collapse-toggle button as `.directions-toggle`.
+    expect(html).toContain('class="directions-header"');
+    expect(html).toContain('class="directions-toggle"');
+    expect(html).not.toMatch(/<button[^>]*class="directions-header"/);
+  });
+
+  it('emits clickable list items with data-step-idx attributes', () => {
+    expect(html).toContain('data-step-idx="');
+    expect(html).toContain("'<li class=\"dir-step\" data-step-idx=\"' + i + '\"");
+  });
+
+  it('declares the interactive-directions runtime symbols', () => {
+    expect(html).toContain('var activeStepIdx');
+    expect(html).toContain('var currentRaceId');
+    expect(html).toContain('var dirMode');
+    expect(html).toContain('function setActiveStep');
+    expect(html).toContain('function setDirMode');
+    expect(html).toContain('function stepSegmentCoords');
+    expect(html).toContain('function attachScrubObserver');
+    expect(html).toContain('function detachScrubObserver');
+    expect(html).toContain('function setCourseDimmed');
+    expect(html).toContain('function addDirectionsHighlightLayers');
+  });
+
+  it('persists the chosen mode in localStorage under tinman.dirMode', () => {
+    expect(html).toContain("localStorage.getItem('tinman.dirMode')");
+    expect(html).toContain("localStorage.setItem('tinman.dirMode', mode)");
+  });
+
+  it('adds highlight sources/layers (active segment + numbered active pin)', () => {
+    expect(html).toContain("'dir-active-segment'");
+    expect(html).toContain("'dir-active-pin'");
+    expect(html).toContain("'dir-active-segment-halo'");
+    expect(html).toContain("'dir-active-segment-line'");
+    expect(html).toContain("'dir-active-pin-halo'");
+    expect(html).toContain("'dir-active-pin-circle'");
+    expect(html).toContain("'dir-active-pin-label'");
+  });
+
+  it('binds click + Enter + Arrow keys for keyboard step navigation', () => {
+    expect(html).toMatch(/addEventListener\('click'/);
+    expect(html).toMatch(/addEventListener\('keydown'/);
+    expect(html).toContain("'ArrowDown'");
+    expect(html).toContain("'ArrowUp'");
+    expect(html).toContain("'ArrowRight'");
+    expect(html).toContain("'ArrowLeft'");
+    expect(html).toContain("e.key === 'Enter'");
+  });
+
+  it('selectRace resets activeStepIdx to -1 (then renderDirections re-anchors to 0)', () => {
+    const sel = html.indexOf('function selectRace');
+    expect(sel).toBeGreaterThan(0);
+    const block = html.substr(sel, 1200);
+    expect(block).toContain('activeStepIdx = -1');
+    expect(block).toContain('detachScrubObserver()');
+    expect(block).toContain('renderDirections(raceId)');
+  });
+
+  it('renderDirections resets active step to 0 every render', () => {
+    const idx = html.indexOf('function renderDirections');
+    expect(idx).toBeGreaterThan(0);
+    const block = html.substr(idx, 3000);
+    expect(block).toContain('setActiveStep(0,');
+    expect(block).toContain('currentRaceId = raceId');
+  });
+
+  it('clicking a turn-arrow badge on the map activates the matching step', () => {
+    expect(html).toMatch(/map\.on\('click', id \+ '-turn-badges'/);
+    expect(html).toMatch(/map\.on\('click', id \+ '-turn-badges-minor'/);
+    // The picker resolves the badge feature back to the closest step by mile.
+    expect(html).toContain('bestDelta = Infinity');
+    expect(html).toContain('setActiveStep(bestIdx');
+  });
+
+  it('Scrub mode uses IntersectionObserver scoped to the directions list', () => {
+    expect(html).toContain('new IntersectionObserver');
+    // root must be the list element so scrolling the list (not the page) drives
+    // the observer.
+    expect(html).toMatch(/root:\s*listEl/);
+    // Negative bottom rootMargin is what makes the "topmost visible" step win.
+    expect(html).toMatch(/rootMargin:\s*'0px 0px -70% 0px'/);
+  });
+
+  it('elevation profile draws the active-mile vertical marker', () => {
+    expect(html).toContain('activeStepIdx >= 0');
+    expect(html).toContain("ctx.setLineDash([3, 3])");
+    expect(html).toContain("loopSeq.indexOf(RACES[currentRaceId].loops[0])");
+  });
+
+  it('CSS defines active-step styling and the mode-toggle pill', () => {
+    expect(html).toContain('.dir-step.active');
+    expect(html).toContain('.dir-mode-toggle');
+    expect(html).toContain('.dir-mode-btn');
+    expect(html).toContain('.dir-mode-btn.active');
+  });
+
+  it('respects prefers-reduced-motion for transitions and smooth scroll', () => {
+    expect(html).toContain('prefers-reduced-motion: reduce');
+  });
+});
+
 describe('Tinman weather panel', () => {
   it('weather data is present', () => {
     expect(html).toContain('CONFIG.weather');
