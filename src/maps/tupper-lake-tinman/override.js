@@ -1547,8 +1547,9 @@ function toggleStreetview() {
   getEl('streetviewBtn').classList.toggle('active', streetviewOn);
   streetviewMarkers.forEach(function(s) {
     s.element.style.display = streetviewOn ? 'block' : 'none';
-    if (!streetviewOn && s.marker.getPopup() && s.marker.getPopup().isOpen()) {
-      s.marker.getPopup().remove();
+    var popup = s.marker.getPopup();
+    if (!streetviewOn && popup && popup.isOpen()) {
+      popup.remove();
     }
   });
 }

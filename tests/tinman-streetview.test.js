@@ -218,7 +218,11 @@ describe('toggleStreetview function', () => {
     const html = readFileSync(distHtmlPath, 'utf-8');
     const fnStart = html.indexOf('function toggleStreetview');
     expect(fnStart).toBeGreaterThan(-1);
-    const fnSlice = html.substring(fnStart, fnStart + 400);
+    // Slice to the function's closing brace so the assertion is robust to
+    // future edits that grow the function body.
+    const fnEnd = html.indexOf('\n}', fnStart) + 2;
+    expect(fnEnd).toBeGreaterThan(fnStart);
+    const fnSlice = html.substring(fnStart, fnEnd);
     expect(fnSlice).toMatch(/streetviewOn\s*=\s*!\s*streetviewOn/);
     expect(fnSlice).toMatch(/getEl\(['"]streetviewBtn['"]\)\.classList\.toggle\(['"]active['"]/);
     expect(fnSlice).toMatch(/streetviewMarkers\.forEach/);
