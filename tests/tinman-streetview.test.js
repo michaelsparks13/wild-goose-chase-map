@@ -94,4 +94,12 @@ describe('Street View toggle button', () => {
     const html = readFileSync(distHtmlPath, 'utf-8');
     expect(html).toMatch(/id="streetviewBtn"[^>]*onclick="toggleStreetview\(\)"/);
   });
+
+  it('button count matches aidBtn and terrainBtn (rows stay in sync)', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    const countOf = (str) => (html.match(new RegExp(str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+    expect(countOf('id="streetviewBtn"')).toBe(countOf('id="aidBtn"'));
+    expect(countOf('id="streetviewBtn"')).toBe(countOf('id="terrainBtn"'));
+    expect(countOf('id="streetviewBtn"')).toBeGreaterThanOrEqual(1);
+  });
 });
