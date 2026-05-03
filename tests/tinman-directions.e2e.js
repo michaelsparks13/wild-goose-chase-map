@@ -15,7 +15,7 @@ test.describe('Tinman interactive directions', () => {
   // addInitScript here because it re-runs on `page.reload()` and would wipe
   // the saved mode mid-test, breaking the persistence assertion.
   test.beforeEach(async ({ page }) => {
-    await page.goto('/maps/tinman/');
+    await page.goto('/maps/tupper-lake-tinman/');
     await page.waitForSelector('#map');
     await page.waitForFunction(() =>
       document.querySelectorAll('#directionsList .dir-step').length > 0
@@ -180,7 +180,7 @@ test.describe('Tinman interactive directions: Sprint + Olympic distances', () =>
   // contract for the two shorter distances so a future race-specific change
   // can't silently break them.
   test.beforeEach(async ({ page }) => {
-    await page.goto('/maps/tinman/');
+    await page.goto('/maps/tupper-lake-tinman/');
     await page.waitForSelector('#map');
     await page.waitForFunction(() =>
       window.map && window.map.loaded && window.map.loaded() &&

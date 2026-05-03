@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="{{THEME_COLOR}}">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<title>{{TITLE}}</title>
+<script src="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/pmtiles@4.4.0/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/@protomaps/basemaps@5.7.0/dist/basemaps.js" crossorigin="anonymous"></script>
+{{GOOGLE_FONTS}}
+<style>
+{{CSS_VARS}}
+{{CSS}}
+</style>
+</head>
+<body class="race-page voice-{{VOICE}} treatment-{{HERO_TREATMENT}} texture-{{TEXTURE}}">
+
+<!-- 1. Studio mark — small, top-aligned, restrained. -->
+<header class="studio-bar" aria-label="Studio identification">
+  <a href="/" class="studio-mark">
+    <span class="studio-mark__diamond" aria-hidden="true"></span>
+    <span class="studio-mark__name">False Summit Studio</span>
+    <span class="studio-mark__role">Atelier of cartographic works for endurance events</span>
+  </a>
+  <nav class="studio-utility" aria-label="Map utilities">
+    <button class="utility-link" type="button" onclick="openPocketModal()">Pocket map</button>
+    <span class="utility-sep" aria-hidden="true">·</span>
+    <button class="utility-link" type="button" onclick="openEmbedModal()">Embed</button>
+    <span class="utility-sep" aria-hidden="true">·</span>
+    <a class="utility-link" href="mailto:hello@falsesummitstudio.com">Commission</a>
+  </nav>
+</header>
+
+<main class="race-spread">
+
+  <!-- 2. Race identity block — the wordmark does the work, not a CTA. -->
+  <section class="masthead">
+    <div class="masthead__rule" aria-hidden="true"></div>
+    <p class="masthead__establishment">{{ESTABLISHMENT_LINE}}</p>
+    <h1 class="masthead__name">{{RACE_NAME_DISPLAY}}</h1>
+    {{WORDMARK_BLOCK}}
+    <dl class="masthead__meta">
+      <div class="masthead__meta-row">
+        <dt>Host</dt>
+        <dd>{{HOST_ORG}}</dd>
+      </div>
+      <div class="masthead__meta-row">
+        <dt>Region</dt>
+        <dd>{{REGION}}</dd>
+      </div>
+      <div class="masthead__meta-row">
+        <dt>Race day</dt>
+        <dd>{{RACE_DAY}}</dd>
+      </div>
+    </dl>
+    <div class="masthead__view-tabs view-tabs" role="tablist" aria-label="Map view">
+      <button class="view-tab active" data-view="map" onclick="switchView('map')" role="tab" aria-selected="true">The map</button>
+      <button class="view-tab" data-view="sim" onclick="switchView('sim')" role="tab" aria-selected="false">Race simulator</button>
+    </div>
+  </section>
+
+  <!-- 3. The map — gallery-framed, generously matted. -->
+  <section class="map-room" aria-label="Interactive race map">
+    <div class="map-room__corner map-room__corner--tl" aria-hidden="true"></div>
+    <div class="map-room__corner map-room__corner--tr" aria-hidden="true"></div>
+    <div class="map-room__corner map-room__corner--bl" aria-hidden="true"></div>
+    <div class="map-room__corner map-room__corner--br" aria-hidden="true"></div>
+    <div class="map-room__plate">
+      {{MAP_VIEW}}
+      {{SIM_VIEW}}
+    </div>
+    <p class="map-room__caption">
+      <span class="caption__plate">Plate I</span>
+      <span class="caption__title">{{CAPTION_TITLE}}</span>
+      <span class="caption__byline">Drawn for {{HOST_ORG}} · False Summit Studio</span>
+    </p>
+  </section>
+
+  <!-- 3b. Disciplines triptych (triathlon-only) -->
+  {{DISCIPLINES_BLOCK}}
+
+  <!-- 4. Course data strip — typographically dense, the studio's voice. -->
+  <section class="course-strip" aria-labelledby="course-strip-title">
+    <div class="course-strip__head">
+      <p class="course-strip__eyebrow">Field bulletin</p>
+      <h2 id="course-strip-title" class="course-strip__title">Course at a glance</h2>
+      <p class="course-strip__lede">{{ELEVATION_STORY}}</p>
+    </div>
+    <dl class="course-strip__grid">
+      {{COURSE_DATA_ROWS}}
+    </dl>
+  </section>
+
+  <!-- 5. Field notes — studio voice, restrained. -->
+  <section class="field-notes" aria-label="Field notes from the cartographer">
+    <p class="field-notes__eyebrow">Notes from the drafting table</p>
+    <p class="field-notes__body">{{FIELD_NOTES}}</p>
+    <p class="field-notes__sign">— False Summit Studio</p>
+  </section>
+
+  <!-- 6. Acquisition — print, digital, commission. -->
+  <section class="acquisition" aria-labelledby="acquisition-title">
+    <h2 id="acquisition-title" class="acquisition__title">Take this map home</h2>
+    <div class="acquisition__shelf">
+      {{ACQUISITION_BLOCK}}
+    </div>
+  </section>
+
+  <!-- 7. Cross-links — contact-sheet, not a carousel. -->
+  <section class="contact-sheet" aria-labelledby="contact-sheet-title">
+    <p class="contact-sheet__eyebrow">From the studio archive</p>
+    <h2 id="contact-sheet-title" class="contact-sheet__title">Other races, drawn the same way</h2>
+    <ul class="contact-sheet__grid">
+      {{CROSS_LINKS_BLOCK}}
+    </ul>
+  </section>
+
+</main>
+
+<footer class="colophon">
+  <div class="colophon__rule" aria-hidden="true"></div>
+  <div class="colophon__row">
+    <p class="colophon__studio">False Summit Studio · falsesummitstudio.com</p>
+    <p class="colophon__set">Set in {{TYPE_DISPLAY}}, {{TYPE_BODY}}, and {{TYPE_MICRO}}.</p>
+    <p class="colophon__race">{{FOOTER_HTML}}</p>
+  </div>
+</footer>
+
+<!-- Modals (carried over from the previous shell so existing JS keeps working) -->
+<div class="embed-modal-backdrop" id="embedBackdrop" onclick="closeEmbedModal()">
+  <div class="embed-modal" onclick="event.stopPropagation()">
+    <div class="embed-modal-header">
+      <h3>Embed this map</h3>
+      <button class="embed-modal-close" onclick="closeEmbedModal()">&times;</button>
+    </div>
+    <p class="embed-modal-desc">Copy this code to embed the interactive map on your website.</p>
+    <div class="embed-code-wrap">
+      <pre class="embed-code" id="embedCode"></pre>
+      <button class="embed-copy-btn" id="embedCopyBtn" onclick="copyEmbedCode()">Copy</button>
+    </div>
+    <div class="embed-modal-options">
+      <label class="embed-option"><input type="checkbox" id="embedCompact" onchange="updateEmbedCode()"> Compact (map only)</label>
+      <label class="embed-option"><input type="checkbox" id="embedNoSim" onchange="updateEmbedCode()"> Hide simulator</label>
+      <label class="embed-option"><input type="checkbox" id="embedDark" onchange="updateEmbedCode()"> Dark theme</label>
+    </div>
+  </div>
+</div>
+
+<div class="pocket-modal-backdrop" id="pocketBackdrop" onclick="closePocketModal()">
+  <div class="pocket-modal" onclick="event.stopPropagation()">
+    <div class="pocket-modal-header">
+      <h3>Save Pocket Map</h3>
+      <button class="pocket-modal-close" onclick="closePocketModal()">&times;</button>
+    </div>
+    <p class="pocket-modal-desc">Download a lightweight offline file you can open on your phone during the race — no cell service needed.</p>
+    <div class="pocket-options">
+      <label class="pocket-option"><input type="checkbox" id="pocketIncludeSim" onchange="updatePocketSizeEstimate()" checked> Race simulator</label>
+      <label class="pocket-option"><input type="checkbox" id="pocketIncludeElevation" onchange="updatePocketSizeEstimate()" checked> Elevation profile</label>
+      <label class="pocket-option"><input type="checkbox" id="pocketIncludeGPS" onchange="updatePocketSizeEstimate()" checked> GPS tracking dot</label>
+    </div>
+    <div class="pocket-info">
+      <div class="pocket-info-row"><span class="pocket-info-label">Estimated size</span><span class="pocket-info-value" id="pocketSizeEstimate">~500 KB</span></div>
+      <div class="pocket-info-row"><span class="pocket-info-label">Includes</span><span class="pocket-info-value">Map snapshot, aid stations, trail cue sheet</span></div>
+    </div>
+    <button class="pocket-download-btn" id="pocketDownloadBtn" onclick="generatePocketMap()">Download Pocket Map</button>
+    <div class="pocket-status" id="pocketStatus"></div>
+  </div>
+</div>
+
+<script>
+{{CONFIG_DATA}}
+{{JS}}
+</script>
+</body>
+</html>

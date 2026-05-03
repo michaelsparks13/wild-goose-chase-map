@@ -118,40 +118,46 @@ var loopCoordDistances = {};
 
 `;
 
-module.exports = {
-  slug: 'tinman',
-  title: 'Tupper Lake Tinman — Run Course Map',
-  raceName: 'TUPPER LAKE TINMAN',
-  themeColor: '#1a1a1a',
-  googleFontsUrl: '<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">',
-  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
-  subtitle: 'June 27, 2026 · 44th Anniversary · <a href="https://www.tupperlaketinman.com/" target="_blank">tupperlaketinman.com</a>',
+const tinmanTheme = require('../../themes/tupper-lake-tinman.js');
 
+module.exports = {
+  slug: 'tupper-lake-tinman',
+  theme: tinmanTheme,
+  title: 'Tupper Lake Tinman — Run Course Map · False Summit Studio',
+  raceName: 'TUPPER LAKE TINMAN',
+  themeColor: tinmanTheme.palette.paper,
+  // build.js wires Google Fonts from theme.type.googleFontsHref when a theme is set.
+  fontFamily: tinmanTheme.type.bodyStack,
+  subtitle: tinmanTheme.identity.raceDay + ' · <a href="https://www.tupperlaketinman.com/" target="_blank">tupperlaketinman.com</a>',
+
+  // Editorial chrome owns the page background, ink, accent, and type stack.
+  // The remaining tokens below are scoped to the *interactive map view* and
+  // simulator components, which still consume the legacy variable names.
   cssVars: {
-    '--primary': '#F5C518',
-    '--primary-dark': '#D4A810',
-    '--accent': '#1a1a1a',
-    '--bg': '#ffffff',
-    '--bg-card': '#ffffff',
-    '--bg-alt': '#f2f2f2',
-    '--text': '#1a1a1a',
-    '--text-secondary': '#444',
-    '--text-muted': '#7a7a7a',
-    '--border': '#e1e1e1',
-    '--course': '#111111',
-    '--shadow': '0 2px 8px rgba(0,0,0,0.08)',
-    '--radius': '10px',
-    '--font-family': "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
-    '--heading-family': "'Oswald', 'Inter', system-ui, sans-serif",
-    '--sprint-color': '#F5C518',
-    '--olympic-color': '#2E7D32',
-    '--tinman-color': '#C8102E',
-    '--sim-bg': '#1a1a1a',
-    '--runner-text': '#fff',
+    '--paper':         tinmanTheme.palette.paper,
+    '--ink':           tinmanTheme.palette.ink,
+    '--accent':        tinmanTheme.palette.accent,
+    '--warm':          tinmanTheme.palette.warm,
+    '--cool':          tinmanTheme.palette.cool,
+    '--font-display':  tinmanTheme.type.displayStack,
+    '--font-body':     tinmanTheme.type.bodyStack,
+    '--font-micro':    tinmanTheme.type.microStack,
+
+    '--primary':       tinmanTheme.palette.accent,
+    '--primary-dark':  '#7a2a1f',
+    '--course':        '#111111',
+    '--radius':        '4px',
+    '--font-family':   tinmanTheme.type.bodyStack,
+    '--heading-family':tinmanTheme.type.displayStack,
+    '--sprint-color':  '#caa238',
+    '--olympic-color': '#2c4a3a',
+    '--tinman-color':  tinmanTheme.palette.accent,
+    '--sim-bg':        '#171817',
+    '--runner-text':   '#fff',
     '--runner-text-shadow': '0 2px 8px rgba(0,0,0,0.5)',
-    '--runner-meta': 'rgba(255,255,255,0.7)',
-    '--scrub-handle-shadow': '0 2px 6px rgba(245,197,24,0.4)',
-    '--popup-bg': '#fff',
+    '--runner-meta':   'rgba(255,255,255,0.7)',
+    '--scrub-handle-shadow': '0 2px 6px rgba(155,58,46,0.45)',
+    '--popup-bg':      tinmanTheme.palette.paper,
   },
 
   configDataJs: configDataJs,
@@ -247,16 +253,8 @@ module.exports = {
   </section>
 
   <section class="cards-section">
-    <h3>Select Race Distance</h3>
+    <h3>Choose your distance</h3>
     <div class="race-cards" id="raceCards"></div>
-  </section>
-
-  <section class="course-info">
-    <h3>About the Run Course</h3>
-    <div class="course-description">
-      <p>The <strong>Tupper Lake Tinman</strong> is a beloved Adirondack triathlon now in its <strong>44th year</strong>. The flat, scenic run course winds through the village of Tupper Lake, NY, passing the History Museum, Civic Center, and the historic Train Station before turning around at Little Wolf Pond. Distances mirror the swim/bike: <strong>Sprint</strong> (0.5/12.6/3.1), <strong>Olympic</strong> (0.93/26/6.2), and the full <strong>Tinman</strong> (1.2/56/13.1). Rolling swim start at 8:00 AM with self-seeding by predicted swim time.</p>
-      <p>This map shows the <strong>run portions only</strong>. Eight aid stations along the Tinman course offer water, Powerade, Coca-Cola, oranges, pretzels, and gels.</p>
-    </div>
   </section>
   </div>
 

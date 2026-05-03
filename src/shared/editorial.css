@@ -1,0 +1,828 @@
+/* editorial.css — page chrome around the map.
+ *
+ * The map view, simulator, weather panel, and modals already have their own
+ * stylesheets (base.css, layout.css, simulator.css, weather.css, etc.).
+ * This file is *only* about the print-spread chrome the brief asked for:
+ * studio bar, masthead, gallery frame, course data strip, field notes,
+ * acquisition shelf, contact sheet, colophon.
+ */
+
+/* ──────────────────────────────────────────────────────────────────────
+ * Theme tokens are injected by build.js as CSS variables on :root.
+ * Editorial tokens (paper, ink, accent, warm, cool, font-display, etc.)
+ * are written by the theme; the map/sim use the legacy tokens (--bg,
+ * --text, --primary). We bridge between the two layers below where the
+ * editorial chrome touches existing components.
+ * ────────────────────────────────────────────────────────────────────── */
+
+body.race-page {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-feature-settings: "onum", "kern", "liga";
+  font-size: 17px;
+  line-height: 1.55;
+  /* Paper-grain substrate (texture: 'paper-grain'). Two stacked layers:
+     a coarse warm grain + a fine speckle. Both are inline SVG fractal
+     noise rendered in a soft sepia tint. No external assets. */
+  background-image:
+    radial-gradient(1100px 600px at 8% -10%, rgba(255,255,255,0.55), transparent 60%),
+    radial-gradient(800px 500px at 92% 110%, rgba(31,70,89,0.06), transparent 60%);
+  background-attachment: fixed;
+}
+
+body.race-page.texture-paper-grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.55;
+  mix-blend-mode: multiply;
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' stitchTiles='stitch' seed='7'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.10  0 0 0 0 0.08  0 0 0 0.45 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.32' numOctaves='1' stitchTiles='stitch' seed='3'/><feColorMatrix values='0 0 0 0 0.20  0 0 0 0 0.16  0 0 0 0 0.10  0 0 0 0.30 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-size: 320px, 240px;
+}
+
+body.race-page.texture-topo-lines::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.18;
+  background-image:
+    repeating-linear-gradient(
+      32deg,
+      transparent 0,
+      transparent 18px,
+      rgba(31, 70, 89, 0.6) 18px,
+      rgba(31, 70, 89, 0.6) 19px
+    );
+}
+
+body.race-page > * { position: relative; z-index: 1; }
+
+/* The map / simulator / weather / modal stylesheets all assume a black-on-
+ * white world. Re-bridge their inherited variables so they read correctly
+ * inside the warm paper substrate. */
+body.race-page {
+  --bg: var(--paper);
+  --bg-card: var(--paper);
+  --bg-alt: color-mix(in srgb, var(--paper) 88%, var(--ink) 12%);
+  --text: var(--ink);
+  --text-secondary: color-mix(in srgb, var(--ink) 72%, var(--paper) 28%);
+  --text-muted: color-mix(in srgb, var(--ink) 52%, var(--paper) 48%);
+  --border: color-mix(in srgb, var(--ink) 14%, var(--paper) 86%);
+  --shadow: none;
+  --primary: var(--accent);
+  --primary-dark: color-mix(in srgb, var(--accent) 80%, #000 20%);
+  --font-family: var(--font-body);
+  --heading-family: var(--font-display);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 1. STUDIO BAR — small, restrained, not a nav.
+ * ────────────────────────────────────────────────────────────────────── */
+.studio-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 48px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.studio-mark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  font-family: var(--font-micro);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.studio-mark__diamond {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+  transform: rotate(45deg);
+  margin-right: 4px;
+  align-self: center;
+}
+.studio-mark__name {
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+.studio-mark__role {
+  color: color-mix(in srgb, var(--ink) 55%, var(--paper) 45%);
+  font-weight: 400;
+  letter-spacing: 0.12em;
+}
+.studio-utility {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
+  font-family: var(--font-micro);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.utility-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s, color 0.2s;
+}
+.utility-link:hover { border-bottom-color: var(--accent); color: var(--accent); }
+.utility-sep { color: color-mix(in srgb, var(--ink) 35%, var(--paper) 65%); }
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 2. MASTHEAD — the wordmark does the work, no CTA.
+ * ────────────────────────────────────────────────────────────────────── */
+.race-spread {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 48px 96px;
+}
+
+.masthead {
+  padding: 56px 0 40px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+  position: relative;
+}
+.masthead__rule {
+  height: 1px;
+  background: linear-gradient(90deg, var(--ink) 0%, var(--ink) 32%, transparent 32.4%, transparent 33.6%, var(--ink) 34%, var(--ink) 100%);
+  opacity: 0.85;
+}
+.masthead__establishment {
+  font-family: var(--font-micro);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 65%, var(--paper) 35%);
+}
+.masthead__name {
+  font-family: var(--font-display);
+  font-weight: 500;
+  /* Fraunces opsz/wonk axes — pulled to a heritage setting. */
+  font-variation-settings: "opsz" 144, "SOFT" 30, "WONK" 0;
+  font-size: clamp(3.6rem, 8.5vw, 7.4rem);
+  line-height: 0.94;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  max-width: 12ch;
+  margin: 4px 0 -6px;
+  /* Editorial italic comma: the second word picks up an italic if the
+     theme provides a 2-word race name. The display variation slot below
+     is set in the theme injector (no JS); fallback is roman. */
+}
+.masthead__name em {
+  font-style: italic;
+  font-variation-settings: "opsz" 144, "SOFT" 80, "WONK" 1;
+  font-weight: 500;
+  color: var(--accent);
+}
+.masthead__wordmark {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-variation-settings: "opsz" 18, "SOFT" 100, "WONK" 1;
+  font-size: clamp(1.1rem, 1.6vw, 1.35rem);
+  color: color-mix(in srgb, var(--ink) 78%, var(--paper) 22%);
+  letter-spacing: 0.005em;
+  margin-top: -10px;
+}
+.masthead__wordmark::before { content: "“"; margin-right: 0.06em; color: var(--accent); }
+.masthead__wordmark::after  { content: "”"; margin-left: 0.06em;  color: var(--accent); }
+
+.masthead__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, max-content));
+  gap: 0 56px;
+  margin-top: 14px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  max-width: 720px;
+}
+.masthead__meta-row dt {
+  font-family: var(--font-micro);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 55%, var(--paper) 45%);
+  margin-bottom: 4px;
+}
+.masthead__meta-row dd {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+/* View tabs — not a SaaS pill set; an editorial inline rule. */
+.masthead__view-tabs {
+  margin-top: 6px;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  gap: 0;
+  display: inline-flex;
+  align-self: start;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+.masthead__view-tabs .view-tab {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 10px 22px;
+  font-family: var(--font-micro);
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+  position: relative;
+}
+.masthead__view-tabs .view-tab + .view-tab { border-left: 1px solid var(--border); }
+.masthead__view-tabs .view-tab.active {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: none;
+}
+.masthead__view-tabs .view-tab:not(.active):hover { background: color-mix(in srgb, var(--paper) 70%, var(--ink) 30%); }
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 3. MAP ROOM — gallery frame.
+ * ────────────────────────────────────────────────────────────────────── */
+.map-room {
+  position: relative;
+  margin: 32px 0 40px;
+  padding: 36px;
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--paper) 92%, var(--ink) 8%) 0%,
+      color-mix(in srgb, var(--paper) 96%, var(--ink) 4%) 100%);
+  border: 1px solid color-mix(in srgb, var(--ink) 22%, var(--paper) 78%);
+  border-radius: 2px; /* well below the 8px ceiling */
+}
+.map-room__corner {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--ink);
+  opacity: 0.6;
+}
+.map-room__corner--tl { top: 12px; left: 12px;  border-right: none; border-bottom: none; }
+.map-room__corner--tr { top: 12px; right: 12px; border-left:  none; border-bottom: none; }
+.map-room__corner--bl { bottom: 12px; left: 12px;  border-right: none; border-top: none; }
+.map-room__corner--br { bottom: 12px; right: 12px; border-left:  none; border-top: none; }
+
+.map-room__plate {
+  background: color-mix(in srgb, var(--paper) 78%, #fff 22%);
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, var(--paper) 82%);
+  border-radius: 2px;
+  overflow: hidden;
+  /* Drop-shadows on the map frame are forbidden. Use a hairline inset
+     "matte" instead. */
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--paper) 40%, #fff 60%);
+  min-height: 600px;
+}
+.map-room__plate .view { display: none; }
+.map-room__plate .view.active { display: block; }
+/* The map *itself* is at least 800px wide on desktop — the spread max is
+ * 1280px and we have 36px frame padding plus 48px page padding. The
+ * weather panel stacks below the map inside the plate so the cartography
+ * gets the full plate width; print spreads don't run sidebars next to the
+ * art. */
+.map-room__plate #map { min-height: 600px; height: 62vh; }
+.map-room__plate .map-weather-layout {
+  display: block;
+  flex-direction: column;
+}
+.map-room__plate .map-main { width: 100%; }
+.map-room__plate .weather-panel {
+  width: 100%;
+  max-width: none;
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  border-left: none;
+  box-shadow: none;
+}
+
+/* Inside the gallery plate, stack the map full-width and let the
+ * directions panel + controls + profile + cards flow beneath it as
+ * separate editorial bands. The existing per-map override.css turns
+ * .map-main into a side-by-side grid on desktop; we undo that here
+ * because print spreads run the artwork full bleed and the index
+ * appears beneath it. */
+.map-room__plate .map-main {
+  display: block !important;
+  grid-template-columns: none !important;
+  grid-template-areas: none !important;
+}
+.map-room__plate .map-main > .map-wrap,
+.map-room__plate .map-main > .directions-section,
+.map-room__plate .map-main > .controls,
+.map-room__plate .map-main > .profile-section,
+.map-room__plate .map-main > .cards-section,
+.map-room__plate .map-main > .course-info {
+  width: 100%;
+  border-left: none;
+}
+.map-room__plate .map-main > .directions-section {
+  border-top: 1px solid var(--border);
+  margin-top: 0;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ *    Bridge: the map view template inside the plate. We unwind the
+ *    SaaS-app borders/shadows the existing layout.css imposes.
+ * ────────────────────────────────────────────────────────────────────── */
+.map-room__plate .map-weather-layout {
+  background: transparent;
+}
+.map-room__plate .map-main {
+  background: transparent;
+}
+.map-room__plate .controls,
+.map-room__plate .profile-section,
+.map-room__plate .cards-section,
+.map-room__plate .course-info {
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border);
+  padding-left: 0;
+  padding-right: 0;
+}
+.map-room__plate .course-info { border-top: 1px solid var(--border); }
+.map-room__plate .stats-section {
+  background: transparent;
+  border: none;
+  padding: 18px 0;
+}
+.map-room__plate .stat-card {
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  text-align: left;
+  padding: 4px 14px;
+}
+.map-room__plate .stat-card:first-child { border-left: none; padding-left: 0; }
+.map-room__plate .stat-card .value {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 32, "SOFT" 30, "WONK" 0;
+  font-weight: 500;
+  color: var(--ink);
+  font-size: 1.6rem;
+}
+.map-room__plate .stat-card .label {
+  font-family: var(--font-micro);
+  letter-spacing: 0.16em;
+  color: color-mix(in srgb, var(--ink) 50%, var(--paper) 50%);
+}
+.map-room__plate .profile-header h3,
+.map-room__plate .course-info h3 {
+  font-family: var(--font-micro);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  color: color-mix(in srgb, var(--ink) 55%, var(--paper) 45%);
+}
+
+.map-room__caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 14px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 18%, var(--paper) 82%);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+}
+.caption__plate {
+  font-family: var(--font-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.66rem;
+  color: var(--accent);
+}
+.caption__title {
+  font-style: italic;
+  color: var(--ink);
+  flex: 1 1 320px;
+}
+.caption__byline {
+  font-family: var(--font-micro);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 55%, var(--paper) 45%);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 3b. DISCIPLINES TRIPTYCH — triathlons only.
+ * ────────────────────────────────────────────────────────────────────── */
+.disciplines {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin: 12px 0 32px;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+.disciplines__cell {
+  padding: 22px 28px;
+  border-left: 1px solid color-mix(in srgb, var(--ink) 18%, var(--paper) 82%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.disciplines__cell:first-child { border-left: none; }
+.disciplines__label {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-variation-settings: "opsz" 96, "SOFT" 50, "WONK" 0;
+  font-size: 2.2rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  line-height: 1;
+}
+.disciplines__cell:nth-child(1) .disciplines__label { color: var(--cool); }
+.disciplines__cell:nth-child(2) .disciplines__label { color: color-mix(in srgb, var(--ink) 92%, var(--accent) 8%); }
+.disciplines__cell:nth-child(3) .disciplines__label { color: var(--accent); }
+.disciplines__distance {
+  font-family: var(--font-micro);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--ink) 65%, var(--paper) 35%);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 4. COURSE STRIP — typographically dense field bulletin.
+ * ────────────────────────────────────────────────────────────────────── */
+.course-strip {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  gap: 56px;
+  padding: 48px 0 56px;
+  border-top: 1px solid var(--ink);
+}
+.course-strip__head { padding-right: 24px; }
+.course-strip__eyebrow {
+  font-family: var(--font-micro);
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+.course-strip__title {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 72, "SOFT" 60, "WONK" 0;
+  font-weight: 500;
+  font-size: clamp(1.7rem, 2.4vw, 2.2rem);
+  line-height: 1.05;
+  margin-bottom: 14px;
+}
+.course-strip__lede {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 0.95rem;
+  color: color-mix(in srgb, var(--ink) 78%, var(--paper) 22%);
+  max-width: 28ch;
+}
+.course-strip__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 18%, var(--paper) 82%);
+  border-left: 1px solid color-mix(in srgb, var(--ink) 18%, var(--paper) 82%);
+}
+.course-strip__cell {
+  padding: 18px 22px;
+  border-right: 1px solid color-mix(in srgb, var(--ink) 18%, var(--paper) 82%);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 18%, var(--paper) 82%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.course-strip__label {
+  font-family: var(--font-micro);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 55%, var(--paper) 45%);
+}
+.course-strip__value {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 32, "SOFT" 30, "WONK" 0;
+  font-feature-settings: "lnum", "kern";
+  font-weight: 500;
+  font-size: 1.45rem;
+  line-height: 1.1;
+  color: var(--ink);
+}
+.course-strip__unit {
+  font-family: var(--font-micro);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--ink) 60%, var(--paper) 40%);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 5. FIELD NOTES — cartographer's voice.
+ * ────────────────────────────────────────────────────────────────────── */
+.field-notes {
+  margin: 0;
+  padding: 56px 0;
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  gap: 56px;
+  border-top: 1px solid var(--ink);
+}
+.field-notes__eyebrow {
+  font-family: var(--font-micro);
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  align-self: start;
+}
+.field-notes__body {
+  font-family: var(--font-body);
+  font-size: 1.18rem;
+  line-height: 1.55;
+  letter-spacing: 0.005em;
+  color: var(--ink);
+  max-width: 60ch;
+  text-indent: 1.2em;
+  hanging-punctuation: first last;
+}
+.field-notes__body::first-letter {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 144, "SOFT" 50, "WONK" 0;
+  font-weight: 500;
+  font-size: 3.2rem;
+  line-height: 0.86;
+  float: left;
+  margin: 4px 10px 0 -2px;
+  color: var(--accent);
+  text-indent: 0;
+}
+.field-notes__sign {
+  grid-column: 2;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-variation-settings: "opsz" 14, "SOFT" 80, "WONK" 1;
+  font-size: 0.95rem;
+  color: color-mix(in srgb, var(--ink) 70%, var(--paper) 30%);
+  margin-top: 18px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 6. ACQUISITION — print / digital / commission.
+ * ────────────────────────────────────────────────────────────────────── */
+.acquisition {
+  padding: 56px 0;
+  border-top: 1px solid var(--ink);
+}
+.acquisition__title {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 72, "SOFT" 50, "WONK" 0;
+  font-weight: 500;
+  font-size: clamp(1.7rem, 2.4vw, 2.2rem);
+  line-height: 1.05;
+  margin-bottom: 28px;
+}
+.acquisition__shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 22%, var(--paper) 78%);
+  border-left: 1px solid color-mix(in srgb, var(--ink) 22%, var(--paper) 78%);
+}
+.acquisition__cell {
+  padding: 28px;
+  border-right: 1px solid color-mix(in srgb, var(--ink) 22%, var(--paper) 78%);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 22%, var(--paper) 78%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.acquisition__kind {
+  font-family: var(--font-micro);
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.acquisition__detail {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--ink);
+  flex: 1;
+}
+.acquisition__price {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 48, "SOFT" 40, "WONK" 0;
+  font-weight: 500;
+  font-size: 1.4rem;
+  color: var(--ink);
+}
+.acquisition__cta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-micro);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  align-self: flex-start;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 4px;
+  transition: color 0.2s, border-color 0.2s;
+}
+.acquisition__cta::after { content: "→"; font-family: var(--font-body); letter-spacing: 0; transition: transform 0.2s; }
+.acquisition__cta:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.acquisition__cta:hover::after { transform: translateX(3px); }
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 7. CONTACT SHEET — cross-links.
+ * ────────────────────────────────────────────────────────────────────── */
+.contact-sheet {
+  padding: 56px 0 12px;
+  border-top: 1px solid var(--ink);
+}
+.contact-sheet__eyebrow {
+  font-family: var(--font-micro);
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.contact-sheet__title {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 72, "SOFT" 50, "WONK" 0;
+  font-weight: 500;
+  font-size: clamp(1.7rem, 2.4vw, 2.2rem);
+  line-height: 1.05;
+  margin-bottom: 28px;
+  max-width: 22ch;
+}
+.contact-sheet__grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 22%, var(--paper) 78%);
+  border-left: 1px solid color-mix(in srgb, var(--ink) 22%, var(--paper) 78%);
+}
+.contact-sheet__cell {
+  display: block;
+  border-right: 1px solid color-mix(in srgb, var(--ink) 22%, var(--paper) 78%);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 22%, var(--paper) 78%);
+}
+.contact-sheet__link {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--ink);
+  position: relative;
+  transition: background 0.18s;
+}
+.contact-sheet__link:hover {
+  background: color-mix(in srgb, var(--paper) 78%, var(--ink) 22%);
+}
+.contact-sheet__index {
+  font-family: var(--font-micro);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.contact-sheet__name {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 32, "SOFT" 50, "WONK" 0;
+  font-weight: 500;
+  font-size: 1.15rem;
+  line-height: 1.15;
+}
+.contact-sheet__region {
+  font-family: var(--font-micro);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--ink) 60%, var(--paper) 40%);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 8. COLOPHON — the way this thing was set.
+ * ────────────────────────────────────────────────────────────────────── */
+.colophon {
+  margin-top: 12px;
+  padding: 28px 48px 56px;
+  border-top: 1px solid var(--ink);
+}
+.colophon__rule {
+  height: 1px;
+  background: linear-gradient(90deg, var(--ink) 0%, var(--ink) 18%, transparent 18.4%, transparent 19.6%, var(--ink) 20%, var(--ink) 100%);
+  opacity: 0.85;
+  margin-bottom: 22px;
+}
+.colophon__row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  gap: 32px;
+  font-family: var(--font-micro);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 55%, var(--paper) 45%);
+}
+.colophon__set { text-align: center; letter-spacing: 0.12em; text-transform: none; font-style: italic; font-family: var(--font-body); font-size: 0.78rem; }
+.colophon__race { text-align: right; }
+.colophon__race a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--accent); }
+.colophon__race a:hover { color: var(--accent); }
+
+/* ──────────────────────────────────────────────────────────────────────
+ * RESPONSIVE — collapse the grids gracefully.
+ * ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .race-spread { padding: 0 32px 80px; }
+  .studio-bar  { padding: 18px 32px 14px; flex-wrap: wrap; gap: 10px 24px; }
+  .studio-mark__role { display: none; }
+  .course-strip,
+  .field-notes { grid-template-columns: 1fr; gap: 24px; }
+  .field-notes__sign { grid-column: 1; }
+  .course-strip__grid { grid-template-columns: repeat(2, 1fr); }
+  .colophon__row { grid-template-columns: 1fr; gap: 8px; }
+  .colophon__set, .colophon__race { text-align: left; }
+}
+@media (max-width: 640px) {
+  .race-spread { padding: 0 22px 60px; }
+  .studio-bar  { padding: 14px 22px 10px; }
+  .map-room    { padding: 14px; }
+  .map-room__plate #map { height: 60vh; min-height: 420px; }
+  .course-strip__grid { grid-template-columns: 1fr; }
+  .disciplines { grid-template-columns: 1fr; }
+  .disciplines__cell { border-left: none; border-top: 1px solid color-mix(in srgb, var(--ink) 18%, var(--paper) 82%); }
+  .disciplines__cell:first-child { border-top: none; }
+  .field-notes__body { font-size: 1.05rem; }
+  .field-notes__body::first-letter { font-size: 2.6rem; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * PAGE-LOAD REVEAL — one orchestrated stagger, not scroll-triggered.
+ * ────────────────────────────────────────────────────────────────────── */
+@keyframes raceFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.race-page .studio-bar,
+.race-page .masthead,
+.race-page .map-room,
+.race-page .disciplines,
+.race-page .course-strip,
+.race-page .field-notes,
+.race-page .acquisition,
+.race-page .contact-sheet,
+.race-page .colophon {
+  animation: raceFadeUp 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.race-page .studio-bar    { animation-delay: 0s; }
+.race-page .masthead      { animation-delay: 0.06s; }
+.race-page .map-room      { animation-delay: 0.14s; }
+.race-page .disciplines   { animation-delay: 0.22s; }
+.race-page .course-strip  { animation-delay: 0.28s; }
+.race-page .field-notes   { animation-delay: 0.36s; }
+.race-page .acquisition   { animation-delay: 0.44s; }
+.race-page .contact-sheet { animation-delay: 0.52s; }
+.race-page .colophon      { animation-delay: 0.60s; }
+@media (prefers-reduced-motion: reduce) {
+  .race-page .studio-bar,
+  .race-page .masthead,
+  .race-page .map-room,
+  .race-page .disciplines,
+  .race-page .course-strip,
+  .race-page .field-notes,
+  .race-page .acquisition,
+  .race-page .contact-sheet,
+  .race-page .colophon { animation: none; }
+}

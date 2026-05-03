@@ -41,8 +41,10 @@ function getMapDirs() {
 }
 
 // --- Load shared CSS ---
-function loadSharedCSS() {
+function loadSharedCSS(opts) {
   const cssFiles = ['base.css', 'layout.css', 'simulator.css', 'responsive.css', 'weather.css', 'maplibre-overrides.css'];
+  // editorial.css must come *after* the legacy chrome CSS so it overrides it.
+  if (opts && opts.editorial) cssFiles.push('editorial.css');
   return cssFiles.map(f => readFile(path.join(SRC, 'shared', f))).join('\n');
 }
 
@@ -93,10 +95,117 @@ function loadEmbedJS() {
 function loadTemplates() {
   return {
     shell: readFile(path.join(SRC, 'templates', 'shell.html')),
+    raceShell: readFile(path.join(SRC, 'templates', 'race-shell.html')),
     embedShell: readFile(path.join(SRC, 'templates', 'embed-shell.html')),
     mapView: readFile(path.join(SRC, 'templates', 'map-view.html')),
     simView: readFile(path.join(SRC, 'templates', 'sim-view.html')),
   };
+}
+
+// --- Editorial chrome: render the masthead/strip/notes/acquisition/cross-links HTML ---
+
+const HTML_ESCAPE = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => HTML_ESCAPE[c]);
+}
+// Allow only <em> and <br/> in the masthead headline. Strip everything else.
+function sanitizeNameDisplay(s) {
+  if (!s) return '';
+  return String(s)
+    .replace(/<(?!\/?(?:em|br\s*\/?)\b)[^>]*>/gi, '')
+    .replace(/<br\s*\/?>/gi, '<br/>');
+}
+function buildEstablishmentLine(theme) {
+  // Edition counts (e.g. "44th running") are authoritative in courseData,
+  // since heritage races sometimes skip years (COVID, weather) and a
+  // year-arithmetic guess will be off. The masthead line stays terse.
+  const parts = [];
+  if (theme.identity.establishedYear) parts.push('Est. ' + theme.identity.establishedYear);
+  parts.push(theme.geography.region);
+  return parts.map(escapeHtml).join('  ·  ');
+}
+function buildCourseDataRows(theme) {
+  return (theme.courseData || []).map(d =>
+    `<div class="course-strip__cell">
+        <dt class="course-strip__label">${escapeHtml(d.label)}</dt>
+        <dd class="course-strip__value">${escapeHtml(d.value)}${d.unit ? ` <span class="course-strip__unit">${escapeHtml(d.unit)}</span>` : ''}</dd>
+      </div>`
+  ).join('\n');
+}
+function buildDisciplinesBlock(theme) {
+  if (!theme.disciplines || !theme.disciplines.length) return '';
+  const cells = theme.disciplines.map(d =>
+    `<div class="disciplines__cell">
+        <span class="disciplines__label">${escapeHtml(d.label)}</span>
+        <span class="disciplines__distance">${escapeHtml(d.distance)}</span>
+      </div>`
+  ).join('\n');
+  return `<section class="disciplines" aria-label="Race disciplines">\n${cells}\n</section>`;
+}
+function buildAcquisitionBlock(theme) {
+  const cells = [];
+  const a = theme.acquisition || {};
+  if (a.print) {
+    cells.push(`<article class="acquisition__cell">
+      <span class="acquisition__kind">Archival print</span>
+      <p class="acquisition__detail">${a.print.sizes.map(escapeHtml).join(' · ')}<br/>Cotton rag, signed and numbered.</p>
+      <span class="acquisition__price">${escapeHtml(a.print.price)}</span>
+      <a class="acquisition__cta" href="${escapeHtml(a.print.href)}">Order a print</a>
+    </article>`);
+  }
+  if (a.digital) {
+    cells.push(`<article class="acquisition__cell">
+      <span class="acquisition__kind">Digital download</span>
+      <p class="acquisition__detail">${escapeHtml(a.digital.format)}<br/>For race-day signage and registration sites.</p>
+      <span class="acquisition__price">${escapeHtml(a.digital.price)}</span>
+      <a class="acquisition__cta" href="${escapeHtml(a.digital.href)}">Download</a>
+    </article>`);
+  }
+  if (a.commission) {
+    cells.push(`<article class="acquisition__cell">
+      <span class="acquisition__kind">Commission</span>
+      <p class="acquisition__detail">${escapeHtml(a.commission.lede)}</p>
+      <span class="acquisition__price">By estimate</span>
+      <a class="acquisition__cta" href="${escapeHtml(a.commission.href)}">Begin a commission</a>
+    </article>`);
+  }
+  return cells.join('\n');
+}
+function buildCrossLinksBlock(theme) {
+  return (theme.crossLinks || []).map((l, i) =>
+    `<li class="contact-sheet__cell">
+        <a class="contact-sheet__link" href="/maps/${encodeURIComponent(l.slug)}/">
+          <span class="contact-sheet__index">No. ${String(i + 1).padStart(2, '0')}</span>
+          <span class="contact-sheet__name">${escapeHtml(l.name)}</span>
+          <span class="contact-sheet__region">${escapeHtml(l.region)}</span>
+        </a>
+      </li>`
+  ).join('\n');
+}
+function buildEditorialCssVars(config) {
+  // Theme-derived tokens, plus the legacy tokens the config still maps. Theme tokens win.
+  const t = config.theme;
+  const themeVars = {
+    '--paper':        t.palette.paper,
+    '--ink':          t.palette.ink,
+    '--accent':       t.palette.accent,
+    '--warm':         t.palette.warm,
+    '--cool':         t.palette.cool,
+    '--font-display': t.type.displayStack,
+    '--font-body':    t.type.bodyStack,
+    '--font-micro':   t.type.microStack,
+  };
+  // Merge config.cssVars with theme tokens taking precedence.
+  const merged = Object.assign({}, config.cssVars || {}, themeVars);
+  const lines = Object.entries(merged).map(([k, v]) => `  ${k}: ${v};`).join('\n');
+  return `:root {\n${lines}\n}`;
+}
+function buildGoogleFontsLink(href) {
+  return [
+    '<link rel="preconnect" href="https://fonts.googleapis.com">',
+    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
+    `<link href="${href}" rel="stylesheet">`,
+  ].join('\n');
 }
 
 // --- Build CSS vars block ---
@@ -205,8 +314,9 @@ function buildMap(slug, templates) {
   delete require.cache[configPath];
   const config = require(configPath);
 
-  const cssVars = buildCssVars(config);
-  const sharedCSS = loadSharedCSS();
+  const editorial = !!config.theme;
+  const cssVars = editorial ? buildEditorialCssVars(config) : buildCssVars(config);
+  const sharedCSS = loadSharedCSS({ editorial });
   // Support both inline cssOverrides string and external overrideCss file
   let overrideCSS = config.cssOverrides || '';
   if (config.overrideCss) {
@@ -267,20 +377,66 @@ function buildMap(slug, templates) {
       .replace('{{DEFAULT_RUNNER_META}}', config.defaultRunnerMeta || '');
   }
 
-  // Build final HTML
-  let html = templates.shell
-    .replace('{{THEME_COLOR}}', config.themeColor)
-    .replace('{{TITLE}}', config.title)
-    .replace('{{GOOGLE_FONTS}}', config.googleFontsUrl || '')
-    .replace('{{CSS_VARS}}', '')  // Already included in fullCSS
-    .replace('{{CSS}}', fullCSS)
-    .replace('{{RACE_NAME}}', config.raceName)
-    .replace('{{SUBTITLE}}', config.subtitle)
-    .replace('{{MAP_VIEW}}', mapView)
-    .replace('{{SIM_VIEW}}', simView)
-    .replace('{{FOOTER_HTML}}', config.footerHtml || '')
-    .replace('{{CONFIG_DATA}}', '')  // Already included in fullJS
-    .replace('{{JS}}', fullJS);
+  // Build final HTML — editorial path uses race-shell.html and renders the
+  // print-spread chrome (masthead, course strip, field notes, acquisition,
+  // contact sheet, colophon) from the theme.
+  let html;
+  if (editorial) {
+    const t = config.theme;
+    const fontsLink = t.type.googleFontsHref
+      ? buildGoogleFontsLink(t.type.googleFontsHref)
+      : (config.googleFontsUrl || '');
+    const wordmarkBlock = t.wordmark
+      ? `<p class="masthead__wordmark">${escapeHtml(t.wordmark)}</p>`
+      : '';
+    const captionTitle = t.mapCaption || (t.identity.name + ' — official course map.');
+    const fillEditorial = (tpl) => tpl
+      .replace('{{THEME_COLOR}}', config.themeColor)
+      .replace('{{TITLE}}', config.title)
+      .replace('{{GOOGLE_FONTS}}', fontsLink)
+      .replace('{{VOICE}}', t.voice)
+      .replace('{{HERO_TREATMENT}}', t.heroTreatment)
+      .replace('{{TEXTURE}}', t.texture)
+      .replace('{{CSS_VARS}}', '')
+      .replace('{{CSS}}', fullCSS)
+      .replace('{{ESTABLISHMENT_LINE}}', buildEstablishmentLine(t))
+      .replace('{{RACE_NAME_DISPLAY}}', sanitizeNameDisplay(t.identity.nameDisplay) || escapeHtml(t.identity.name))
+      .replace('{{WORDMARK_BLOCK}}', wordmarkBlock)
+      .replace('{{HOST_ORG}}', escapeHtml(t.identity.hostOrg))
+      .replace('{{REGION}}', escapeHtml(t.geography.region))
+      .replace('{{RACE_DAY}}', escapeHtml(t.identity.raceDay || ''))
+      .replace('{{RACE_NAME}}', escapeHtml(config.raceName))
+      .replace('{{MAP_VIEW}}', mapView)
+      .replace('{{SIM_VIEW}}', simView)
+      .replace('{{CAPTION_TITLE}}', escapeHtml(captionTitle))
+      .replace('{{DISCIPLINES_BLOCK}}', buildDisciplinesBlock(t))
+      .replace('{{ELEVATION_STORY}}', escapeHtml(t.geography.elevationStory))
+      .replace('{{COURSE_DATA_ROWS}}', buildCourseDataRows(t))
+      .replace('{{FIELD_NOTES}}', escapeHtml(t.fieldNotes))
+      .replace('{{ACQUISITION_BLOCK}}', buildAcquisitionBlock(t))
+      .replace('{{CROSS_LINKS_BLOCK}}', buildCrossLinksBlock(t))
+      .replace('{{TYPE_DISPLAY}}', escapeHtml(t.type.display))
+      .replace('{{TYPE_BODY}}', escapeHtml(t.type.body))
+      .replace('{{TYPE_MICRO}}', escapeHtml(t.type.micro))
+      .replace('{{FOOTER_HTML}}', config.footerHtml || '')
+      .replace('{{CONFIG_DATA}}', '')
+      .replace('{{JS}}', fullJS);
+    html = fillEditorial(templates.raceShell);
+  } else {
+    html = templates.shell
+      .replace('{{THEME_COLOR}}', config.themeColor)
+      .replace('{{TITLE}}', config.title)
+      .replace('{{GOOGLE_FONTS}}', config.googleFontsUrl || '')
+      .replace('{{CSS_VARS}}', '')
+      .replace('{{CSS}}', fullCSS)
+      .replace('{{RACE_NAME}}', config.raceName)
+      .replace('{{SUBTITLE}}', config.subtitle)
+      .replace('{{MAP_VIEW}}', mapView)
+      .replace('{{SIM_VIEW}}', simView)
+      .replace('{{FOOTER_HTML}}', config.footerHtml || '')
+      .replace('{{CONFIG_DATA}}', '')
+      .replace('{{JS}}', fullJS);
+  }
 
   // Write output
   const outDir = path.join(DIST, 'maps', slug);
