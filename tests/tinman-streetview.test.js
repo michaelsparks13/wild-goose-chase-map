@@ -150,9 +150,12 @@ describe('buildStreetviewPopupHtml structure', () => {
 
   it('popup HTML wires the chevron transform to streetviewArrowAngle', () => {
     const html = readFileSync(distHtmlPath, 'utf-8');
-    // The helper should compute rotate(...deg) using streetviewArrowAngle
-    expect(html).toMatch(/streetviewArrowAngle\s*\(/);
-    expect(html).toMatch(/rotate\(/);
+    const fnStart = html.indexOf('function buildStreetviewPopupHtml');
+    expect(fnStart).toBeGreaterThan(-1);
+    // Slice through the function body — the function is < 2KB; 2500 chars is a safe upper bound.
+    const fnSlice = html.substring(fnStart, fnStart + 2500);
+    expect(fnSlice).toMatch(/streetviewArrowAngle\s*\(/);
+    expect(fnSlice).toMatch(/rotate\(/);
   });
 });
 

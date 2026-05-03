@@ -112,7 +112,7 @@ function buildStreetviewPopupHtml(turn) {
           chevronSvg +
         '</div>' +
       '</div>' +
-      '<a class="streetview-link" href="' + mapsUrl + '" target="_blank" rel="noopener">Open in Google Maps →</a>' +
+      '<a class="streetview-link" href="' + mapsUrl + '" target="_blank" rel="noopener noreferrer">Open in Google Maps →</a>' +
     '</div>'
   );
 }
