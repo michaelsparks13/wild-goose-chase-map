@@ -190,3 +190,20 @@ describe('Street View toggle button', () => {
     expect(countOf('id="streetviewBtn"')).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe('Street View marker creation', () => {
+  it('main HTML iterates STREETVIEW_TURNS to create markers', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    expect(html).toMatch(/STREETVIEW_TURNS\.forEach/);
+  });
+
+  it('main HTML defines streetviewMarkers array', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    expect(html).toMatch(/var\s+streetviewMarkers\s*=\s*\[\s*\]/);
+  });
+
+  it('tap-passthrough guard includes .streetview-marker', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    expect(html).toMatch(/closest\(['"][^'"]*\.streetview-marker[^'"]*['"]\)/);
+  });
+});

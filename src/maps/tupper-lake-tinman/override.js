@@ -121,6 +121,8 @@ var map;
 var aidOn = false;
 var terrain3D = false;
 var aidMarkers = [];
+var streetviewMarkers = [];
+var streetviewOn = false;
 var loopTurnMarkers = { sprint: [], olympic: [], tinman: [] };
 
 // ─── Interactive directions state ───
@@ -628,7 +630,7 @@ function initMap() {
       (function(loopId, loopObj) {
         map.on('click', loopId, function(e) {
           var t = e.originalEvent && e.originalEvent.target;
-          if (t && t.closest && t.closest('.aid-marker, .hq-marker, .mile-marker')) return;
+          if (t && t.closest && t.closest('.aid-marker, .hq-marker, .mile-marker, .streetview-marker')) return;
           new maplibregl.Popup({ offset: 12 }).setLngLat(e.lngLat).setHTML(
             '<strong style="color:' + loopObj.color + '">' + loopObj.label + ' Run</strong><br>' +
             '<span style="color:#666">' + loopObj.run + ' mi run · ' + loopObj.gain + "' gain</span><br>" +
@@ -695,6 +697,44 @@ function initMap() {
         ))
         .addTo(map);
       aidMarkers.push({ marker: marker, element: aidEl });
+    });
+
+    // Street View markers — placed just past each turn corner along the
+    // runner's exit direction. The ~8 m offset both communicates "this is the
+    // road you take" and separates pairs of turns at the same intersection
+    // (e.g. mile 0.03 and 4.44 both at the Boyer/Pleasant corner). Hidden by
+    // default; toggleStreetview() flips them visible.
+    var STREETVIEW_OFFSET_M = 8;
+    STREETVIEW_TURNS.forEach(function(turn) {
+      var lat = turn.coords[1];
+      var lng = turn.coords[0];
+      var br = turn.bearingAfter * Math.PI / 180;
+      var dLat = (STREETVIEW_OFFSET_M * Math.cos(br)) / 111000;
+      var dLng = (STREETVIEW_OFFSET_M * Math.sin(br)) / (111000 * Math.cos(lat * Math.PI / 180));
+      var renderLng = lng + dLng;
+      var renderLat = lat + dLat;
+
+      var svEl = document.createElement('div');
+      svEl.className = 'streetview-marker';
+      svEl.style.display = 'none';
+      // Camera glyph: black disc, yellow border, white camera body, black lens.
+      setHtml(svEl,
+        '<svg viewBox="0 0 32 32" aria-hidden="true">' +
+          '<circle cx="16" cy="16" r="13" fill="#1a1a1a" stroke="#F5C518" stroke-width="2.5"/>' +
+          '<rect x="9" y="12" width="14" height="9" rx="1.5" fill="#fff"/>' +
+          '<polygon points="13,12 15,10 17,10 19,12" fill="#fff"/>' +
+          '<circle cx="16" cy="16.5" r="2.6" fill="#1a1a1a"/>' +
+        '</svg>'
+      );
+      var marker = new maplibregl.Marker({ element: svEl })
+        .setLngLat([renderLng, renderLat])
+        .setPopup(new maplibregl.Popup({
+          offset: 16,
+          className: 'streetview-popup',
+          maxWidth: '380px'
+        }).setHTML(buildStreetviewPopupHtml(turn)))
+        .addTo(map);
+      streetviewMarkers.push({ marker: marker, element: svEl });
     });
 
     // Apply initial visibility per LOOPS[id].visible defaults — by default
