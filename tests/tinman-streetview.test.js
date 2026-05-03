@@ -228,3 +228,29 @@ describe('toggleStreetview function', () => {
     expect(fnSlice).toMatch(/streetviewMarkers\.forEach/);
   });
 });
+
+describe('Street View styles', () => {
+  it('main HTML inlines .streetview-marker styles', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    expect(html).toMatch(/\.streetview-marker\s*\{/);
+  });
+
+  it('main HTML inlines .streetview-arrow styles', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    expect(html).toMatch(/\.streetview-arrow\s*\{/);
+  });
+
+  it('popup uses --paper background', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    expect(html).toMatch(/\.streetview-popup[^{]*\.maplibregl-popup-content[^{]*\{[^}]*var\(--paper\)/s);
+  });
+
+  it('arrow has transform-origin and absolute positioning', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    const arrowStart = html.indexOf('.streetview-arrow {');
+    expect(arrowStart).toBeGreaterThan(-1);
+    const arrowSlice = html.substring(arrowStart, arrowStart + 400);
+    expect(arrowSlice).toContain('position: absolute');
+    expect(arrowSlice).toContain('transform-origin');
+  });
+});
