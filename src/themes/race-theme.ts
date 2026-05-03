@@ -1,169 +1,211 @@
 /*
- * race-theme.ts — schema for False Summit Studio race-page themes.
+ * race-theme.ts — schema for False Summit Studio race-page themes (v2).
  *
- * This file is the single source of truth for the per-race design system
- * that flexes the editorial chrome around each map. It is intentionally a
- * .ts file so the schema travels with the design intent (voice, treatment,
- * palette tokens), while concrete themes ship as plain CommonJS modules
- * (`./<slug>.js`) consumed by the zero-dependency build pipeline.
+ * The page is an ATHLETE-FACING tool the race director links to from
+ * their own site. It is not a studio showcase. Themes therefore describe
+ * the *race's* identity (palette extracted from race brand assets, type
+ * stack matching the race's voice), plus operational facts (race-day
+ * timing, distances, geography, aid). Studio identity is fixed minimal
+ * chrome, not a theme variable.
  *
- * The build does not run a TS compiler — see ./tupper-lake-tinman.js for
- * the runtime shape, which mirrors `RaceTheme` 1:1.
+ * The build is zero-dependency Node — see ./tupper-lake-tinman.js for
+ * the runtime CommonJS shape, mirroring `RaceTheme` 1:1.
  */
 
-/** A studio-voice marker that selects a font + tone preset in the chrome. */
-export type RaceVoice =
-  | 'archival'              // heritage events, transitional serif, restrained
-  | 'field-guide'           // working-landscape trail races, slab + reading serif
-  | 'editorial'             // flagship races, didone or Caslon revival
-  | 'topographic-technical' // alpine / mountain, geometric mono + lining sans
-  | 'trail-party';          // community ultras, slab + sturdy sans
+/** Race format. The page surfaces only the disciplines the studio mapped. */
+export type Discipline =
+  | 'triathlon'
+  | 'trail-run'
+  | 'road-run'
+  | 'gravel'
+  | 'road-cycle'
+  | 'multisport';
 
-/** How the map is *framed* on the page — print-design term, not animation. */
-export type HeroTreatment =
-  | 'unfurl'                 // the map unfolds across the spread (point-to-point)
-  | 'gallery-frame'          // matted with generous margins, museum-print energy
-  | 'split-with-elevation'   // map + elevation profile share a left/right split
-  | 'parallax-portfolio';    // portfolio-style stacked layout, no parallax-of-stars
-
-/** Substrate texture applied to the page background. */
-export type Texture =
-  | 'paper-grain'
-  | 'topo-lines'
-  | 'aerial-noise'
-  | 'clean';
-
-/** Identity copy block — race-supplied voice, not the studio's. */
-export interface RaceIdentity {
-  /** "Tupper Lake Tinman", in title case. The display type does the work. */
-  name: string;
+/** A single distance in a multi-distance event. */
+export interface Distance {
+  /** Slug used in toggles + JSON file names. e.g. 'sprint' | 'olympic' | 'tinman'. */
+  id: string;
+  /** Display label. e.g. "Sprint", "Olympic", "Tinman". */
+  label: string;
+  /** Run-leg distance in miles (this page maps the run only). */
+  runMiles: number;
+  /** Run-leg elevation gain in feet. */
+  runGainFt: number;
+  /** Per-distance accent color, sampled from the race's distance signage. */
+  color: string;
   /**
-   * Optional HTML override for the masthead headline. Use to wrap a single
-   * proper-noun word in <em> for an italic accent ("Tupper Lake <em>Tinman</em>").
-   * Sanitised by the build to allow only <em> and <br/>.
+   * Optional human-readable run-start window. Triathlons don't have a
+   * single run gun; runners clear T2 across a window of time.
+   * e.g. "9:15 – 9:45 AM (after T2)"
    */
-  nameDisplay?: string;
-  /** A single line in the *race's own* tone of voice — its wordmark, not a marketing slogan. */
-  tagline: string;
+  runStartWindow?: string;
+}
+
+export interface RaceIdentity {
+  /** "Tupper Lake Tinman", in title case. Small banner, never a wordmark hero. */
+  name: string;
+  /** Short label for nav, breadcrumbs, simulator UI. e.g. "Tinman". */
+  shortName: string;
   /** Producing organisation, written as it appears on the race site. */
   hostOrg: string;
-  /** Year of first running, for heritage events. Omit for new races. */
+  /** Race's own URL. */
+  hostUrl: string;
+  /** Year of first running, for heritage events. */
   establishedYear?: number;
-  /** Race day display string. e.g. "June 27, 2026". */
-  raceDay?: string;
+  /** Path/URL to the race's actual logo asset (svg/png). Optional. */
+  sourceLogoUrl?: string;
 }
 
-/** Geographic specifics — concrete, not "upstate NY". */
-export interface RaceGeography {
-  /** "Adirondack High Peaks", "Catskill Devil's Path", "Sonoran Desert". */
-  region: string;
-  /** A human sentence about the elevation story, not a raw integer. */
-  elevationStory: string;
-  /** Surface composition in priority order: ['paved road','village','mixed surface'] */
-  surface: string[];
-  /** Optional named water feature for triathlons / lakeside races. */
-  waterFeature?: string;
-}
-
-/** All five tokens are required. None of them may be `#fff`. */
+/**
+ * Palette — pulled from the race's own brand assets, NOT invented from
+ * a romantic idea of the geography. None of these may be `#ffffff`.
+ */
 export interface RacePalette {
-  /** Page substrate — warm paper, never pure white. */
+  /** The race's signature color — extract from their logo/site. */
+  raceBrand: string;
+  /** The race's text/dark color (typically near-black). */
+  raceInk: string;
+  /** Page background — tinted, not pure white. */
   paper: string;
-  /** Body ink — near-black with a hue from the geography. */
-  ink: string;
-  /** Accent for links, key figures, focal punctuation. */
-  accent: string;
-  /** Warm pole of the palette (sunrise, fire road, bib pinks). */
-  warm: string;
-  /** Cool pole of the palette (lake, conifer, ridge shadow). */
-  cool: string;
+  /** Section/card backgrounds — slightly distinct from `paper`. */
+  surfaceWarm: string;
+  /** Course route color on the map. Use a high-contrast complement to the basemap. */
+  routeColor: string;
+  /** Aid station marker color. */
+  aidStation: string;
+  /** Hazard/cutoff/warning color. */
+  hazard: string;
 }
 
-/** Type stack — pick three families with intentional jobs. */
+/** Type stack matching the race's voice. */
 export interface RaceType {
-  /** Display face for the race wordmark and headlines. */
+  /** Display face for the small race wordmark; ≤ ~28px in any header. */
   display: string;
-  /** Reading face for field notes and body. */
+  /** Workhorse reading face for cues and notes. */
   body: string;
-  /** Mono / micro face for the technical course-data strip. */
+  /** Mono for distances, elevations, times — the technical voice. */
   micro: string;
-  /** Optional Google Fonts URL; if omitted the build uses only system fallbacks. */
+  /** Optional Google Fonts URL. */
   googleFontsHref?: string;
-  /** CSS family stack for `--font-display`, including fallbacks. */
   displayStack: string;
-  /** CSS family stack for `--font-body`. */
   bodyStack: string;
-  /** CSS family stack for `--font-micro`. */
   microStack: string;
 }
 
-/** A single line in the typographically-dense course data strip. */
-export interface CourseDatum {
-  /** Mono micro-label, sentence case. e.g. "Distance", "Elevation gain". */
-  label: string;
-  /** Serif numeral or short string. Keep under ~24 chars. */
-  value: string;
-  /** Optional unit, set smaller in the mono face. e.g. "mi", "ft", "°F". */
-  unit?: string;
+export interface RaceFormat {
+  discipline: Discipline;
+  /** Distances offered. Order = order in toggles. */
+  distances: Distance[];
+  /** True if the race has a swim — used only for context messaging. */
+  hasSwim: boolean;
+  /**
+   * True if the race has bike→run transitions; used for honest run-start
+   * messaging ("runners start the run after clearing T2", not "8:00 AM").
+   */
+  hasTransitions: boolean;
+  /**
+   * Default distance shown on first load. Should be the headline distance.
+   * e.g. 'tinman'.
+   */
+  defaultDistanceId: string;
 }
 
-/** A single related-map link, presented contact-sheet style. */
-export interface CrossLink {
-  /** Race slug — must match a built /maps/{slug}/ route. */
-  slug: string;
-  /** Race name as it appears on its own page. */
+export interface RaceGeography {
+  region: string;
+  startLat: number;
+  startLng: number;
+  /** Human sentence about elevation, not a raw integer. */
+  elevationStory: string;
+  /** Surface composition in priority order. */
+  surface: string[];
+  /** Optional named water feature for context only — not mapped if hasSwim is false. */
+  waterFeature?: string;
+  /** Identifier for the live weather feed (city/airport code or station). */
+  weatherStation: string;
+}
+
+export interface RaceDayStartTime {
+  /** Distance id this start-time applies to. */
+  distance: string;
+  /** Display string. e.g. "8:00 AM (rolling swim)" or "9:15–9:45 AM (run)". */
+  time: string;
+}
+
+export interface RaceCutoff {
+  /** Mile within the run leg. */
+  mile: number;
+  /** Display string. e.g. "11:30 AM" or "+3h 30m from gun". */
+  time: string;
+  /** Short label. e.g. "Tinman aid station closes". */
+  label: string;
+}
+
+export interface RaceDay {
+  /** ISO date. e.g. "2026-06-27". */
+  date: string;
+  /** Display date. e.g. "June 27, 2026 · Saturday". */
+  displayDate: string;
+  /** Start times per distance. */
+  startTimes: RaceDayStartTime[];
+  /** Cutoffs that affect the run. Empty list if none. */
+  cutoffs: RaceCutoff[];
+  /** "5:09 AM" */
+  sunrise: string;
+  /** "8:48 PM" */
+  sunset: string;
+}
+
+/** Aid station — used by both map markers and the on-page table. */
+export interface AidStation {
   name: string;
-  /** Region one-liner, mono micro. */
+  /** Mile within the run leg. */
+  mile: number;
+  /** What's stocked. */
+  stocked: string;
+  /** Optional cutoff time at this station. */
+  cutoff?: string;
+}
+
+/** A single cross-link to another studio map. */
+export interface CrossLink {
+  slug: string;
+  name: string;
   region: string;
 }
 
-/** Acquisition options. Omit any block that doesn't apply to the race. */
-export interface Acquisition {
-  print?: { sizes: string[]; price: string; href: string };
-  digital?: { format: string; price: string; href: string };
-  commission?: { lede: string; href: string };
+/** Logistics — keep the page from duplicating the host race's full athlete guide. */
+export interface RaceLogistics {
+  parking: string;
+  packetPickup: string;
+  /** Brief shuttle/transit info. */
+  shuttle?: string;
+  /** Where on the run course spectators can realistically see runners 2+ times. */
+  spectatorTips?: string;
+  /** Link out to the host race's full athlete guide. */
+  hostGuideUrl: string;
 }
 
-/** A 2–3 sentence studio-voice note about what made this map a specific job. */
-export type FieldNote = string;
+/** The cartographer's run-only operational note. 1–2 short paragraphs. */
+export type CartographerNote = string;
 
-/**
- * The full theme. One file per race in src/themes/, paired with a config in
- * src/maps/{slug}/. The build reads `config.theme` and uses it to render the
- * editorial chrome around the existing map view.
- */
 export interface RaceTheme {
   slug: string;
   identity: RaceIdentity;
-  geography: RaceGeography;
   palette: RacePalette;
   type: RaceType;
-  voice: RaceVoice;
-  heroTreatment: HeroTreatment;
-  texture: Texture;
-  /**
-   * Course data strip. Order matters — the strip reads left-to-right,
-   * top-to-bottom on a 4-column grid. Aim for 6–10 entries.
-   */
-  courseData: CourseDatum[];
-  /**
-   * For triathlons and multi-discipline races: a typographic triptych of
-   * disciplines. Renders as a row of capitalized labels with hairline
-   * separators. Omit for single-discipline races.
-   */
-  disciplines?: { label: string; distance: string }[];
-  fieldNotes: FieldNote;
-  acquisition: Acquisition;
-  /** Other maps from the studio. Keep tight — 3 to 5 entries. */
+  raceFormat: RaceFormat;
+  geography: RaceGeography;
+  raceDay: RaceDay;
+  aidStations: AidStation[];
+  logistics: RaceLogistics;
+  /** 1–2 paragraphs, run-scoped. The only place studio voice appears in body copy. */
+  cartographerNotes: CartographerNote;
+  /** Other maps from the studio. 3–5 entries. */
   crossLinks: CrossLink[];
   /**
-   * Optional small wordmark line treated typographically (not as a button).
-   * Tinman uses this for "Race the Adirondacks".
+   * Single-line scope note shown above the cue sheet. Tells the athlete
+   * what is and isn't on this page. e.g.
+   * "Run course only. For swim and bike routes, see the official race site."
    */
-  wordmark?: string;
-  /**
-   * Caption that appears below the map in italic body text, like a museum
-   * plate label. e.g. "Run course, all five distances · drawn from NYSDOT".
-   */
-  mapCaption?: string;
+  scopeNote: string;
 }

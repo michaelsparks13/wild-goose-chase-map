@@ -171,7 +171,7 @@ module.exports = {
   <div class="map-main">
   <div class="map-wrap">
     <div id="map"></div>
-    <div class="hq-badge"><div class="dot"></div><div class="text">BIKE FINISH / RUN START</div></div>
+    <div class="hq-badge"><div class="dot"></div><div class="text">RUN START</div></div>
     <div class="map-btns">
       <button class="trail-btn" id="aidBtn" onclick="toggleAid()">Aid Stations</button>
       <button class="trail-btn" id="terrainBtn" onclick="toggle3D()">3D</button>
@@ -224,38 +224,26 @@ module.exports = {
     <ol class="directions-list" id="directionsList"></ol>
   </section>
 
-  <div class="controls">
-    <div>
-      <div class="section-label">Run Courses</div>
-      <div class="loop-toggles">
-        <div class="loop-toggle" data-loop="sprint" style="--loop-color:#F5C518" onclick="toggleLoop('sprint')">
-          <div class="swatch" style="background:#F5C518"></div>
-          <div class="info"><div class="name">Sprint Run</div><div class="stats">3.1 mi &middot; 193'</div></div>
-        </div>
-        <div class="loop-toggle" data-loop="olympic" style="--loop-color:#2E7D32" onclick="toggleLoop('olympic')">
-          <div class="swatch" style="background:#2E7D32"></div>
-          <div class="info"><div class="name">Olympic Run</div><div class="stats">6.2 mi &middot; 218'</div></div>
-        </div>
-        <div class="loop-toggle active" data-loop="tinman" style="--loop-color:#C8102E" onclick="toggleLoop('tinman')">
-          <div class="swatch" style="background:#C8102E"></div>
-          <div class="info"><div class="name">Tinman Run</div><div class="stats">13.1 mi &middot; 407'</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <!-- Profile-section is moved into the essentials block at runtime by
+       editorial-runtime.js. The legacy controls + race-cards are kept as
+       hidden DOM stubs because override.js's selectRace() queries
+       [data-loop=...] and .race-card to update their .active state — a
+       missing element would throw and halt the race switch. -->
   <section class="profile-section">
     <div class="profile-header">
-      <h3 id="profileTitle">Elevation Profile</h3>
+      <h3 id="profileTitle">Elevation profile</h3>
       <div class="profile-stats" id="profileStats"></div>
     </div>
     <canvas id="profileCanvas"></canvas>
   </section>
-
-  <section class="cards-section">
-    <h3>Choose your distance</h3>
-    <div class="race-cards" id="raceCards"></div>
-  </section>
+  <div class="legacy-controls" hidden aria-hidden="true">
+    <div class="loop-toggles">
+      <div class="loop-toggle" data-loop="sprint"></div>
+      <div class="loop-toggle" data-loop="olympic"></div>
+      <div class="loop-toggle active" data-loop="tinman"></div>
+    </div>
+  </div>
+  <div class="race-cards" id="raceCards" hidden></div>
   </div>
 
   ${weatherData ? `<aside class="weather-panel" id="weatherPanel">
@@ -375,7 +363,7 @@ module.exports = {
   trailsData: { type: 'FeatureCollection', features: [] },
 
   startCoords: [-74.46478, 44.22999],
-  startLabel: 'Bike Finish / Run Start (T2) - Tinman Beach',
+  startLabel: 'Run Start — Tinman Beach (T2 in real life; this map is run-only)',
   finishCoords: null,
   finishLabel: null,
 

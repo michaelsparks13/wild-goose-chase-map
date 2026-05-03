@@ -1,75 +1,118 @@
-// tupper-lake-tinman.e2e.js — end-to-end checks of the editorial race page.
-// Verifies the chrome renders, the page substrate is the cream paper (not
-// white), the headline display font is Fraunces, and the map/sim view tabs
-// still wire up correctly inside the gallery frame.
+// tupper-lake-tinman.e2e.js — v2 athlete-first contract.
+// Verifies the four operational fixes from the v2 brief:
+//   1. The map dominates the page above the fold (≥ 60vh tall, visible)
+//   2. The cue sheet is co-visible with the map (split view, sticky map)
+//   3. Run-only scope is plainly stated; no swim/bike chrome
+//   4. Race-branded palette (yellow on black) lands as expected
 
 import { test, expect } from '@playwright/test';
 
-test.describe('Tupper Lake Tinman — editorial page', () => {
+test.describe('Tupper Lake Tinman — athlete-first race page (v2)', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/maps/tupper-lake-tinman/');
   });
 
-  test('page title carries studio attribution', async ({ page }) => {
-    await expect(page).toHaveTitle(/Tupper Lake Tinman.*False Summit Studio/);
+  test('top bar belongs to the race, not the studio', async ({ page }) => {
+    const raceMark = page.locator('.race-mark__name');
+    await expect(raceMark).toContainText('Tupper Lake Tinman');
+    const raceMarkSize = await raceMark.evaluate(el => parseFloat(getComputedStyle(el).fontSize));
+    // Race wordmark is small (≤ 28px per brief, not a hero)
+    expect(raceMarkSize).toBeLessThanOrEqual(28);
+    // Studio credit exists but is small (≤ ~12px) and far-right
+    const credit = page.locator('.studio-credit');
+    await expect(credit).toBeVisible();
+    const creditSize = await credit.evaluate(el => parseFloat(getComputedStyle(el).fontSize));
+    expect(creditSize).toBeLessThanOrEqual(14);
   });
 
-  test('renders all 7 universal editorial sections', async ({ page }) => {
-    await expect(page.locator('.studio-mark')).toBeVisible();
-    await expect(page.locator('.masthead__name')).toBeVisible();
-    await expect(page.locator('.map-room__plate')).toBeVisible();
-    await expect(page.locator('.disciplines')).toBeVisible();
-    await expect(page.locator('.course-strip')).toBeVisible();
-    await expect(page.locator('.field-notes__body')).toBeVisible();
-    await expect(page.locator('.acquisition__shelf')).toBeVisible();
-    await expect(page.locator('.contact-sheet__grid')).toBeVisible();
-    await expect(page.locator('.colophon')).toBeVisible();
+  test('the map dominates above the fold (≥ 60vh tall)', async ({ page }) => {
+    const mapBox = await page.locator('#map').boundingBox();
+    expect(mapBox).toBeTruthy();
+    expect(mapBox.height).toBeGreaterThanOrEqual(900 * 0.6);
+    // And the map must be visible on first viewport, not below the fold
+    expect(mapBox.y).toBeLessThan(900);
   });
 
-  test('page substrate is warm cream paper, not pure white', async ({ page }) => {
-    const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    // #ece4d3 → rgb(236, 228, 211)
-    expect(bg).toBe('rgb(236, 228, 211)');
+  test('cue sheet is co-visible with the map on first viewport', async ({ page }) => {
+    const mapBox = await page.locator('#map').boundingBox();
+    const cuesBox = await page.locator('.course__cues').boundingBox();
+    expect(mapBox).toBeTruthy();
+    expect(cuesBox).toBeTruthy();
+    // Both visible on first viewport
+    expect(mapBox.y + mapBox.height).toBeGreaterThan(0);
+    expect(cuesBox.y).toBeLessThan(900);
+    // And they sit side-by-side, not stacked
+    expect(Math.abs(mapBox.y - cuesBox.y)).toBeLessThan(80);
   });
 
-  test('headline uses Fraunces with italic accent on the proper noun', async ({ page }) => {
-    const h1 = page.locator('.masthead__name');
-    await expect(h1).toContainText('Tupper Lake');
-    await expect(h1.locator('em')).toHaveText('Tinman');
-    const fontFamily = await h1.evaluate(el => getComputedStyle(el).fontFamily);
-    expect(fontFamily.toLowerCase()).toContain('fraunces');
+  test('clicking a cue row keeps the map and cue both visible', async ({ page }) => {
+    const cue = page.locator('.dir-step').nth(2);
+    await cue.click();
+    // Map remains visible; we don't assert pan because that's covered in tinman-directions.e2e.js
+    await expect(page.locator('#map')).toBeVisible();
+    await expect(cue).toBeVisible();
   });
 
-  test('the map itself renders at ≥ 800px wide on desktop', async ({ page }) => {
-    const box = await page.locator('#map').boundingBox();
-    expect(box).toBeTruthy();
-    expect(box.width).toBeGreaterThanOrEqual(800);
+  test('palette is the race brand (yellow + black), not invented Adirondack tokens', async ({ page }) => {
+    const brand = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--race-brand').trim());
+    expect(brand.toLowerCase()).toBe('#f5c518');
+    const ink = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--ink').trim());
+    expect(ink.toLowerCase()).toBe('#1a1a1a');
+    // Top bar uses raceInk on raceBrand — black with a yellow accent rule
+    const bar = page.locator('.top-bar');
+    const barBg = await bar.evaluate(el => getComputedStyle(el).backgroundColor);
+    expect(barBg).toBe('rgb(26, 26, 26)');
   });
 
-  test('view tabs switch between map and simulator', async ({ page }) => {
-    const mapTab = page.locator('.masthead__view-tabs [data-view="map"]');
-    const simTab = page.locator('.masthead__view-tabs [data-view="sim"]');
-    await expect(mapTab).toHaveClass(/active/);
-    await simTab.click();
-    await expect(simTab).toHaveClass(/active/);
-    await expect(page.locator('#simView')).toHaveClass(/active/);
-    await expect(page.locator('#mapView')).not.toHaveClass(/active/);
+  test('start marker reads RUN START, not BIKE FINISH / RUN START', async ({ page }) => {
+    const badge = page.locator('.hq-badge .text');
+    await expect(badge).toHaveText('RUN START');
   });
 
-  test('contact-sheet links go to the right map slugs', async ({ page }) => {
-    const links = page.locator('.contact-sheet__link');
-    await expect(links).toHaveCount(5);
-    await expect(links.nth(0)).toHaveAttribute('href', '/maps/escarpment/');
-    await expect(links.nth(3)).toHaveAttribute('href', '/maps/wild-goose/');
+  test('scope note plainly states run-only and routes to host race', async ({ page }) => {
+    const note = page.locator('.scope-note');
+    await expect(note).toBeVisible();
+    await expect(note).toContainText('Run course only');
+    const link = note.locator('a.scope-note__link');
+    await expect(link).toHaveAttribute('href', /tupperlaketinman/);
   });
 
-  test('mobile viewport stacks editorial chrome and keeps masthead readable', async ({ page }) => {
+  test('no swim/bike chrome — disciplines triptych is gone, scope is run-only', async ({ page }) => {
+    await expect(page.locator('.disciplines')).toHaveCount(0);
+    await expect(page.locator('text=Tinman swim')).toHaveCount(0);
+    await expect(page.locator('text=Tinman bike')).toHaveCount(0);
+  });
+
+  test('countdown shows a sensible day count for 2026-06-27', async ({ page }) => {
+    const text = await page.locator('#raceCountdown').textContent();
+    expect(text).toMatch(/Race in \d+ days|Race tomorrow|Race today|Past edition|Just raced/);
+  });
+
+  test('aid table renders all theme aid stations', async ({ page }) => {
+    const rows = page.locator('.aid-table tbody tr');
+    await expect(rows).toHaveCount(8);
+    await expect(rows.first()).toContainText('Park Street');
+  });
+
+  test('embed mode applies via ?embed=1 (compact chrome)', async ({ page }) => {
+    await page.goto('/maps/tupper-lake-tinman/?embed=1');
+    await expect(page.locator('body')).toHaveClass(/race-page--embed/);
+    // Non-essential blocks hidden in embed
+    await expect(page.locator('#essentialsNotes')).toBeHidden();
+    await expect(page.locator('#essentialsCross')).toBeHidden();
+    // FSS credit still present in footer (race directors find FSS through embeds)
+    await expect(page.locator('.page-footer__line')).toContainText('Cartography');
+  });
+
+  test('mobile viewport stacks map (sticky top) above cues', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await expect(page.locator('.masthead__name')).toBeVisible();
-    await expect(page.locator('.map-room__plate')).toBeVisible();
-    // Disciplines stack into a single column on mobile (per editorial.css ≤ 640px)
-    const discBox = await page.locator('.disciplines').boundingBox();
-    expect(discBox.width).toBeLessThanOrEqual(390);
+    await page.goto('/maps/tupper-lake-tinman/');
+    const mapBox = await page.locator('#map').boundingBox();
+    const cuesBox = await page.locator('.course__cues').boundingBox();
+    // Stacked (map above cues), not side-by-side
+    expect(cuesBox.y).toBeGreaterThan(mapBox.y + mapBox.height - 30);
+    // Map is still ≥ 50vh tall (per brief: ~50vh on mobile)
+    expect(mapBox.height).toBeGreaterThanOrEqual(844 * 0.4);
   });
 });

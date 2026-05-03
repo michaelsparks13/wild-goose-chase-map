@@ -40,21 +40,19 @@ describe('Tinman build artifacts', () => {
 });
 
 describe('Tinman branding and content', () => {
-  it('uses race name in title and masthead', () => {
+  it('uses race name in title and top bar', () => {
     expect(html).toContain('Tupper Lake Tinman');
-    expect(html).toContain('June 27, 2026');
-    // 44th running is now authoritative in the course-strip cell, not the masthead.
-    expect(html).toContain('44th running');
+    expect(html).toContain('Sat, Jun 27, 2026');
   });
 
   it('links to race website', () => {
-    expect(html).toContain('href="https://www.tupperlaketinman.com/"');
+    expect(html).toContain('https://www.tupperlaketinman.com');
   });
 
-  it('uses paper substrate tokens, not pure-white SaaS chrome', () => {
-    expect(html).toContain('--paper: #ece4d3');
-    expect(html).toContain('--ink: #1a1c1c');
-    expect(html).toContain('--accent: #9b3a2e');
+  it('uses race-branded palette tokens, not pure-white SaaS chrome', () => {
+    expect(html).toContain('--paper: #f6f1e7');
+    expect(html).toContain('--ink: #1a1a1a');
+    expect(html).toContain('--race-brand: #F5C518');
     expect(html).not.toMatch(/--bg:\s*#ffffff/);
     expect(html).not.toMatch(/--bg-card:\s*#ffffff/);
   });
@@ -63,20 +61,25 @@ describe('Tinman branding and content', () => {
     expect(html).toContain('--course: #111111');
   });
 
-  it('imports the editorial type stack (Fraunces / Spectral / JetBrains Mono)', () => {
-    expect(html).toContain('Fraunces');
-    expect(html).toContain('Spectral');
+  it('imports the v2 race-branded type stack (Roboto Slab + Source Serif 4 + JetBrains Mono)', () => {
+    expect(html).toContain('Roboto+Slab');
+    expect(html).toContain('Source+Serif+4');
     expect(html).toContain('JetBrains+Mono');
   });
 
   it('does not import any forbidden fonts', () => {
-    // System Inter / Roboto / Arial / Space Grotesk / Poppins are explicitly
-    // banned by the design brief. They must not appear as font-face requests.
+    // Roboto Slab is allowed (it's the v2 display face); the banned 'Roboto'
+    // is the geometric sans the brief calls out. Match precise font-family
+    // tokens — `family=Roboto:` not `family=Roboto+Slab:`.
     expect(html).not.toMatch(/family=Inter[:&]/);
-    expect(html).not.toMatch(/family=Roboto[:&]/);
+    expect(html).not.toMatch(/family=Roboto:/);
     expect(html).not.toMatch(/family=Space\+Grotesk[:&]/);
     expect(html).not.toMatch(/family=Poppins[:&]/);
     expect(html).not.toMatch(/family=Oswald[:&]/);
+    expect(html).not.toMatch(/family=Arial[:&]/);
+    // v1 archival faces are gone
+    expect(html).not.toMatch(/family=Fraunces[:&]/);
+    expect(html).not.toMatch(/family=Spectral[:&]/);
   });
 
   it('includes Tinman/Olympic/Sprint loops in LOOPS object', () => {
@@ -101,11 +104,11 @@ describe('Tinman branding and content', () => {
     expect(html).toContain('Little Wolf');
   });
 
-  it('uses BIKE FINISH / RUN START label (T2), not swim start', () => {
-    expect(html).toContain('BIKE FINISH / RUN START');
-    expect(html).toContain('Bike Finish / Run Start (T2)');
-    expect(html).not.toContain('SWIM START / FINISH');
-    expect(html).not.toContain('Swim Start / Run Finish');
+  it('relabels the start marker as RUN START (v2 run-only scope)', () => {
+    // The map's HQ badge shows the athlete-facing label
+    expect(html).toContain('>RUN START<');
+    expect(html).not.toContain('BIKE FINISH / RUN START');
+    expect(html).not.toContain('Swim Start');
   });
 });
 

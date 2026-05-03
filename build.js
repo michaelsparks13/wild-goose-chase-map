@@ -115,82 +115,98 @@ function sanitizeNameDisplay(s) {
     .replace(/<(?!\/?(?:em|br\s*\/?)\b)[^>]*>/gi, '')
     .replace(/<br\s*\/?>/gi, '<br/>');
 }
-function buildEstablishmentLine(theme) {
-  // Edition counts (e.g. "44th running") are authoritative in courseData,
-  // since heritage races sometimes skip years (COVID, weather) and a
-  // year-arithmetic guess will be off. The masthead line stays terse.
+function buildEditionLine(theme) {
   const parts = [];
   if (theme.identity.establishedYear) parts.push('Est. ' + theme.identity.establishedYear);
   parts.push(theme.geography.region);
-  return parts.map(escapeHtml).join('  ·  ');
+  return parts.map(escapeHtml).join(' · ');
 }
-function buildCourseDataRows(theme) {
-  return (theme.courseData || []).map(d =>
-    `<div class="course-strip__cell">
-        <dt class="course-strip__label">${escapeHtml(d.label)}</dt>
-        <dd class="course-strip__value">${escapeHtml(d.value)}${d.unit ? ` <span class="course-strip__unit">${escapeHtml(d.unit)}</span>` : ''}</dd>
-      </div>`
-  ).join('\n');
+
+function buildAidTableRows(theme) {
+  return (theme.aidStations || []).map(a => {
+    const cutoff = a.cutoff
+      ? `<br/><span class="aid-table__cutoff">Cutoff ${escapeHtml(a.cutoff)}</span>`
+      : '';
+    return `<tr>
+      <td class="aid-table__mile">${a.mile.toFixed(1)}</td>
+      <td class="aid-table__name">${escapeHtml(a.name)}${cutoff}</td>
+      <td class="aid-table__stock">${escapeHtml(a.stocked)}</td>
+    </tr>`;
+  }).join('\n');
 }
-function buildDisciplinesBlock(theme) {
-  if (!theme.disciplines || !theme.disciplines.length) return '';
-  const cells = theme.disciplines.map(d =>
-    `<div class="disciplines__cell">
-        <span class="disciplines__label">${escapeHtml(d.label)}</span>
-        <span class="disciplines__distance">${escapeHtml(d.distance)}</span>
-      </div>`
-  ).join('\n');
-  return `<section class="disciplines" aria-label="Race disciplines">\n${cells}\n</section>`;
+
+function buildDayGridRows(theme) {
+  const rd = theme.raceDay || {};
+  const rows = [];
+  // Sunrise / sunset
+  if (rd.sunrise) {
+    rows.push(`<div class="day-grid__row">
+      <dt>Sunrise</dt><dd>${escapeHtml(rd.sunrise)}</dd>
+    </div>`);
+  }
+  if (rd.sunset) {
+    rows.push(`<div class="day-grid__row">
+      <dt>Sunset</dt><dd>${escapeHtml(rd.sunset)}</dd>
+    </div>`);
+  }
+  // Per-distance run-start window
+  for (const d of (theme.raceFormat && theme.raceFormat.distances) || []) {
+    if (!d.runStartWindow) continue;
+    rows.push(`<div class="day-grid__row">
+      <dt>${escapeHtml(d.label)} run starts</dt>
+      <dd>${escapeHtml(d.runStartWindow)}<span class="day-grid__sub">${d.runMiles} mi · ${d.runGainFt} ft gain</span></dd>
+    </div>`);
+  }
+  // Cutoffs
+  for (const c of rd.cutoffs || []) {
+    rows.push(`<div class="day-grid__row">
+      <dt>Cutoff · mile ${c.mile}</dt>
+      <dd>${escapeHtml(c.time)}<span class="day-grid__sub">${escapeHtml(c.label)}</span></dd>
+    </div>`);
+  }
+  return rows.join('\n');
 }
-function buildAcquisitionBlock(theme) {
+
+function buildLogisticsCells(theme) {
+  const l = theme.logistics || {};
   const cells = [];
-  const a = theme.acquisition || {};
-  if (a.print) {
-    cells.push(`<article class="acquisition__cell">
-      <span class="acquisition__kind">Archival print</span>
-      <p class="acquisition__detail">${a.print.sizes.map(escapeHtml).join(' · ')}<br/>Cotton rag, signed and numbered.</p>
-      <span class="acquisition__price">${escapeHtml(a.print.price)}</span>
-      <a class="acquisition__cta" href="${escapeHtml(a.print.href)}">Order a print</a>
-    </article>`);
+  if (l.shuttle) {
+    cells.push(`<div class="logistics-cell">
+      <span class="logistics-cell__kind">Shuttle</span>
+      <p>${escapeHtml(l.shuttle)}</p>
+    </div>`);
   }
-  if (a.digital) {
-    cells.push(`<article class="acquisition__cell">
-      <span class="acquisition__kind">Digital download</span>
-      <p class="acquisition__detail">${escapeHtml(a.digital.format)}<br/>For race-day signage and registration sites.</p>
-      <span class="acquisition__price">${escapeHtml(a.digital.price)}</span>
-      <a class="acquisition__cta" href="${escapeHtml(a.digital.href)}">Download</a>
-    </article>`);
+  if (l.spectatorTips) {
+    cells.push(`<div class="logistics-cell">
+      <span class="logistics-cell__kind">Spectator tips</span>
+      <p>${escapeHtml(l.spectatorTips)}</p>
+    </div>`);
   }
-  if (a.commission) {
-    cells.push(`<article class="acquisition__cell">
-      <span class="acquisition__kind">Commission</span>
-      <p class="acquisition__detail">${escapeHtml(a.commission.lede)}</p>
-      <span class="acquisition__price">By estimate</span>
-      <a class="acquisition__cta" href="${escapeHtml(a.commission.href)}">Begin a commission</a>
-    </article>`);
-  }
-  return cells.join('\n');
+  return { shuttle: cells[0] || '', spectator: cells[1] || '' };
 }
+
 function buildCrossLinksBlock(theme) {
-  return (theme.crossLinks || []).map((l, i) =>
-    `<li class="contact-sheet__cell">
-        <a class="contact-sheet__link" href="/maps/${encodeURIComponent(l.slug)}/">
-          <span class="contact-sheet__index">No. ${String(i + 1).padStart(2, '0')}</span>
-          <span class="contact-sheet__name">${escapeHtml(l.name)}</span>
-          <span class="contact-sheet__region">${escapeHtml(l.region)}</span>
-        </a>
-      </li>`
+  return (theme.crossLinks || []).map(l =>
+    `<li>
+      <a href="/maps/${encodeURIComponent(l.slug)}/">
+        <span class="cross-grid__name">${escapeHtml(l.name)}</span>
+        <span class="cross-grid__region">${escapeHtml(l.region)}</span>
+      </a>
+    </li>`
   ).join('\n');
 }
+
 function buildEditorialCssVars(config) {
-  // Theme-derived tokens, plus the legacy tokens the config still maps. Theme tokens win.
+  // Theme-derived tokens — race-driven, not studio-driven.
   const t = config.theme;
   const themeVars = {
     '--paper':        t.palette.paper,
-    '--ink':          t.palette.ink,
-    '--accent':       t.palette.accent,
-    '--warm':         t.palette.warm,
-    '--cool':         t.palette.cool,
+    '--ink':          t.palette.raceInk,
+    '--race-brand':   t.palette.raceBrand,
+    '--surface-warm': t.palette.surfaceWarm,
+    '--route-color':  t.palette.routeColor,
+    '--aid-color':    t.palette.aidStation,
+    '--hazard-color': t.palette.hazard,
     '--font-display': t.type.displayStack,
     '--font-body':    t.type.bodyStack,
     '--font-micro':   t.type.microStack,
@@ -199,6 +215,24 @@ function buildEditorialCssVars(config) {
   const merged = Object.assign({}, config.cssVars || {}, themeVars);
   const lines = Object.entries(merged).map(([k, v]) => `  ${k}: ${v};`).join('\n');
   return `:root {\n${lines}\n}`;
+}
+
+function deriveHostDomain(url) {
+  try {
+    const u = new URL(url);
+    return u.hostname.replace(/^www\./, '');
+  } catch (e) {
+    return url;
+  }
+}
+
+function deriveGunTime(theme) {
+  // The race's first start time (for triathlons, this is the rolling swim
+  // gun; for run-only races, the run gun). The theme may set
+  // raceDay.gunTime explicitly; otherwise we fall back to 8:00 AM as a
+  // sensible US endurance-event default and never show "undefined" in the
+  // top bar.
+  return (theme.raceDay && theme.raceDay.gunTime) || '8:00 AM';
 }
 function buildGoogleFontsLink(href) {
   return [
@@ -343,8 +377,13 @@ function buildMap(slug, templates) {
   const weatherUiJS = config.skipSharedJs
     ? readFile(path.join(SRC, 'shared', 'weather-ui.js'))
     : '';
+  // Editorial chrome runtime — countdown, embed-mode detection, cue↔map
+  // hover sync, top-bar weather widget. Loaded only when a theme is set.
+  const editorialRuntimeJS = editorial
+    ? readFile(path.join(SRC, 'shared', 'editorial-runtime.js'))
+    : '';
 
-  const fullJS = configData + '\n\n' + sharedJS + (weatherUiJS ? '\n\n' + weatherUiJS : '') + (embedModalJS ? '\n\n' + embedModalJS : '') + (pocketMapJS ? '\n\n' + pocketMapJS : '') + (overrideJS ? '\n\n' + overrideJS : '');
+  const fullJS = configData + '\n\n' + sharedJS + (weatherUiJS ? '\n\n' + weatherUiJS : '') + (embedModalJS ? '\n\n' + embedModalJS : '') + (pocketMapJS ? '\n\n' + pocketMapJS : '') + (overrideJS ? '\n\n' + overrideJS : '') + (editorialRuntimeJS ? '\n\n' + editorialRuntimeJS : '');
 
   // Build map view HTML (config can override entirely via mapViewHtml)
   let mapView;
@@ -378,49 +417,55 @@ function buildMap(slug, templates) {
   }
 
   // Build final HTML — editorial path uses race-shell.html and renders the
-  // print-spread chrome (masthead, course strip, field notes, acquisition,
-  // contact sheet, colophon) from the theme.
+  // athlete-first chrome (top bar, sticky-map split, race-day essentials)
+  // from the theme.
   let html;
   if (editorial) {
     const t = config.theme;
     const fontsLink = t.type.googleFontsHref
       ? buildGoogleFontsLink(t.type.googleFontsHref)
       : (config.googleFontsUrl || '');
-    const wordmarkBlock = t.wordmark
-      ? `<p class="masthead__wordmark">${escapeHtml(t.wordmark)}</p>`
-      : '';
-    const captionTitle = t.mapCaption || (t.identity.name + ' — official course map.');
+    const headlineDistance = (t.raceFormat.distances || []).find(d => d.id === t.raceFormat.defaultDistanceId)
+      || t.raceFormat.distances[0];
+    const logCells = buildLogisticsCells(t);
+    const hostDomain = deriveHostDomain(t.identity.hostUrl);
     const fillEditorial = (tpl) => tpl
-      .replace('{{THEME_COLOR}}', config.themeColor)
-      .replace('{{TITLE}}', config.title)
-      .replace('{{GOOGLE_FONTS}}', fontsLink)
-      .replace('{{VOICE}}', t.voice)
-      .replace('{{HERO_TREATMENT}}', t.heroTreatment)
-      .replace('{{TEXTURE}}', t.texture)
-      .replace('{{CSS_VARS}}', '')
-      .replace('{{CSS}}', fullCSS)
-      .replace('{{ESTABLISHMENT_LINE}}', buildEstablishmentLine(t))
-      .replace('{{RACE_NAME_DISPLAY}}', sanitizeNameDisplay(t.identity.nameDisplay) || escapeHtml(t.identity.name))
-      .replace('{{WORDMARK_BLOCK}}', wordmarkBlock)
-      .replace('{{HOST_ORG}}', escapeHtml(t.identity.hostOrg))
-      .replace('{{REGION}}', escapeHtml(t.geography.region))
-      .replace('{{RACE_DAY}}', escapeHtml(t.identity.raceDay || ''))
-      .replace('{{RACE_NAME}}', escapeHtml(config.raceName))
-      .replace('{{MAP_VIEW}}', mapView)
-      .replace('{{SIM_VIEW}}', simView)
-      .replace('{{CAPTION_TITLE}}', escapeHtml(captionTitle))
-      .replace('{{DISCIPLINES_BLOCK}}', buildDisciplinesBlock(t))
-      .replace('{{ELEVATION_STORY}}', escapeHtml(t.geography.elevationStory))
-      .replace('{{COURSE_DATA_ROWS}}', buildCourseDataRows(t))
-      .replace('{{FIELD_NOTES}}', escapeHtml(t.fieldNotes))
-      .replace('{{ACQUISITION_BLOCK}}', buildAcquisitionBlock(t))
-      .replace('{{CROSS_LINKS_BLOCK}}', buildCrossLinksBlock(t))
-      .replace('{{TYPE_DISPLAY}}', escapeHtml(t.type.display))
-      .replace('{{TYPE_BODY}}', escapeHtml(t.type.body))
-      .replace('{{TYPE_MICRO}}', escapeHtml(t.type.micro))
-      .replace('{{FOOTER_HTML}}', config.footerHtml || '')
-      .replace('{{CONFIG_DATA}}', '')
-      .replace('{{JS}}', fullJS);
+      .replace(/{{THEME_COLOR}}/g, config.themeColor)
+      .replace(/{{TITLE}}/g, config.title)
+      .replace(/{{GOOGLE_FONTS}}/g, fontsLink)
+      .replace(/{{SLUG}}/g, t.slug)
+      .replace(/{{HOST_URL}}/g, escapeHtml(t.identity.hostUrl))
+      .replace(/{{HOST_DOMAIN}}/g, escapeHtml(hostDomain))
+      .replace(/{{HOST_GUIDE_URL}}/g, escapeHtml(t.logistics.hostGuideUrl || t.identity.hostUrl))
+      .replace(/{{RACE_NAME_SHORT}}/g, escapeHtml(t.identity.name))
+      .replace(/{{EDITION_LINE}}/g, buildEditionLine(t))
+      .replace(/{{RACE_DAY_DISPLAY}}/g, escapeHtml(t.raceDay.displayDate))
+      .replace(/{{GUN_TIME}}/g, escapeHtml(deriveGunTime(t)))
+      .replace(/{{RACE_DATE_ISO}}/g, escapeHtml(t.raceDay.date))
+      .replace(/{{RACE_NAME_DISPLAY}}/g, escapeHtml(t.identity.name))
+      .replace(/{{RACE_NAME}}/g, escapeHtml(config.raceName))
+      .replace(/{{HEADLINE_DISTANCE_LABEL}}/g, escapeHtml(headlineDistance.label))
+      .replace(/{{HEADLINE_MILES}}/g, headlineDistance.runMiles + ' mi · ' + headlineDistance.runGainFt + ' ft')
+      .replace(/{{DEFAULT_DISTANCE_ID}}/g, headlineDistance.id)
+      .replace(/{{DEFAULT_DISTANCE_LABEL}}/g, escapeHtml(headlineDistance.label))
+      .replace(/{{SCOPE_NOTE}}/g, escapeHtml(t.scopeNote))
+      .replace(/{{MAP_HTML}}/g, config.mapHtml || mapView)
+      .replace(/{{CUES_HTML}}/g, config.cueHtml || '')
+      .replace(/{{MAP_VIEW}}/g, mapView)
+      .replace(/{{SIM_VIEW}}/g, simView)
+      .replace(/{{AID_TABLE_ROWS}}/g, buildAidTableRows(t))
+      .replace(/{{DAY_GRID_ROWS}}/g, buildDayGridRows(t))
+      .replace(/{{LOGISTICS_PARKING}}/g, escapeHtml(t.logistics.parking))
+      .replace(/{{LOGISTICS_PACKET}}/g, escapeHtml(t.logistics.packetPickup))
+      .replace(/{{LOGISTICS_SHUTTLE_CELL}}/g, logCells.shuttle)
+      .replace(/{{LOGISTICS_SPECTATOR_CELL}}/g, logCells.spectator)
+      .replace(/{{CARTOGRAPHER_NOTES}}/g, escapeHtml(t.cartographerNotes))
+      .replace(/{{CROSS_LINKS_BLOCK}}/g, buildCrossLinksBlock(t))
+      .replace(/{{CSS_VARS}}/g, '')
+      .replace(/{{CSS}}/g, fullCSS)
+      .replace(/{{FOOTER_HTML}}/g, config.footerHtml || '')
+      .replace(/{{CONFIG_DATA}}/g, '')
+      .replace(/{{JS}}/g, fullJS);
     html = fillEditorial(templates.raceShell);
   } else {
     html = templates.shell

@@ -1,8 +1,12 @@
-// editorial-theme.test.js — schema + build-output assertions for the
-// per-race RaceTheme system. Treats the theme as a contract: required
+// editorial-theme.test.js — v2 schema + build-output assertions for the
+// athlete-first race page. Treats the theme as a contract: required
 // fields must be present, palette tokens must not be pure white, the
-// type stack must avoid the brief's forbidden families, and the editorial
-// chrome must actually land in the built HTML.
+// type stack must avoid the brief's forbidden families, and the chrome
+// must read as an athlete tool (map dominates, cues co-visible) rather
+// than a studio showcase.
+//
+// File name is retained from v1 for build/CI compatibility; assertions
+// are the v2 athlete-first contract.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
@@ -14,72 +18,82 @@ const builtHtml = readFileSync(
   'utf-8',
 );
 
-describe('RaceTheme schema (tupper-lake-tinman)', () => {
-  it('has the required identity fields', () => {
+describe('RaceTheme schema (v2 — athlete-first, race-branded)', () => {
+  it('has the required identity fields including hostUrl', () => {
     expect(tinmanTheme.identity.name).toBe('Tupper Lake Tinman');
-    expect(tinmanTheme.identity.tagline).toBe('Race the Adirondacks');
+    expect(tinmanTheme.identity.shortName).toBe('Tinman');
     expect(tinmanTheme.identity.hostOrg).toBe('Adirondack Sports Council');
-    expect(tinmanTheme.identity.establishedYear).toBe(1982);
+    expect(tinmanTheme.identity.hostUrl).toMatch(/^https:\/\/.+tupperlaketinman/);
   });
 
-  it('declares region and elevation story (not raw integers)', () => {
-    expect(tinmanTheme.geography.region).toMatch(/Adirondack/);
-    expect(tinmanTheme.geography.elevationStory.length).toBeGreaterThan(40);
-  });
-
-  it('palette has all five required tokens, none of them pure white', () => {
-    const { paper, ink, accent, warm, cool } = tinmanTheme.palette;
-    for (const c of [paper, ink, accent, warm, cool]) {
-      expect(c).toMatch(/^#[0-9a-f]{6}$/i);
-      expect(c.toLowerCase()).not.toBe('#ffffff');
-    }
+  it('palette is race-branded, not invented from geography', () => {
+    // Yellow + black + cream — not lake-blue / conifer-green / sunrise-amber
+    expect(tinmanTheme.palette.raceBrand.toLowerCase()).toMatch(/^#f[5-9]c|^#ffc/);
+    expect(tinmanTheme.palette.raceInk.toLowerCase()).toMatch(/^#1[0-9a-f]/);
+    expect(tinmanTheme.palette.paper.toLowerCase()).not.toBe('#ffffff');
+    // No "lake blue" — the cool / Adirondack-romantic invented tokens of v1 are gone.
+    expect(JSON.stringify(tinmanTheme.palette)).not.toMatch(/Adirondack lake|sunrise hit|conifer/);
   });
 
   it('type stack avoids the brief\'s forbidden families', () => {
-    const { display, body, micro } = tinmanTheme.type;
-    const forbidden = ['Inter', 'Roboto', 'Arial', 'Space Grotesk', 'Poppins'];
-    for (const f of [display, body, micro]) {
+    const stacks = [tinmanTheme.type.display, tinmanTheme.type.body, tinmanTheme.type.micro,
+                    tinmanTheme.type.displayStack, tinmanTheme.type.bodyStack, tinmanTheme.type.microStack];
+    const forbidden = ['Inter', 'Roboto Mono', 'Roboto,', 'Arial', 'Space Grotesk', 'Poppins'];
+    for (const f of stacks) {
       for (const ban of forbidden) {
+        // 'Roboto Slab' is allowed; 'Roboto,' (sans) is not. Match precise tokens.
+        if (ban === 'Roboto,' && /Roboto Slab/i.test(f)) continue;
         expect(f).not.toContain(ban);
       }
     }
   });
 
-  it('voice + heroTreatment + texture are valid enum values', () => {
-    expect(['archival', 'field-guide', 'editorial', 'topographic-technical', 'trail-party'])
-      .toContain(tinmanTheme.voice);
-    expect(['unfurl', 'gallery-frame', 'split-with-elevation', 'parallax-portfolio'])
-      .toContain(tinmanTheme.heroTreatment);
-    expect(['paper-grain', 'topo-lines', 'aerial-noise', 'clean'])
-      .toContain(tinmanTheme.texture);
-  });
-
-  it('course data strip has 8+ entries (target 6–10)', () => {
-    expect(tinmanTheme.courseData.length).toBeGreaterThanOrEqual(8);
-    for (const d of tinmanTheme.courseData) {
-      expect(d.label).toBeTruthy();
-      expect(d.value).toBeTruthy();
+  it('raceFormat declares run-only distances with brand-driven colors', () => {
+    expect(tinmanTheme.raceFormat.discipline).toBe('triathlon');
+    expect(tinmanTheme.raceFormat.hasSwim).toBe(true);
+    expect(tinmanTheme.raceFormat.hasTransitions).toBe(true);
+    expect(tinmanTheme.raceFormat.distances).toHaveLength(3);
+    const ids = tinmanTheme.raceFormat.distances.map(d => d.id).sort();
+    expect(ids).toEqual(['olympic', 'sprint', 'tinman']);
+    for (const d of tinmanTheme.raceFormat.distances) {
+      expect(typeof d.runMiles).toBe('number');
+      expect(typeof d.runGainFt).toBe('number');
+      expect(d.runStartWindow).toMatch(/AM|PM/);
     }
   });
 
-  it('triathlon disciplines triptych is set with three legs', () => {
-    expect(tinmanTheme.disciplines).toHaveLength(3);
-    expect(tinmanTheme.disciplines.map(d => d.label)).toEqual(['Swim', 'Bike', 'Run']);
+  it('raceDay carries gun, sunrise, sunset, run-start windows', () => {
+    expect(tinmanTheme.raceDay.date).toBe('2026-06-27');
+    expect(tinmanTheme.raceDay.gunTime).toBeTruthy();
+    expect(tinmanTheme.raceDay.sunrise).toBeTruthy();
+    expect(tinmanTheme.raceDay.sunset).toBeTruthy();
   });
 
-  it('field notes are 2–3 sentences in studio voice', () => {
-    const sentences = tinmanTheme.fieldNotes.split(/\.\s+/).filter(Boolean);
-    expect(sentences.length).toBeGreaterThanOrEqual(2);
-    expect(tinmanTheme.fieldNotes).not.toMatch(/About the |Race Information|Course Details/);
+  it('aid stations are RUN-leg only, with miles and stocks', () => {
+    expect(tinmanTheme.aidStations.length).toBeGreaterThanOrEqual(6);
+    for (const a of tinmanTheme.aidStations) {
+      expect(a.mile).toBeLessThan(14); // run leg ≤ 13.1mi
+      expect(a.stocked).toBeTruthy();
+    }
   });
 
-  it('acquisition includes print, digital, and commission options', () => {
-    expect(tinmanTheme.acquisition.print).toBeTruthy();
-    expect(tinmanTheme.acquisition.digital).toBeTruthy();
-    expect(tinmanTheme.acquisition.commission).toBeTruthy();
+  it('logistics has parking + packet pickup + a host-guide URL', () => {
+    expect(tinmanTheme.logistics.parking).toBeTruthy();
+    expect(tinmanTheme.logistics.packetPickup).toBeTruthy();
+    expect(tinmanTheme.logistics.hostGuideUrl).toMatch(/^https:\/\//);
   });
 
-  it('cross-links are 3–5 entries pointing at known map slugs', () => {
+  it('cartographer notes are RUN-only — no swim/bike commentary', () => {
+    expect(tinmanTheme.cartographerNotes.length).toBeGreaterThan(120);
+    expect(tinmanTheme.cartographerNotes).not.toMatch(/swim leg|bike leg|cycling|cyclists/i);
+  });
+
+  it('scope note routes athletes to the host race for swim/bike', () => {
+    expect(tinmanTheme.scopeNote.toLowerCase()).toContain('run course only');
+    expect(tinmanTheme.scopeNote.toLowerCase()).toMatch(/swim|bike/);
+  });
+
+  it('cross-links point at known map slugs (3–5 entries)', () => {
     const known = new Set(['escarpment', 'manitous-revenge', 'sleeping-giant', 'wild-goose', 'golden-leaf', 'javelina-jundred']);
     expect(tinmanTheme.crossLinks.length).toBeGreaterThanOrEqual(3);
     expect(tinmanTheme.crossLinks.length).toBeLessThanOrEqual(5);
@@ -89,97 +103,145 @@ describe('RaceTheme schema (tupper-lake-tinman)', () => {
   });
 });
 
-describe('Editorial chrome in dist/maps/tupper-lake-tinman/index.html', () => {
-  it('mounts the editorial body classes (voice, treatment, texture)', () => {
-    expect(builtHtml).toContain('class="race-page voice-archival treatment-gallery-frame texture-paper-grain"');
+describe('Athlete-first chrome in dist/maps/tupper-lake-tinman/index.html', () => {
+  it('renders the thin top bar with race mark + race-day strip + studio credit', () => {
+    expect(builtHtml).toContain('class="top-bar"');
+    expect(builtHtml).toContain('class="race-mark"');
+    expect(builtHtml).toContain('class="race-mark__name"');
+    expect(builtHtml).toContain('Tupper Lake Tinman');
+    expect(builtHtml).toContain('class="race-day-strip"');
+    expect(builtHtml).toContain('Sat, Jun 27, 2026');
+    expect(builtHtml).toContain('Gun 8:00 AM');
+    expect(builtHtml).toContain('id="raceCountdown"');
+    expect(builtHtml).toContain('data-race-date="2026-06-27"');
+    expect(builtHtml).toContain('class="studio-credit"');
   });
 
-  it('renders the studio mark', () => {
-    expect(builtHtml).toContain('False Summit Studio');
-    expect(builtHtml).toContain('Atelier of cartographic works for endurance events');
+  it('exiles studio-portfolio language from the chrome (no atelier, no commission-as-CTA)', () => {
+    expect(builtHtml).not.toContain('Atelier of cartographic works');
+    expect(builtHtml).not.toContain('Notes from the drafting table');
+    expect(builtHtml).not.toContain('Take this map home');
+    expect(builtHtml).not.toContain('Begin a commission');
   });
 
-  it('renders the masthead with italic accent on the proper noun', () => {
-    expect(builtHtml).toContain('<h1 class="masthead__name">Tupper Lake<br/><em>Tinman</em></h1>');
+  it('renders the course as a sticky-map split (map left, cues right)', () => {
+    expect(builtHtml).toContain('class="course"');
+    expect(builtHtml).toContain('class="course__map"');
+    expect(builtHtml).toContain('class="course__cues"');
+    expect(builtHtml).toMatch(/\.course__map\s*\{[^}]*position:\s*sticky/);
   });
 
-  it('renders the wordmark as quoted italic, not a CTA', () => {
-    expect(builtHtml).toContain('<p class="masthead__wordmark">Race the Adirondacks</p>');
-    expect(builtHtml).not.toMatch(/<button[^>]*>\s*Race the Adirondacks/);
+  it('shows the run-only scope note with a host-race link', () => {
+    expect(builtHtml).toContain('class="scope-note"');
+    expect(builtHtml).toContain('Run course only');
+    expect(builtHtml).toContain('class="scope-note__link"');
   });
 
-  it('renders host / region / race-day metadata strip', () => {
-    expect(builtHtml).toContain('<dt>Host</dt>');
-    expect(builtHtml).toContain('Adirondack Sports Council');
-    expect(builtHtml).toContain('<dt>Region</dt>');
-    expect(builtHtml).toContain('<dt>Race day</dt>');
+  it('relabels the start marker as RUN START, not BIKE FINISH / RUN START', () => {
+    expect(builtHtml).toContain('>RUN START<');
+    expect(builtHtml).not.toContain('BIKE FINISH / RUN START');
   });
 
-  it('frames the map in a gallery with corner brackets', () => {
-    expect(builtHtml).toContain('class="map-room__corner map-room__corner--tl"');
-    expect(builtHtml).toContain('class="map-room__corner map-room__corner--br"');
-    expect(builtHtml).toContain('class="map-room__plate"');
-    expect(builtHtml).toContain('Plate I');
+  it('does not render swim/bike scope leaks anywhere visible', () => {
+    // No disciplines triptych, no swim/bike legs in the chrome
+    expect(builtHtml).not.toMatch(/<span class="disciplines__label">Swim<\/span>/);
+    expect(builtHtml).not.toMatch(/<span class="disciplines__label">Bike<\/span>/);
+    // No 1.2mi or 56mi swim/bike facts in the chrome data strip
+    expect(builtHtml).not.toMatch(/Tinman swim/);
+    expect(builtHtml).not.toMatch(/Tinman bike/);
   });
 
-  it('renders the disciplines triptych', () => {
-    expect(builtHtml).toContain('<span class="disciplines__label">Swim</span>');
-    expect(builtHtml).toContain('<span class="disciplines__label">Bike</span>');
-    expect(builtHtml).toContain('<span class="disciplines__label">Run</span>');
+  it('renders the race-day essentials grid (run-start windows, sunrise, sunset)', () => {
+    expect(builtHtml).toContain('id="essentialsDay"');
+    expect(builtHtml).toContain('Sunrise');
+    expect(builtHtml).toContain('5:09 AM');
+    expect(builtHtml).toContain('Sunset');
+    expect(builtHtml).toContain('Sprint run starts');
+    expect(builtHtml).toContain('Tinman run starts');
+    expect(builtHtml).toContain('after T2');
   });
 
-  it('renders the course data strip with theme entries', () => {
-    expect(builtHtml).toContain('Field bulletin');
-    expect(builtHtml).toContain('Course at a glance');
-    expect(builtHtml).toContain('44th running');
-    expect(builtHtml).toContain('Triathlete · Best Half-Distance 2026');
+  it('renders the aid station table from the theme', () => {
+    expect(builtHtml).toContain('class="aid-table"');
+    expect(builtHtml).toContain('Park Street');
+    expect(builtHtml).toContain('Wild Center');
+    expect(builtHtml).toContain('Little Wolf Pond Turn');
   });
 
-  it('renders the field notes with a drop-cap-eligible body', () => {
-    expect(builtHtml).toContain('Notes from the drafting table');
-    expect(builtHtml).toContain('Forty-four years of the same start line');
-    expect(builtHtml).toContain('class="field-notes__sign"');
+  it('renders the logistics block (parking, pickup, host guide)', () => {
+    expect(builtHtml).toContain('id="essentialsLogistics"');
+    expect(builtHtml).toContain('Parking');
+    expect(builtHtml).toContain('Packet pickup');
+    expect(builtHtml).toContain('Full athlete guide on tupperlaketinman.com');
   });
 
-  it('renders the acquisition shelf (print + digital + commission)', () => {
-    expect(builtHtml).toContain('Archival print');
-    expect(builtHtml).toContain('Digital download');
-    expect(builtHtml).toContain('Commission');
-    expect(builtHtml).toContain('Begin a commission');
+  it('renders the downloads grid (print, GPX, pocket, embed)', () => {
+    expect(builtHtml).toContain('id="essentialsDownloads"');
+    expect(builtHtml).toContain('Print PDF cue sheet');
+    expect(builtHtml).toContain('GPX / GeoJSON');
+    expect(builtHtml).toContain('Pocket map');
+    expect(builtHtml).toContain('Embed');
   });
 
-  it('renders the contact-sheet cross-links with numbered indices', () => {
-    expect(builtHtml).toMatch(/No\. 01[\s\S]+Escarpment Trail Run 30K/);
-    expect(builtHtml).toMatch(/No\. 04[\s\S]+Wild Goose/);
+  it('renders the cartographer note as run-scoped', () => {
+    expect(builtHtml).toContain('id="essentialsNotes"');
+    expect(builtHtml).toContain('From the cartographer');
+    // v2 note opens with run-leg observations, not heritage flattery
+    expect(builtHtml).toMatch(/paved village streets|sun exposure|open road with no shade/);
+    expect(builtHtml).not.toMatch(/swim leg|bike leg|cycling/i);
   });
 
-  it('renders the colophon naming the type stack', () => {
-    expect(builtHtml).toContain('Set in Fraunces, Spectral, and JetBrains Mono');
-  });
-
-  it('does not contain any forbidden CMS section headers', () => {
-    expect(builtHtml).not.toMatch(/<h[2-3][^>]*>\s*Race Information/);
-    expect(builtHtml).not.toMatch(/<h[2-3][^>]*>\s*Course Details/);
-    expect(builtHtml).not.toMatch(/<h[2-3][^>]*>\s*Features/);
-    expect(builtHtml).not.toMatch(/<h[2-3][^>]*>\s*About the Run Course/);
-    expect(builtHtml).not.toMatch(/<h[2-3][^>]*>\s*Select Race Distance/);
-  });
-
-  it('links cross-references to the right map slugs', () => {
+  it('renders cross-links and a quiet footer credit', () => {
+    expect(builtHtml).toContain('class="cross-grid"');
     expect(builtHtml).toContain('href="/maps/escarpment/"');
-    expect(builtHtml).toContain('href="/maps/wild-goose/"');
-    expect(builtHtml).toContain('href="/maps/sleeping-giant/"');
+    expect(builtHtml).toContain('class="page-footer"');
+    expect(builtHtml).toContain('Cartography by');
+    expect(builtHtml).toContain('falsesummitstudio.com');
   });
 
-  it('the gallery frame uses a small, intentional border-radius (≤ 8px)', () => {
-    // editorial.css declares the .map-room__plate radius as 2px
-    expect(builtHtml).toMatch(/\.map-room__plate\s*\{[^}]*border-radius:\s*2px/);
+  it('imports the v2 race-branded type stack and avoids the v1 archival serif', () => {
+    expect(builtHtml).toContain('Roboto+Slab');
+    expect(builtHtml).toContain('Source+Serif+4');
+    expect(builtHtml).toContain('JetBrains+Mono');
+    // v1's archival display face is gone
+    expect(builtHtml).not.toMatch(/family=Fraunces[:&]/);
+    expect(builtHtml).not.toMatch(/family=Spectral[:&]/);
   });
 
-  it('does not drop-shadow the map frame', () => {
-    // Shadows are forbidden under the map. Only inset hairlines are allowed.
-    const plateBlock = builtHtml.match(/\.map-room__plate\s*\{[^}]*\}/);
-    expect(plateBlock).toBeTruthy();
-    expect(plateBlock[0]).not.toMatch(/box-shadow:\s*0\s+\d+px/);
+  it('does not import any forbidden fonts', () => {
+    expect(builtHtml).not.toMatch(/family=Inter[:&]/);
+    expect(builtHtml).not.toMatch(/family=Space\+Grotesk[:&]/);
+    expect(builtHtml).not.toMatch(/family=Poppins[:&]/);
+    expect(builtHtml).not.toMatch(/family=Oswald[:&]/);
+    expect(builtHtml).not.toMatch(/family=Arial[:&]/);
+  });
+
+  it('uses race-brand CSS variables, not invented Adirondack tokens', () => {
+    expect(builtHtml).toContain('--race-brand: #F5C518');
+    expect(builtHtml).toContain('--paper: #f6f1e7');
+    expect(builtHtml).toContain('--ink: #1a1a1a');
+  });
+
+  it('does not reintroduce v1 editorial chrome (masthead, gallery, course-strip, etc.)', () => {
+    expect(builtHtml).not.toContain('class="masthead"');
+    expect(builtHtml).not.toContain('class="map-room"');
+    expect(builtHtml).not.toContain('class="course-strip"');
+    expect(builtHtml).not.toContain('class="field-notes"');
+    expect(builtHtml).not.toContain('class="acquisition__shelf"');
+    expect(builtHtml).not.toContain('class="contact-sheet__grid"');
+    expect(builtHtml).not.toContain('class="colophon"');
+  });
+
+  it('does not contain forbidden CMS section headers', () => {
+    expect(builtHtml).not.toMatch(/<h[2-3][^>]*>\s*Race Information/);
+    expect(builtHtml).not.toMatch(/<h[2-3][^>]*>\s*About the Run Course/);
+    expect(builtHtml).not.toMatch(/<h[2-3][^>]*>\s*Course Details/);
+  });
+
+  it('CSP frame-ancestors is set at the HTTP layer (netlify.toml), not via meta', () => {
+    // Meta-CSP is silently ignored by browsers and produced a console error.
+    expect(builtHtml).not.toMatch(/<meta[^>]+http-equiv=["']Content-Security-Policy["'][^>]+frame-ancestors/);
+    const netlify = readFileSync(resolve(__dirname, '../netlify.toml'), 'utf-8');
+    expect(netlify).toMatch(/for\s*=\s*"\/maps\/\*"[\s\S]+frame-ancestors/);
   });
 });

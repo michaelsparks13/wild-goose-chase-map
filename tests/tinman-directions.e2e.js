@@ -122,7 +122,7 @@ test.describe('Tinman interactive directions', () => {
     await expect(page.locator('#directionsList .dir-step').nth(4)).toHaveClass(/active/);
 
     // Switch to Sprint via the race card.
-    await page.locator('.race-card[data-race="sprint"]').click();
+    await page.locator('.dir-race-tab[data-race="sprint"]').click();
     await page.waitForFunction(() =>
       document.querySelector('#directionsRaceLabel').textContent.includes('Sprint')
     );
@@ -196,7 +196,7 @@ test.describe('Tinman interactive directions: Sprint + Olympic distances', () =>
     { id: 'olympic', label: 'Olympic Run', miles: '6.2 mi',  minSteps: 12 },
   ]) {
     test(`${race.id}: race card switch rebuilds the list with the right header + count`, async ({ page }) => {
-      await page.locator(`.race-card[data-race="${race.id}"]`).click();
+      await page.locator(`.dir-race-tab[data-race="${race.id}"]`).click();
       const label = page.locator('#directionsRaceLabel');
       await expect(label).toContainText(race.label);
       await expect(label).toContainText(race.miles);
@@ -205,7 +205,7 @@ test.describe('Tinman interactive directions: Sprint + Olympic distances', () =>
     });
 
     test(`${race.id}: switching to this race resets active to step 1`, async ({ page }) => {
-      await page.locator(`.race-card[data-race="${race.id}"]`).click();
+      await page.locator(`.dir-race-tab[data-race="${race.id}"]`).click();
       const first = page.locator('#directionsList .dir-step').first();
       await expect(first).toHaveClass(/active/);
       const activeCount = await page.locator('#directionsList .dir-step.active').count();
@@ -213,7 +213,7 @@ test.describe('Tinman interactive directions: Sprint + Olympic distances', () =>
     });
 
     test(`${race.id}: clicking a middle step updates the highlight pipeline`, async ({ page }) => {
-      await page.locator(`.race-card[data-race="${race.id}"]`).click();
+      await page.locator(`.dir-race-tab[data-race="${race.id}"]`).click();
       const section = page.locator('#directionsSection');
       if (!(await section.evaluate(el => el.classList.contains('expanded')))) {
         await page.locator('.directions-toggle').click();
@@ -239,7 +239,7 @@ test.describe('Tinman interactive directions: Sprint + Olympic distances', () =>
     });
 
     test(`${race.id}: snapped step miles are precomputed and monotonic`, async ({ page }) => {
-      await page.locator(`.race-card[data-race="${race.id}"]`).click();
+      await page.locator(`.dir-race-tab[data-race="${race.id}"]`).click();
       const miles = await page.evaluate((id) => window.SNAPPED_STEP_MILES[id], race.id);
       expect(Array.isArray(miles)).toBe(true);
       expect(miles.length).toBeGreaterThan(2);
@@ -280,14 +280,14 @@ test.describe('Tinman interactive directions: Sprint + Olympic distances', () =>
 
   test('race-tab and race-card selectors stay in sync', async ({ page }) => {
     // Switch via the bottom card; the in-panel tab should follow.
-    await page.locator('.race-card[data-race="sprint"]').click();
+    await page.locator('.dir-race-tab[data-race="sprint"]').click();
     await expect(page.locator('.dir-race-tab[data-race="sprint"]')).toHaveClass(/active/);
     await expect(page.locator('.dir-race-tab[data-race="tinman"]')).not.toHaveClass(/active/);
 
     // Switch via the in-panel tab; the bottom card should follow.
     await page.locator('.dir-race-tab[data-race="tinman"]').click();
-    await expect(page.locator('.race-card[data-race="tinman"]')).toHaveClass(/active/);
-    await expect(page.locator('.race-card[data-race="sprint"]')).not.toHaveClass(/active/);
+    await expect(page.locator('.dir-race-tab[data-race="tinman"]')).toHaveClass(/active/);
+    await expect(page.locator('.dir-race-tab[data-race="sprint"]')).not.toHaveClass(/active/);
   });
 
   test('mode toggle stays in effect across race switches', async ({ page }) => {
@@ -296,7 +296,7 @@ test.describe('Tinman interactive directions: Sprint + Olympic distances', () =>
     await page.locator('.dir-mode-btn[data-mode="scrub"]').click();
     await expect(page.locator('.dir-mode-btn[data-mode="scrub"]')).toHaveClass(/active/);
 
-    await page.locator('.race-card[data-race="sprint"]').click();
+    await page.locator('.dir-race-tab[data-race="sprint"]').click();
     await expect(page.locator('#directionsRaceLabel')).toContainText('Sprint');
     await expect(page.locator('.dir-mode-btn[data-mode="scrub"]')).toHaveClass(/active/);
     await expect(page.locator('#directionsSection')).toHaveClass(/mode-scrub/);
