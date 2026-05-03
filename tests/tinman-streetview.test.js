@@ -207,3 +207,20 @@ describe('Street View marker creation', () => {
     expect(html).toMatch(/closest\(['"][^'"]*\.streetview-marker[^'"]*['"]\)/);
   });
 });
+
+describe('toggleStreetview function', () => {
+  it('main HTML defines toggleStreetview', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    expect(html).toMatch(/function\s+toggleStreetview\s*\(/);
+  });
+
+  it('toggleStreetview flips streetviewOn and updates element display', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    const fnStart = html.indexOf('function toggleStreetview');
+    expect(fnStart).toBeGreaterThan(-1);
+    const fnSlice = html.substring(fnStart, fnStart + 400);
+    expect(fnSlice).toMatch(/streetviewOn\s*=\s*!\s*streetviewOn/);
+    expect(fnSlice).toMatch(/getEl\(['"]streetviewBtn['"]\)\.classList\.toggle\(['"]active['"]/);
+    expect(fnSlice).toMatch(/streetviewMarkers\.forEach/);
+  });
+});

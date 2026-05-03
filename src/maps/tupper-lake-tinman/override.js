@@ -1542,6 +1542,17 @@ function toggleAid() {
   aidMarkers.forEach(function(a) { a.element.style.display = aidOn ? 'block' : 'none'; });
 }
 
+function toggleStreetview() {
+  streetviewOn = !streetviewOn;
+  getEl('streetviewBtn').classList.toggle('active', streetviewOn);
+  streetviewMarkers.forEach(function(s) {
+    s.element.style.display = streetviewOn ? 'block' : 'none';
+    if (!streetviewOn && s.marker.getPopup() && s.marker.getPopup().isOpen()) {
+      s.marker.getPopup().remove();
+    }
+  });
+}
+
 function toggle3D() {
   terrain3D = !terrain3D;
   getEl('terrainBtn').classList.toggle('active', terrain3D);
