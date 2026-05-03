@@ -172,3 +172,97 @@ test.describe('Tinman interactive directions', () => {
     await expect(section).toHaveClass(/expanded/);
   });
 });
+
+test.describe('Tinman interactive directions: Sprint + Olympic distances', () => {
+  // The interactive directions are race-agnostic — clicking Sprint or Olympic
+  // in the race-cards section rebuilds the list, anchors active to step 1,
+  // and rebinds the click + map highlight pipeline. These tests pin that
+  // contract for the two shorter distances so a future race-specific change
+  // can't silently break them.
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/maps/tinman/');
+    await page.waitForSelector('#map');
+    await page.waitForFunction(() =>
+      window.map && window.map.loaded && window.map.loaded() &&
+      window.map.getSource('dir-active-pin')
+    );
+    await page.waitForFunction(() =>
+      document.querySelectorAll('#directionsList .dir-step').length > 0
+    );
+  });
+
+  for (const race of [
+    { id: 'sprint',  label: 'Sprint Run',  miles: '3.1 mi',  minSteps: 5 },
+    { id: 'olympic', label: 'Olympic Run', miles: '6.2 mi',  minSteps: 12 },
+  ]) {
+    test(`${race.id}: race card switch rebuilds the list with the right header + count`, async ({ page }) => {
+      await page.locator(`.race-card[data-race="${race.id}"]`).click();
+      const label = page.locator('#directionsRaceLabel');
+      await expect(label).toContainText(race.label);
+      await expect(label).toContainText(race.miles);
+      const stepCount = await page.locator('#directionsList .dir-step').count();
+      expect(stepCount).toBeGreaterThanOrEqual(race.minSteps);
+    });
+
+    test(`${race.id}: switching to this race resets active to step 1`, async ({ page }) => {
+      await page.locator(`.race-card[data-race="${race.id}"]`).click();
+      const first = page.locator('#directionsList .dir-step').first();
+      await expect(first).toHaveClass(/active/);
+      const activeCount = await page.locator('#directionsList .dir-step.active').count();
+      expect(activeCount).toBe(1);
+    });
+
+    test(`${race.id}: clicking a middle step updates the highlight pipeline`, async ({ page }) => {
+      await page.locator(`.race-card[data-race="${race.id}"]`).click();
+      const section = page.locator('#directionsSection');
+      if (!(await section.evaluate(el => el.classList.contains('expanded')))) {
+        await page.locator('.directions-toggle').click();
+      }
+      // Pick a non-trivial middle step (not the depart/arrive endpoints).
+      const stepIdx = race.id === 'sprint' ? 2 : 5;
+      await page.locator('#directionsList .dir-step').nth(stepIdx).click();
+      await expect(page.locator('#directionsList .dir-step').nth(stepIdx)).toHaveClass(/active/);
+
+      // The highlight pipeline should populate both the segment AND the pin
+      // sources for whichever race is currently active. If either is empty
+      // the click→highlight contract is broken for that race.
+      const result = await page.evaluate(() => ({
+        segCoords: window.map.getStyle().sources['dir-active-segment'].data.geometry.coordinates.length,
+        pinFeatures: window.map.getStyle().sources['dir-active-pin'].data.features.length,
+        activeIdx: window.activeStepIdx,
+        currentRaceId: window.currentRaceId,
+      }));
+      expect(result.currentRaceId).toBe(race.id);
+      expect(result.activeIdx).toBe(stepIdx);
+      expect(result.segCoords).toBeGreaterThan(1);
+      expect(result.pinFeatures).toBe(1);
+    });
+
+    test(`${race.id}: snapped step miles are precomputed and monotonic`, async ({ page }) => {
+      await page.locator(`.race-card[data-race="${race.id}"]`).click();
+      const miles = await page.evaluate((id) => window.SNAPPED_STEP_MILES[id], race.id);
+      expect(Array.isArray(miles)).toBe(true);
+      expect(miles.length).toBeGreaterThan(2);
+      // Monotonic non-decreasing (out-and-back routes can repeat at U-turns).
+      for (let i = 1; i < miles.length; i++) {
+        expect(miles[i], `${race.id} snapped mile at step ${i + 1} regressed`).toBeGreaterThanOrEqual(miles[i - 1] - 0.001);
+      }
+      // First step at 0, last step within 0.05 mi of the official total.
+      const totalsByRace = { sprint: 3.1, olympic: 6.2 };
+      expect(miles[0]).toBeCloseTo(0, 1);
+      expect(Math.abs(miles[miles.length - 1] - totalsByRace[race.id])).toBeLessThan(0.05);
+    });
+  }
+
+  test('mode toggle stays in effect across race switches', async ({ page }) => {
+    // Pick scrub on Tinman, then switch to Sprint — scrub should persist and
+    // re-attach the IntersectionObserver to the new step list.
+    await page.locator('.dir-mode-btn[data-mode="scrub"]').click();
+    await expect(page.locator('.dir-mode-btn[data-mode="scrub"]')).toHaveClass(/active/);
+
+    await page.locator('.race-card[data-race="sprint"]').click();
+    await expect(page.locator('#directionsRaceLabel')).toContainText('Sprint');
+    await expect(page.locator('.dir-mode-btn[data-mode="scrub"]')).toHaveClass(/active/);
+    await expect(page.locator('#directionsSection')).toHaveClass(/mode-scrub/);
+  });
+});
