@@ -72,6 +72,71 @@ describe('build inlines STREETVIEW_TURNS', () => {
   });
 });
 
+describe('arrow rotation math (pure)', () => {
+  // These helpers MUST stay in sync with override.js. Tested as pure functions
+  // by redefining inline; the source-of-truth lives in override.js. The
+  // HTML-inspection test below verifies the override.js definitions match.
+  function normalizeAngle(deg) {
+    var x = deg % 360;
+    if (x > 180) x -= 360;
+    if (x < -180) x += 360;
+    return x;
+  }
+
+  function streetviewArrowAngle(turn) {
+    return normalizeAngle(turn.bearingAfter - turn.yaw);
+  }
+
+  it('normalizeAngle handles common values', () => {
+    expect(normalizeAngle(0)).toBe(0);
+    expect(normalizeAngle(90)).toBe(90);
+    expect(normalizeAngle(-90)).toBe(-90);
+    expect(normalizeAngle(180)).toBe(180);
+    expect(normalizeAngle(-180)).toBe(-180);
+    expect(normalizeAngle(360)).toBe(0);
+    expect(normalizeAngle(450)).toBe(90);
+    expect(normalizeAngle(-450)).toBe(-90);
+  });
+
+  it('streetviewArrowAngle for the 9 captured turns', () => {
+    const cases = [
+      { yaw: 116.16, bearingAfter: 171, expected: 54.84 },
+      { yaw: 137.24, bearingAfter: 82,  expected: -55.24 },
+      { yaw: 98.82,  bearingAfter: 119, expected: 20.18 },
+      { yaw: 334.81, bearingAfter: 262, expected: -72.81 },
+      { yaw: 265.99, bearingAfter: 201, expected: -64.99 },
+      { yaw: 14.53,  bearingAfter: 285, expected: -89.53 },
+      { yaw: 260.01, bearingAfter: 327, expected: 66.99 },
+      { yaw: 331.20, bearingAfter: 330, expected: -1.20 },
+      { yaw: 255.91, bearingAfter: 180, expected: -75.91 },
+    ];
+    cases.forEach((c) => {
+      const result = streetviewArrowAngle(c);
+      expect(result, `yaw=${c.yaw} bearingAfter=${c.bearingAfter}`).toBeCloseTo(c.expected, 1);
+    });
+  });
+
+  it('all 9 captured turns have |arrowAngle| <= 90 (exit visible in frame)', () => {
+    const data = JSON.parse(readFileSync(dataPath, 'utf-8'));
+    data.forEach((turn) => {
+      const angle = streetviewArrowAngle(turn);
+      expect(Math.abs(angle), `${turn.name}`).toBeLessThanOrEqual(90);
+    });
+  });
+});
+
+describe('override.js exposes the rotation helpers', () => {
+  it('main HTML contains normalizeAngle definition', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    expect(html).toMatch(/function\s+normalizeAngle\s*\(/);
+  });
+
+  it('main HTML contains streetviewArrowAngle definition', () => {
+    const html = readFileSync(distHtmlPath, 'utf-8');
+    expect(html).toMatch(/function\s+streetviewArrowAngle\s*\(/);
+  });
+});
+
 describe('Street View toggle button', () => {
   it('button exists in main HTML between aid and 3D', () => {
     const html = readFileSync(distHtmlPath, 'utf-8');

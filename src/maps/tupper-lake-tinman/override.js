@@ -56,6 +56,22 @@ var BASEMAP_STYLE = {
   }])
 };
 
+// ─── Street View arrow rotation ───
+// streetviewArrowAngle(turn) returns the CSS rotation (degrees) for the
+// chevron overlaid on a Street View thumbnail. 0° = arrow points up, into
+// the photo (the runner continues along the camera direction).
+// Positive = clockwise (exit is to the right of the frame).
+function normalizeAngle(deg) {
+  var x = deg % 360;
+  if (x > 180) x -= 360;
+  if (x < -180) x += 360;
+  return x;
+}
+
+function streetviewArrowAngle(turn) {
+  return normalizeAngle(turn.bearingAfter - turn.yaw);
+}
+
 var map;
 var aidOn = false;
 var terrain3D = false;
