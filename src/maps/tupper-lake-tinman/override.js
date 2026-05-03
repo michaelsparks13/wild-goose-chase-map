@@ -123,6 +123,10 @@ var terrain3D = false;
 var aidMarkers = [];
 var streetviewMarkers = [];
 var streetviewOn = false;
+// 8m offset places the marker just past the turn corner along the runner's
+// exit direction — both communicates "this is the road you take" and
+// separates pairs of turns at shared intersections.
+var STREETVIEW_OFFSET_M = 8;
 var loopTurnMarkers = { sprint: [], olympic: [], tinman: [] };
 
 // ─── Interactive directions state ───
@@ -700,11 +704,8 @@ function initMap() {
     });
 
     // Street View markers — placed just past each turn corner along the
-    // runner's exit direction. The ~8 m offset both communicates "this is the
-    // road you take" and separates pairs of turns at the same intersection
-    // (e.g. mile 0.03 and 4.44 both at the Boyer/Pleasant corner). Hidden by
-    // default; toggleStreetview() flips them visible.
-    var STREETVIEW_OFFSET_M = 8;
+    // runner's exit direction (offset controlled by STREETVIEW_OFFSET_M).
+    // Hidden by default; toggleStreetview() flips them visible.
     STREETVIEW_TURNS.forEach(function(turn) {
       var lat = turn.coords[1];
       var lng = turn.coords[0];
