@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="{{THEME_COLOR}}">
+<!-- Iframing: race directors embed this page on their own sites. We do
+     not set X-Frame-Options here, and frame-ancestors must be an HTTP
+     header (it is silently ignored as a meta tag). The Netlify _headers
+     entry for /maps/* sets `X-Frame-Options: ALLOWALL` and
+     `Content-Security-Policy: frame-ancestors *` at the edge. -->
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<title>{{TITLE}}</title>
+<script src="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/pmtiles@4.4.0/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/@protomaps/basemaps@5.7.0/dist/basemaps.js" crossorigin="anonymous"></script>
+{{GOOGLE_FONTS}}
+<style>
+{{CSS_VARS}}
+{{CSS}}
+</style>
+</head>
+<body class="race-page race-{{SLUG}}">
+
+<!-- ── 1. Top bar — small race mark left, race-day strip right, FSS credit far-right ── -->
+<header class="top-bar" aria-label="Race header">
+  <a class="race-mark" href="{{HOST_URL}}" target="_blank" rel="noopener">
+    <span class="race-mark__name">{{RACE_NAME_SHORT}}</span>
+    <span class="race-mark__edition">{{EDITION_LINE}}</span>
+  </a>
+  <div class="race-day-strip" id="raceDayStrip" aria-label="Race day at a glance">
+    <span class="rds-cell rds-date">{{RACE_DAY_DISPLAY}}</span>
+    <span class="rds-sep" aria-hidden="true">·</span>
+    <span class="rds-cell rds-start">Gun {{GUN_TIME}}</span>
+    <span class="rds-sep" aria-hidden="true">·</span>
+    <span class="rds-cell rds-countdown" id="raceCountdown" data-race-date="{{RACE_DATE_ISO}}">…</span>
+    <span class="rds-sep rds-sep--weather" aria-hidden="true">·</span>
+    <span class="rds-cell rds-weather" id="rdsWeather" aria-label="Race-day weather">
+      <span class="rds-weather__temp" id="rdsWeatherTemp">--°</span>
+      <span class="rds-weather__cond" id="rdsWeatherCond">checking…</span>
+    </span>
+  </div>
+  <div class="top-bar__utility">
+    <button type="button" class="top-bar__util-btn" onclick="openEmbedModal()">Embed</button>
+    <button type="button" class="top-bar__util-btn" onclick="openPocketModal()">Pocket map</button>
+    <a class="studio-credit" href="https://falsesummitstudio.com" target="_blank" rel="noopener" title="Cartography by False Summit Studio">
+      <span class="studio-credit__diamond" aria-hidden="true"></span>
+      <span class="studio-credit__label">Cartography · FSS</span>
+    </a>
+  </div>
+</header>
+
+<main class="race-page__main">
+
+  <!-- ── 2. The course — sticky map + scrolling cue sheet. The MAP is the hero. ── -->
+  <section class="course" aria-label="Course map and turn-by-turn cues">
+    <aside class="course__map" id="courseMap">
+      <div class="map-controls" aria-label="Map layers">
+        <div class="map-toggles">
+          <button type="button" class="map-toggle" id="aidBtn" onclick="toggleAid()">Aid stations</button>
+          <button type="button" class="map-toggle" id="terrainBtn" onclick="toggle3D()">3D</button>
+        </div>
+      </div>
+      {{MAP_HTML}}
+    </aside>
+
+    <section class="course__cues" aria-labelledby="cueHeading">
+      <p class="scope-note" role="note">
+        <span class="scope-note__icon" aria-hidden="true">▴</span>
+        {{SCOPE_NOTE}}
+        <a class="scope-note__link" href="{{HOST_URL}}" target="_blank" rel="noopener">Host race site →</a>
+      </p>
+
+      <h1 id="cueHeading" class="visually-hidden">{{RACE_NAME_DISPLAY}} — Run course, turn-by-turn</h1>
+
+      {{CUES_HTML}}
+    </section>
+  </section>
+
+  <!-- Hidden simulator container — keeps the existing simulator JS happy
+       without surfacing a sim UI on the v2 athlete-first layout. -->
+  <div hidden aria-hidden="true">{{SIM_VIEW}}</div>
+
+  <!-- ── 3. Race-day essentials, in operational order ── -->
+
+  <section class="essentials" id="essentialsProfile">
+    <div class="essentials__head">
+      <h2 class="essentials__title">Elevation Profile</h2>
+      <p class="essentials__sub" id="profileSubLabel">Run leg only</p>
+    </div>
+    <div class="essentials__profile-canvas">
+      <canvas id="essProfileCanvas"></canvas>
+    </div>
+  </section>
+
+  <section class="essentials" id="essentialsAid">
+    <div class="essentials__head">
+      <h2 class="essentials__title">Aid Stations</h2>
+      <p class="essentials__sub">All stocks on-course for the run leg. Pass numbers reflect the Tinman half — Sprint and Olympic see the early stations only.</p>
+    </div>
+    <table class="aid-table">
+      <thead>
+        <tr>
+          <th class="aid-table__mile">Mile</th>
+          <th class="aid-table__name">Station</th>
+          <th class="aid-table__stock">Stocked</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{AID_TABLE_ROWS}}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="essentials" id="essentialsDay">
+    <div class="essentials__head">
+      <h2 class="essentials__title">Race-Day Essentials</h2>
+      <p class="essentials__sub">Run-leg timing only. Swim/bike timing is on the host race site.</p>
+    </div>
+    <dl class="day-grid">
+      {{DAY_GRID_ROWS}}
+    </dl>
+  </section>
+
+  <section class="essentials" id="essentialsLogistics">
+    <div class="essentials__head">
+      <h2 class="essentials__title">Parking, Pickup, Spectators</h2>
+      <p class="essentials__sub">Quick-reference. Full athlete guide lives on the host race site.</p>
+    </div>
+    <div class="logistics-grid">
+      <div class="logistics-cell">
+        <span class="logistics-cell__kind">Parking</span>
+        <p>{{LOGISTICS_PARKING}}</p>
+      </div>
+      <div class="logistics-cell">
+        <span class="logistics-cell__kind">Packet pickup</span>
+        <p>{{LOGISTICS_PACKET}}</p>
+      </div>
+      {{LOGISTICS_SHUTTLE_CELL}}
+      {{LOGISTICS_SPECTATOR_CELL}}
+    </div>
+    <p class="logistics-host">
+      Need transition info, swim/bike specifics, packet substitutions, or anything not on this page?
+      <a href="{{HOST_GUIDE_URL}}" target="_blank" rel="noopener">Full athlete guide on {{HOST_DOMAIN}} →</a>
+    </p>
+  </section>
+
+  <section class="essentials" id="essentialsDownloads">
+    <div class="essentials__head">
+      <h2 class="essentials__title">Take the map with you</h2>
+      <p class="essentials__sub">For race-day use, on the road, or off the grid.</p>
+    </div>
+    <div class="downloads-grid">
+      <button type="button" class="download-card" onclick="window.print()">
+        <span class="download-card__kind">Print PDF cue sheet</span>
+        <p>Foldable, printer-friendly cues — no map graphic needed.</p>
+        <span class="download-card__cta">Open print dialog →</span>
+      </button>
+      <a class="download-card" href="data/{{DEFAULT_DISTANCE_ID}}.geojson" download="{{SLUG}}-{{DEFAULT_DISTANCE_ID}}.geojson">
+        <span class="download-card__kind">GPX / GeoJSON</span>
+        <p>Load to Garmin, Wahoo, Strava, or Gaia. {{DEFAULT_DISTANCE_LABEL}} run leg.</p>
+        <span class="download-card__cta">Download →</span>
+      </a>
+      <button type="button" class="download-card" onclick="openPocketModal()">
+        <span class="download-card__kind">Pocket map</span>
+        <p>Lightweight offline file you can open on your phone with no cell service.</p>
+        <span class="download-card__cta">Generate →</span>
+      </button>
+      <button type="button" class="download-card" onclick="openEmbedModal()">
+        <span class="download-card__kind">Embed</span>
+        <p>For race directors: drop this map into your own race site.</p>
+        <span class="download-card__cta">Get the snippet →</span>
+      </button>
+    </div>
+  </section>
+
+  <section class="essentials essentials--notes" id="essentialsNotes">
+    <div class="essentials__head">
+      <h2 class="essentials__title">From the cartographer</h2>
+      <p class="essentials__sub">Run-only intel — what the map can’t tell you.</p>
+    </div>
+    <p class="cartographer-note">{{CARTOGRAPHER_NOTES}}</p>
+    <p class="cartographer-sign">— False Summit Studio · Cartography for endurance events</p>
+  </section>
+
+  <section class="essentials essentials--cross" id="essentialsCross">
+    <div class="essentials__head">
+      <h2 class="essentials__title">Other race maps from the studio</h2>
+    </div>
+    <ul class="cross-grid">
+      {{CROSS_LINKS_BLOCK}}
+    </ul>
+  </section>
+
+</main>
+
+<footer class="page-footer">
+  <p class="page-footer__line">
+    Cartography by <a href="https://falsesummitstudio.com" target="_blank" rel="noopener">False Summit Studio</a>
+    · <a href="https://falsesummitstudio.com#maps" target="_blank" rel="noopener">view other race maps</a>
+    · <a href="mailto:hello@falsesummitstudio.com?subject=Commission%20inquiry">commission a map</a>
+  </p>
+  <p class="page-footer__sub">
+    Race information sourced from <a href="{{HOST_URL}}" target="_blank" rel="noopener">{{HOST_DOMAIN}}</a>.
+    For official rules, swim/bike logistics, registration, and race-day discretion: defer to the host race.
+  </p>
+</footer>
+
+<!-- Modals — kept identical to v1 so existing JS keeps working -->
+<div class="embed-modal-backdrop" id="embedBackdrop" onclick="closeEmbedModal()">
+  <div class="embed-modal" onclick="event.stopPropagation()">
+    <div class="embed-modal-header">
+      <h3>Embed this map</h3>
+      <button class="embed-modal-close" onclick="closeEmbedModal()">&times;</button>
+    </div>
+    <p class="embed-modal-desc">Copy this code to embed the interactive map on your website.</p>
+    <div class="embed-code-wrap">
+      <pre class="embed-code" id="embedCode"></pre>
+      <button class="embed-copy-btn" id="embedCopyBtn" onclick="copyEmbedCode()">Copy</button>
+    </div>
+    <div class="embed-modal-options">
+      <label class="embed-option"><input type="checkbox" id="embedCompact" onchange="updateEmbedCode()"> Compact (map only)</label>
+      <label class="embed-option"><input type="checkbox" id="embedNoSim" onchange="updateEmbedCode()"> Hide simulator</label>
+      <label class="embed-option"><input type="checkbox" id="embedDark" onchange="updateEmbedCode()"> Dark theme</label>
+    </div>
+  </div>
+</div>
+
+<div class="pocket-modal-backdrop" id="pocketBackdrop" onclick="closePocketModal()">
+  <div class="pocket-modal" onclick="event.stopPropagation()">
+    <div class="pocket-modal-header">
+      <h3>Save Pocket Map</h3>
+      <button class="pocket-modal-close" onclick="closePocketModal()">&times;</button>
+    </div>
+    <p class="pocket-modal-desc">Download a lightweight offline file you can open on your phone during the race — no cell service needed.</p>
+    <div class="pocket-options">
+      <label class="pocket-option"><input type="checkbox" id="pocketIncludeSim" onchange="updatePocketSizeEstimate()" checked> Race simulator</label>
+      <label class="pocket-option"><input type="checkbox" id="pocketIncludeElevation" onchange="updatePocketSizeEstimate()" checked> Elevation profile</label>
+      <label class="pocket-option"><input type="checkbox" id="pocketIncludeGPS" onchange="updatePocketSizeEstimate()" checked> GPS tracking dot</label>
+    </div>
+    <div class="pocket-info">
+      <div class="pocket-info-row"><span class="pocket-info-label">Estimated size</span><span class="pocket-info-value" id="pocketSizeEstimate">~500 KB</span></div>
+      <div class="pocket-info-row"><span class="pocket-info-label">Includes</span><span class="pocket-info-value">Map snapshot, aid stations, trail cue sheet</span></div>
+    </div>
+    <button class="pocket-download-btn" id="pocketDownloadBtn" onclick="generatePocketMap()">Download Pocket Map</button>
+    <div class="pocket-status" id="pocketStatus"></div>
+  </div>
+</div>
+
+<script>
+{{CONFIG_DATA}}
+{{JS}}
+</script>
+</body>
+</html>

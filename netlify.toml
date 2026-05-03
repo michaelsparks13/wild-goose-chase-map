@@ -13,3 +13,10 @@
   [headers.values]
     Content-Security-Policy = "frame-ancestors *"
     Access-Control-Allow-Origin = "*"
+
+# /maps/{slug}/ pages support ?embed=1 mode (race directors iframe these
+# from their own race sites). Allow framing from any origin.
+[[headers]]
+  for = "/maps/*"
+  [headers.values]
+    Content-Security-Policy = "frame-ancestors *"

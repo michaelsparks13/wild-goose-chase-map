@@ -1,0 +1,938 @@
+/* editorial.css — utility-first race-page chrome.
+ *
+ * Replaces v1's editorial showcase with an athlete-first layout:
+ *   • Thin top bar (race mark + race-day strip + small FSS credit)
+ *   • Course = sticky map (left, dominant) + scrollable cue sheet (right)
+ *   • Race-day essentials in operational order beneath
+ *   • Quiet footer credit
+ *
+ * The page belongs to the RACE. Studio identity sits at the chrome
+ * level (~12px caps height, far-right), not as a hero.
+ *
+ * Filename retained for build.js compatibility; contents are no longer
+ * editorial.
+ */
+
+/* ── Theme bridge: the per-race theme injects --paper / --ink /
+ * --race-brand / --route-color / etc. on :root. We bridge to the
+ * legacy tokens used by the map view, simulator, weather panel, and
+ * modals so they read correctly inside the race substrate. ── */
+body.race-page {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-feature-settings: "kern", "liga", "onum";
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  --bg: var(--paper);
+  --bg-card: var(--surface-warm, var(--paper));
+  --bg-alt: color-mix(in srgb, var(--paper) 88%, var(--ink) 12%);
+  --text: var(--ink);
+  --text-secondary: color-mix(in srgb, var(--ink) 75%, var(--paper) 25%);
+  --text-muted: color-mix(in srgb, var(--ink) 52%, var(--paper) 48%);
+  --border: color-mix(in srgb, var(--ink) 16%, var(--paper) 84%);
+  --shadow: none;
+  --primary: var(--race-brand);
+  --primary-dark: color-mix(in srgb, var(--race-brand) 70%, #000 30%);
+  --font-family: var(--font-body);
+  --heading-family: var(--font-display);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 1. TOP BAR — race wordmark left, race-day strip right.
+ *    Studio credit small, far-right.
+ * ────────────────────────────────────────────────────────────────────── */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 24px;
+  padding: 10px 24px;
+  background: var(--ink);
+  color: var(--paper);
+  border-bottom: 3px solid var(--race-brand);
+}
+
+.race-mark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--paper);
+}
+.race-mark__name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  color: var(--race-brand);
+}
+.race-mark__edition {
+  font-family: var(--font-micro);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--paper) 65%, var(--ink) 35%);
+}
+
+.race-day-strip {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-family: var(--font-micro);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  color: var(--paper);
+}
+.rds-cell { white-space: nowrap; }
+.rds-date strong, .rds-start, .rds-countdown { color: var(--paper); }
+.rds-countdown {
+  background: color-mix(in srgb, var(--race-brand) 100%, transparent 0%);
+  color: var(--ink);
+  padding: 2px 8px;
+  font-weight: 600;
+}
+.rds-sep { color: color-mix(in srgb, var(--paper) 40%, var(--ink) 60%); }
+.rds-weather { display: inline-flex; align-items: baseline; gap: 6px; }
+.rds-weather__temp { font-weight: 600; font-size: 0.84rem; }
+.rds-weather__cond { color: color-mix(in srgb, var(--paper) 70%, var(--ink) 30%); }
+.rds-weather--unavailable { display: none; }
+
+.top-bar__utility {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.top-bar__util-btn {
+  background: transparent;
+  color: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--paper) 20%, var(--ink) 80%);
+  font-family: var(--font-micro);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s, background 0.18s;
+}
+.top-bar__util-btn:hover {
+  border-color: var(--race-brand);
+  color: var(--race-brand);
+}
+
+/* Studio credit — explicitly minimal. */
+.studio-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: color-mix(in srgb, var(--paper) 60%, var(--ink) 40%);
+  font-family: var(--font-micro);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding-left: 12px;
+  border-left: 1px solid color-mix(in srgb, var(--paper) 20%, var(--ink) 80%);
+  transition: color 0.18s;
+}
+.studio-credit__diamond {
+  width: 6px; height: 6px;
+  background: var(--race-brand);
+  transform: rotate(45deg);
+}
+.studio-credit:hover { color: var(--race-brand); }
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 2. THE COURSE — sticky-map split.
+ *    The map is the hero. The cue sheet sits beside it and scrolls.
+ * ────────────────────────────────────────────────────────────────────── */
+.race-page__main {
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.course {
+  display: grid;
+  grid-template-columns: 1fr;          /* mobile: stacked */
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+@media (min-width: 1024px) {
+  .course {
+    grid-template-columns: minmax(720px, 1.25fr) minmax(380px, 0.85fr);
+  }
+}
+
+/* Map column — sticky on desktop so it stays visible while cues scroll. */
+.course__map {
+  position: relative;
+  background: color-mix(in srgb, var(--ink) 5%, var(--paper) 95%);
+  border-right: 1px solid var(--border);
+  min-height: 420px;
+}
+@media (min-width: 1024px) {
+  .course__map {
+    position: sticky;
+    top: 60px; /* sits below the top bar */
+    height: calc(100vh - 60px);
+    min-height: 600px;
+  }
+}
+@media (max-width: 1023px) {
+  .course__map {
+    position: sticky;
+    top: 56px;
+    height: 50vh;
+    min-height: 360px;
+    z-index: 10;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+/* The MapLibre canvas fills its column. Override v1's gallery-frame chrome. */
+.course__map .map-wrap,
+.course__map #mapView,
+.course__map .view {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  background: transparent;
+}
+.course__map .view:not(.active) { display: none !important; }
+.course__map #map {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+.course__map .hq-badge,
+.course__map .map-btns,
+.course__map .course-legend {
+  z-index: 5;
+}
+/* Hide v1 legacy chrome that lived inside the old mapViewHtml. */
+.course__map .map-weather-layout > .map-main > :not(.map-wrap),
+.course__map .map-weather-layout > aside.weather-panel,
+.course__map .map-btns, /* duplicate of new .map-toggles */
+.course__map .controls,
+.course__map .profile-section,
+.course__map .cards-section,
+.course__map .course-info { display: none !important; }
+.course__map .map-weather-layout,
+.course__map .map-main {
+  display: block !important;
+  height: 100% !important;
+  background: transparent !important;
+}
+.course__map .map-wrap { background: transparent !important; }
+
+/* Floating map controls (top-right of the map column) */
+.map-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+.distance-toggles {
+  display: inline-flex;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 0;
+}
+.distance-toggle {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-left: 1px solid color-mix(in srgb, var(--ink) 18%, var(--paper) 82%);
+  padding: 8px 14px;
+  font-family: var(--font-micro);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  position: relative;
+}
+.distance-toggle:first-child { border-left: none; }
+.distance-toggle__dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--dist-color, currentColor);
+  align-self: center;
+}
+.distance-toggle__miles {
+  font-size: 0.68rem;
+  color: color-mix(in srgb, var(--ink) 55%, var(--paper) 45%);
+}
+.distance-toggle.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+.distance-toggle.active .distance-toggle__miles {
+  color: color-mix(in srgb, var(--paper) 70%, var(--ink) 30%);
+}
+.distance-toggle:hover:not(.active) {
+  background: color-mix(in srgb, var(--paper) 80%, var(--ink) 20%);
+}
+
+.map-toggles {
+  display: inline-flex;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+.map-toggle {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-left: 1px solid color-mix(in srgb, var(--ink) 18%, var(--paper) 82%);
+  padding: 7px 12px;
+  font-family: var(--font-micro);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+}
+.map-toggle:first-child { border-left: none; }
+.map-toggle.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* Cue column — scrolls inside the page (NOT inside its own scroll container). */
+.course__cues {
+  background: var(--paper);
+  padding: 22px 28px 36px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.scope-note {
+  font-family: var(--font-body);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--race-brand) 24%, var(--paper) 76%);
+  border-left: 3px solid var(--race-brand);
+  padding: 10px 14px;
+  margin-bottom: 18px;
+}
+.scope-note__icon {
+  display: inline-block;
+  color: var(--race-brand);
+  font-size: 0.72rem;
+  margin-right: 4px;
+  transform: translateY(-1px);
+}
+.scope-note__link {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom: 1px solid var(--ink);
+  text-decoration: none;
+  margin-left: 6px;
+}
+
+.cue-head { margin-bottom: 14px; }
+.cue-head__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.35rem;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.cue-head__leg {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+}
+.cue-head__sub {
+  margin-top: 4px;
+  font-family: var(--font-micro);
+  font-size: 0.74rem;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+/* Re-style the existing .directions-section so it lives inside the cue column. */
+.course__cues .directions-section {
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0;
+}
+/* Visually-hidden utility for screen-reader-only headings. */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
+
+/* The in-panel race-tabs ARE the primary distance switcher. Restyle to fit
+ * the chrome: chunky, race-branded, easy to thumb on race morning. */
+.course__cues .dir-race-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin: 0 0 14px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 0;
+  position: relative;
+}
+.course__cues .dir-race-tab {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-left: 1px solid color-mix(in srgb, var(--ink) 16%, var(--paper) 84%);
+  padding: 12px 14px 11px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+.course__cues .dir-race-tab:first-child { border-left: none; }
+.course__cues .dir-race-tab .dir-race-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-bottom: 2px;
+}
+.course__cues .dir-race-tab .dir-race-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.course__cues .dir-race-tab .dir-race-mi {
+  font-family: var(--font-micro);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.course__cues .dir-race-tab:hover:not(.active) {
+  background: color-mix(in srgb, var(--paper) 86%, var(--ink) 14%);
+}
+.course__cues .dir-race-tab.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+.course__cues .dir-race-tab.active .dir-race-mi {
+  color: color-mix(in srgb, var(--paper) 70%, var(--ink) 30%);
+}
+.course__cues .dir-race-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  bottom: -1px;
+  height: 3px;
+  background: var(--race-brand);
+}
+.course__cues .dir-race-tab.active:nth-child(1)::after,
+.course__cues .dir-race-tab.active:nth-child(2)::after,
+.course__cues .dir-race-tab.active:nth-child(3)::after {
+  /* one underline color regardless of distance, since brand identity > distance */
+  background: var(--race-brand);
+}
+.course__cues .directions-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+.course__cues .directions-toggle {
+  background: transparent;
+  border: none;
+  font-family: var(--font-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  padding: 6px 0;
+}
+.course__cues .directions-eyebrow {
+  color: var(--race-brand);
+  font-family: var(--font-micro);
+  letter-spacing: 0.18em;
+}
+.course__cues .directions-race {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 1rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.course__cues .directions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: none;
+  overflow: visible;
+}
+.course__cues .dir-step {
+  display: grid;
+  grid-template-columns: 56px 30px 1fr;
+  gap: 10px;
+  padding: 12px 6px 12px 0;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 8%, var(--paper) 92%);
+  cursor: pointer;
+  transition: background 0.15s, padding-left 0.15s;
+}
+.course__cues .dir-step:hover {
+  background: color-mix(in srgb, var(--race-brand) 14%, var(--paper) 86%);
+  padding-left: 4px;
+}
+.course__cues .dir-step.dir-step--active,
+.course__cues .dir-step.active {
+  background: color-mix(in srgb, var(--race-brand) 22%, var(--paper) 78%);
+  border-left: 3px solid var(--race-brand);
+  padding-left: 5px;
+}
+.course__cues .dir-step .dir-mile {
+  font-family: var(--font-micro);
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: var(--ink);
+  align-self: center;
+}
+.course__cues .dir-step .dir-icon {
+  align-self: center;
+  color: var(--race-brand);
+}
+.course__cues .dir-step .dir-text {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+  line-height: 1.4;
+}
+.course__cues .dir-step .dir-segment {
+  font-family: var(--font-micro);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 3. ESSENTIALS BLOCKS — operational data beneath the split.
+ * ────────────────────────────────────────────────────────────────────── */
+.essentials {
+  padding: 36px 28px;
+  border-bottom: 1px solid var(--border);
+}
+.essentials:last-of-type { border-bottom: none; }
+.essentials__head {
+  margin-bottom: 18px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  max-width: 920px;
+}
+.essentials__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.essentials__title::before {
+  content: "";
+  width: 22px;
+  height: 4px;
+  background: var(--race-brand);
+  align-self: center;
+}
+.essentials__sub {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  max-width: 60ch;
+}
+
+/* Elevation profile block */
+.essentials__profile-canvas {
+  background: color-mix(in srgb, var(--paper) 92%, var(--ink) 8%);
+  border: 1px solid var(--border);
+  padding: 8px;
+}
+#essProfileCanvas {
+  width: 100%;
+  height: 180px;
+  display: block;
+}
+
+/* Aid-station table */
+.aid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+.aid-table th {
+  text-align: left;
+  font-family: var(--font-micro);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 500;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.aid-table td {
+  padding: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, var(--paper) 92%);
+}
+.aid-table tr:last-child td { border-bottom: none; }
+.aid-table tr:hover td {
+  background: color-mix(in srgb, var(--race-brand) 10%, var(--paper) 90%);
+}
+.aid-table__mile {
+  width: 90px;
+  font-family: var(--font-micro);
+  font-weight: 600;
+  color: var(--ink);
+}
+.aid-table__name {
+  font-weight: 600;
+  color: var(--ink);
+}
+.aid-table__stock {
+  color: var(--text-secondary);
+}
+
+/* Race-day grid */
+.day-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--ink);
+  border-left: 1px solid var(--border);
+}
+.day-grid__row {
+  padding: 16px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.day-grid__row dt {
+  font-family: var(--font-micro);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.day-grid__row dd {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.25;
+}
+.day-grid__row .day-grid__sub {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+/* Logistics grid */
+.logistics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.logistics-cell {
+  background: var(--surface-warm, color-mix(in srgb, var(--paper) 88%, var(--ink) 12%));
+  padding: 16px 18px;
+  border-left: 3px solid var(--ink);
+}
+.logistics-cell__kind {
+  display: block;
+  font-family: var(--font-micro);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--race-brand);
+  margin-bottom: 6px;
+}
+.logistics-cell p {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+  line-height: 1.5;
+}
+.logistics-host {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+.logistics-host a {
+  color: var(--ink);
+  border-bottom: 1px solid var(--race-brand);
+  text-decoration: none;
+}
+
+/* Downloads */
+.downloads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.download-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  background: color-mix(in srgb, var(--paper) 93%, var(--ink) 7%);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--race-brand);
+  text-align: left;
+  text-decoration: none;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.18s, transform 0.18s, background 0.18s;
+}
+.download-card:hover {
+  border-color: var(--ink);
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--race-brand) 10%, var(--paper) 90%);
+}
+.download-card__kind {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--ink);
+}
+.download-card p {
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  flex: 1;
+}
+.download-card__cta {
+  font-family: var(--font-micro);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--race-brand);
+  align-self: flex-start;
+}
+
+/* Cartographer notes */
+.essentials--notes { background: var(--surface-warm, color-mix(in srgb, var(--paper) 92%, var(--ink) 8%)); }
+.cartographer-note {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--ink);
+  max-width: 70ch;
+  margin-bottom: 12px;
+}
+.cartographer-sign {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.88rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+/* Cross-links */
+.cross-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+.cross-grid li {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.cross-grid a {
+  display: block;
+  padding: 18px 20px;
+  text-decoration: none;
+  color: var(--ink);
+  background: var(--paper);
+  transition: background 0.18s;
+}
+.cross-grid a:hover {
+  background: color-mix(in srgb, var(--race-brand) 14%, var(--paper) 86%);
+}
+.cross-grid__name {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+.cross-grid__region {
+  display: block;
+  font-family: var(--font-micro);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 4. PAGE FOOTER — quiet credit only.
+ * ────────────────────────────────────────────────────────────────────── */
+.page-footer {
+  padding: 28px 28px 40px;
+  background: var(--ink);
+  color: color-mix(in srgb, var(--paper) 70%, var(--ink) 30%);
+  border-top: 3px solid var(--race-brand);
+}
+.page-footer__line {
+  font-family: var(--font-micro);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.page-footer__line a {
+  color: var(--paper);
+  text-decoration: none;
+  border-bottom: 1px solid var(--race-brand);
+}
+.page-footer__line a:hover { color: var(--race-brand); }
+.page-footer__sub {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 0.82rem;
+  color: color-mix(in srgb, var(--paper) 55%, var(--ink) 45%);
+  max-width: 70ch;
+}
+.page-footer__sub a {
+  color: color-mix(in srgb, var(--paper) 80%, var(--ink) 20%);
+  text-decoration: underline;
+  text-decoration-color: var(--race-brand);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 5. RESPONSIVE — collapse the top bar to a single line on phones.
+ * ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  .top-bar {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 4px 18px;
+    padding: 8px 18px;
+  }
+  .race-mark { grid-row: 1; grid-column: 1; }
+  .top-bar__utility { grid-row: 1; grid-column: 2; }
+  .race-day-strip {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 0.7rem;
+  }
+  .studio-credit__label { display: none; }
+  .studio-credit { padding-left: 8px; gap: 0; border-left: none; }
+}
+@media (max-width: 640px) {
+  .essentials { padding: 28px 18px; }
+  .course__cues { padding: 18px 18px 28px; }
+  .rds-weather { display: none; } /* triage on small phones */
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 6. EMBED MODE — applied via class="race-page--embed".
+ *    Race directors iframe this on their own sites; the page background
+ *    goes transparent so it inherits the host site's surface.
+ * ────────────────────────────────────────────────────────────────────── */
+.race-page--embed {
+  background: transparent;
+}
+.race-page--embed .top-bar {
+  /* Top bar still shows but compacts: hide weather + utility buttons. */
+  grid-template-columns: auto 1fr auto;
+}
+.race-page--embed .top-bar__utility .top-bar__util-btn,
+.race-page--embed .rds-weather,
+.race-page--embed .rds-sep--weather { display: none; }
+.race-page--embed .essentials--cross,
+.race-page--embed .essentials--notes,
+.race-page--embed .essentials#essentialsDownloads { display: none; }
+.race-page--embed .page-footer__sub { display: none; }
+.race-page--embed .page-footer { padding: 14px 18px; }
+.race-page--embed .page-footer__line { font-size: 0.66rem; letter-spacing: 0.18em; }
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 7. PRINT — the foldable cue sheet. Map graphic deliberately omitted;
+ *    print serves athletes who want a paper backup of the cues, not a
+ *    screenshot of the interactive map.
+ * ────────────────────────────────────────────────────────────────────── */
+@media print {
+  body.race-page { background: #fff; color: #000; }
+  .top-bar, .page-footer, .essentials--cross, .essentials--downloads,
+  .essentials--notes, #essentialsLogistics, .map-controls { display: none !important; }
+  .course { display: block; }
+  .course__map { display: none; }                      /* map omitted on paper */
+  .course__cues { padding: 0; }
+  .course__cues .directions-section { border: 0; }
+  .course__cues .dir-step { break-inside: avoid; padding: 6px 0; border-color: #ddd; }
+  .essentials { padding: 14px 0; border-bottom: 1px solid #ddd; }
+  .essentials__title::before { display: none; }
+  .aid-table th, .aid-table td { padding: 6px 8px; font-size: 11pt; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * Accessibility — single page-load reveal, no scroll-triggered animations.
+ * Cue ↔ map sync is the interaction; nothing else animates.
+ * ────────────────────────────────────────────────────────────────────── */
+@keyframes raceFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.race-page > .top-bar,
+.race-page > .race-page__main,
+.race-page > .page-footer {
+  animation: raceFadeIn 0.4s ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .race-page > * { animation: none; }
+  .course__map { position: static !important; height: auto !important; }
+}

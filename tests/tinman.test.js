@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
 import { resolve, join } from 'path';
 
-const distPath = resolve(__dirname, '../dist/maps/tinman/index.html');
-const embedPath = resolve(__dirname, '../dist/embed/tinman/index.html');
-const dataDir = resolve(__dirname, '../src/maps/tinman/data');
+const distPath = resolve(__dirname, '../dist/maps/tupper-lake-tinman/index.html');
+const embedPath = resolve(__dirname, '../dist/embed/tupper-lake-tinman/index.html');
+const dataDir = resolve(__dirname, '../src/maps/tupper-lake-tinman/data');
 
 const html = readFileSync(distPath, 'utf-8');
 const embedHtml = readFileSync(embedPath, 'utf-8');
@@ -40,34 +40,46 @@ describe('Tinman build artifacts', () => {
 });
 
 describe('Tinman branding and content', () => {
-  it('uses race name in title and subtitle', () => {
-    expect(html).toContain('TUPPER LAKE TINMAN');
-    expect(html).toContain('June 27, 2026');
-    expect(html).toContain('44th Anniversary');
+  it('uses race name in title and top bar', () => {
+    expect(html).toContain('Tupper Lake Tinman');
+    expect(html).toContain('Sat, Jun 27, 2026');
   });
 
   it('links to race website', () => {
-    expect(html).toContain('href="https://www.tupperlaketinman.com/"');
+    expect(html).toContain('https://www.tupperlaketinman.com');
   });
 
-  it('uses yellow primary color', () => {
-    expect(html).toContain('--primary: #F5C518');
-    expect(html).toContain('--primary-dark: #D4A810');
+  it('uses race-branded palette tokens, not pure-white SaaS chrome', () => {
+    expect(html).toContain('--paper: #f6f1e7');
+    expect(html).toContain('--ink: #1a1a1a');
+    expect(html).toContain('--race-brand: #F5C518');
+    expect(html).not.toMatch(/--bg:\s*#ffffff/);
+    expect(html).not.toMatch(/--bg-card:\s*#ffffff/);
   });
 
-  it('uses three-distinct-color light theme', () => {
-    expect(html).toContain('--bg: #ffffff');
-    expect(html).toContain('--bg-card: #ffffff');
-    expect(html).toContain('--bg-alt: #f2f2f2');
-  });
-
-  it('uses dark course line with branded glow', () => {
+  it('uses dark course line', () => {
     expect(html).toContain('--course: #111111');
   });
 
-  it('imports Oswald and Inter fonts', () => {
-    expect(html).toContain('Oswald');
-    expect(html).toContain('Inter');
+  it('imports the v2 race-branded type stack (Roboto Slab + Source Serif 4 + JetBrains Mono)', () => {
+    expect(html).toContain('Roboto+Slab');
+    expect(html).toContain('Source+Serif+4');
+    expect(html).toContain('JetBrains+Mono');
+  });
+
+  it('does not import any forbidden fonts', () => {
+    // Roboto Slab is allowed (it's the v2 display face); the banned 'Roboto'
+    // is the geometric sans the brief calls out. Match precise font-family
+    // tokens — `family=Roboto:` not `family=Roboto+Slab:`.
+    expect(html).not.toMatch(/family=Inter[:&]/);
+    expect(html).not.toMatch(/family=Roboto:/);
+    expect(html).not.toMatch(/family=Space\+Grotesk[:&]/);
+    expect(html).not.toMatch(/family=Poppins[:&]/);
+    expect(html).not.toMatch(/family=Oswald[:&]/);
+    expect(html).not.toMatch(/family=Arial[:&]/);
+    // v1 archival faces are gone
+    expect(html).not.toMatch(/family=Fraunces[:&]/);
+    expect(html).not.toMatch(/family=Spectral[:&]/);
   });
 
   it('includes Tinman/Olympic/Sprint loops in LOOPS object', () => {
@@ -92,11 +104,11 @@ describe('Tinman branding and content', () => {
     expect(html).toContain('Little Wolf');
   });
 
-  it('uses BIKE FINISH / RUN START label (T2), not swim start', () => {
-    expect(html).toContain('BIKE FINISH / RUN START');
-    expect(html).toContain('Bike Finish / Run Start (T2)');
-    expect(html).not.toContain('SWIM START / FINISH');
-    expect(html).not.toContain('Swim Start / Run Finish');
+  it('relabels the start marker as RUN START (v2 run-only scope)', () => {
+    // The map's HQ badge shows the athlete-facing label
+    expect(html).toContain('>RUN START<');
+    expect(html).not.toContain('BIKE FINISH / RUN START');
+    expect(html).not.toContain('Swim Start');
   });
 });
 
@@ -140,7 +152,7 @@ describe('Tinman directional arrows + turn-by-turn', () => {
 
   it('phase-split GeoJSON has features tagged out or back', () => {
     for (const slug of ['sprint', 'olympic', 'tinman']) {
-      const geo = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tinman/data/${slug}.geojson`), 'utf-8'));
+      const geo = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tupper-lake-tinman/data/${slug}.geojson`), 'utf-8'));
       expect(geo.features.length, `${slug} should have multiple phase segments`).toBeGreaterThan(1);
       const phases = new Set(geo.features.map(f => f.properties.phase));
       expect(phases.has('out')).toBe(true);
@@ -151,7 +163,7 @@ describe('Tinman directional arrows + turn-by-turn', () => {
   it('emits a turnarounds JSON file with at least one entry per race', () => {
     const expected = { sprint: 1, olympic: 1, tinman: 2 };
     for (const slug of ['sprint', 'olympic', 'tinman']) {
-      const turns = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tinman/data/${slug}-turnarounds.json`), 'utf-8'));
+      const turns = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tupper-lake-tinman/data/${slug}-turnarounds.json`), 'utf-8'));
       expect(turns.length, `${slug} should have ~${expected[slug]} turnaround(s)`).toBeGreaterThanOrEqual(expected[slug]);
       for (const t of turns) {
         expect(t).toHaveProperty('lng');
@@ -182,7 +194,7 @@ describe('Tinman directional arrows + turn-by-turn', () => {
 
   it('step JSON files match the expected schema', () => {
     for (const slug of ['sprint', 'olympic', 'tinman']) {
-      const steps = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tinman/data/${slug}-steps.json`), 'utf-8'));
+      const steps = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tupper-lake-tinman/data/${slug}-steps.json`), 'utf-8'));
       expect(steps.length, `${slug} should have at least 3 steps`).toBeGreaterThan(2);
       for (const s of steps) {
         expect(s).toHaveProperty('n');
@@ -195,7 +207,7 @@ describe('Tinman directional arrows + turn-by-turn', () => {
 
   it('step miles are monotonic (cumulative across the run)', () => {
     for (const slug of ['sprint', 'olympic', 'tinman']) {
-      const steps = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tinman/data/${slug}-steps.json`), 'utf-8'));
+      const steps = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tupper-lake-tinman/data/${slug}-steps.json`), 'utf-8'));
       for (let i = 1; i < steps.length; i++) {
         expect(steps[i].mile, `${slug} step ${i + 1} (${steps[i].instruction}) mile must be >= prior`).toBeGreaterThanOrEqual(steps[i - 1].mile);
       }
@@ -205,7 +217,7 @@ describe('Tinman directional arrows + turn-by-turn', () => {
   it('every race ends with an arrive maneuver at total miles', () => {
     const expectedMiles = { sprint: 3.1, olympic: 6.2, tinman: 13.1 };
     for (const slug of ['sprint', 'olympic', 'tinman']) {
-      const steps = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tinman/data/${slug}-steps.json`), 'utf-8'));
+      const steps = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tupper-lake-tinman/data/${slug}-steps.json`), 'utf-8'));
       const last = steps[steps.length - 1];
       expect(last.type, `${slug} last step type`).toBe('arrive');
       expect(Math.abs(last.mile - expectedMiles[slug])).toBeLessThan(0.05);
@@ -221,7 +233,7 @@ describe('Tinman course geometry (road-snapped)', () => {
   });
 
   it('aid station mileage matches published values within 0.2 mi tolerance', () => {
-    const aid = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/tinman/data/aid-stations.json'), 'utf-8'));
+    const aid = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/tupper-lake-tinman/data/aid-stations.json'), 'utf-8'));
     const byName = Object.fromEntries(aid.map(a => [a.name, a.miles]));
     // Published values from tupperlaketinman.com
     const expected = {
@@ -244,7 +256,7 @@ describe('Tinman course geometry (road-snapped)', () => {
   });
 
   it('snapped course coordinates are dense enough to follow roads (sum across phase segments)', () => {
-    const tinmanGeo = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/tinman/data/tinman.geojson'), 'utf-8'));
+    const tinmanGeo = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/tupper-lake-tinman/data/tinman.geojson'), 'utf-8'));
     const total = tinmanGeo.features.reduce((s, f) => s + f.geometry.coordinates.length, 0);
     expect(total).toBeGreaterThan(150);
   });
@@ -299,7 +311,7 @@ describe('Tinman map features', () => {
   });
 
   it('directions data includes bearings so the depart arrow can render', () => {
-    const t = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/tinman/data/tinman-steps.json'), 'utf-8'));
+    const t = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/tupper-lake-tinman/data/tinman-steps.json'), 'utf-8'));
     const depart = t.find(s => s.type === 'depart');
     expect(depart, 'expected at least one depart maneuver').toBeDefined();
     expect(typeof depart.bearingAfter).toBe('number');
@@ -315,7 +327,7 @@ describe('Tinman map features', () => {
   });
 
   it('Tinman has multiple turnaround markers including a mid-course U-turn', () => {
-    const t = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/tinman/data/tinman-turnarounds.json'), 'utf-8'));
+    const t = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/tupper-lake-tinman/data/tinman-turnarounds.json'), 'utf-8'));
     expect(t.length).toBeGreaterThanOrEqual(3);
     const miles = t.map(x => x.mile);
     // Major turnarounds (Dugal, N. Little Wolf) plus at least one mid-course
@@ -544,8 +556,8 @@ describe('Tinman directions–route alignment', () => {
 
   it('every step.location sits within 250 ft of the snapped route', () => {
     for (const slug of ['sprint', 'olympic', 'tinman']) {
-      const geo = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tinman/data/${slug}.geojson`), 'utf-8'));
-      const steps = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tinman/data/${slug}-steps.json`), 'utf-8'));
+      const geo = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tupper-lake-tinman/data/${slug}.geojson`), 'utf-8'));
+      const steps = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tupper-lake-tinman/data/${slug}-steps.json`), 'utf-8'));
       const coords = flatten(geo);
       for (const s of steps) {
         if (!s.location) continue;

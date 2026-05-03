@@ -118,40 +118,46 @@ var loopCoordDistances = {};
 
 `;
 
-module.exports = {
-  slug: 'tinman',
-  title: 'Tupper Lake Tinman — Run Course Map',
-  raceName: 'TUPPER LAKE TINMAN',
-  themeColor: '#1a1a1a',
-  googleFontsUrl: '<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">',
-  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
-  subtitle: 'June 27, 2026 · 44th Anniversary · <a href="https://www.tupperlaketinman.com/" target="_blank">tupperlaketinman.com</a>',
+const tinmanTheme = require('../../themes/tupper-lake-tinman.js');
 
+module.exports = {
+  slug: 'tupper-lake-tinman',
+  theme: tinmanTheme,
+  title: 'Tupper Lake Tinman — Run Course Map · False Summit Studio',
+  raceName: 'TUPPER LAKE TINMAN',
+  themeColor: tinmanTheme.palette.paper,
+  // build.js wires Google Fonts from theme.type.googleFontsHref when a theme is set.
+  fontFamily: tinmanTheme.type.bodyStack,
+  subtitle: tinmanTheme.identity.raceDay + ' · <a href="https://www.tupperlaketinman.com/" target="_blank">tupperlaketinman.com</a>',
+
+  // Editorial chrome owns the page background, ink, accent, and type stack.
+  // The remaining tokens below are scoped to the *interactive map view* and
+  // simulator components, which still consume the legacy variable names.
   cssVars: {
-    '--primary': '#F5C518',
-    '--primary-dark': '#D4A810',
-    '--accent': '#1a1a1a',
-    '--bg': '#ffffff',
-    '--bg-card': '#ffffff',
-    '--bg-alt': '#f2f2f2',
-    '--text': '#1a1a1a',
-    '--text-secondary': '#444',
-    '--text-muted': '#7a7a7a',
-    '--border': '#e1e1e1',
-    '--course': '#111111',
-    '--shadow': '0 2px 8px rgba(0,0,0,0.08)',
-    '--radius': '10px',
-    '--font-family': "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
-    '--heading-family': "'Oswald', 'Inter', system-ui, sans-serif",
-    '--sprint-color': '#F5C518',
-    '--olympic-color': '#2E7D32',
-    '--tinman-color': '#C8102E',
-    '--sim-bg': '#1a1a1a',
-    '--runner-text': '#fff',
+    '--paper':         tinmanTheme.palette.paper,
+    '--ink':           tinmanTheme.palette.ink,
+    '--accent':        tinmanTheme.palette.accent,
+    '--warm':          tinmanTheme.palette.warm,
+    '--cool':          tinmanTheme.palette.cool,
+    '--font-display':  tinmanTheme.type.displayStack,
+    '--font-body':     tinmanTheme.type.bodyStack,
+    '--font-micro':    tinmanTheme.type.microStack,
+
+    '--primary':       tinmanTheme.palette.accent,
+    '--primary-dark':  '#7a2a1f',
+    '--course':        '#111111',
+    '--radius':        '4px',
+    '--font-family':   tinmanTheme.type.bodyStack,
+    '--heading-family':tinmanTheme.type.displayStack,
+    '--sprint-color':  '#caa238',
+    '--olympic-color': '#2c4a3a',
+    '--tinman-color':  tinmanTheme.palette.accent,
+    '--sim-bg':        '#171817',
+    '--runner-text':   '#fff',
     '--runner-text-shadow': '0 2px 8px rgba(0,0,0,0.5)',
-    '--runner-meta': 'rgba(255,255,255,0.7)',
-    '--scrub-handle-shadow': '0 2px 6px rgba(245,197,24,0.4)',
-    '--popup-bg': '#fff',
+    '--runner-meta':   'rgba(255,255,255,0.7)',
+    '--scrub-handle-shadow': '0 2px 6px rgba(155,58,46,0.45)',
+    '--popup-bg':      tinmanTheme.palette.paper,
   },
 
   configDataJs: configDataJs,
@@ -165,7 +171,7 @@ module.exports = {
   <div class="map-main">
   <div class="map-wrap">
     <div id="map"></div>
-    <div class="hq-badge"><div class="dot"></div><div class="text">BIKE FINISH / RUN START</div></div>
+    <div class="hq-badge"><div class="dot"></div><div class="text">RUN START</div></div>
     <div class="map-btns">
       <button class="trail-btn" id="aidBtn" onclick="toggleAid()">Aid Stations</button>
       <button class="trail-btn" id="terrainBtn" onclick="toggle3D()">3D</button>
@@ -218,46 +224,26 @@ module.exports = {
     <ol class="directions-list" id="directionsList"></ol>
   </section>
 
-  <div class="controls">
-    <div>
-      <div class="section-label">Run Courses</div>
-      <div class="loop-toggles">
-        <div class="loop-toggle" data-loop="sprint" style="--loop-color:#F5C518" onclick="toggleLoop('sprint')">
-          <div class="swatch" style="background:#F5C518"></div>
-          <div class="info"><div class="name">Sprint Run</div><div class="stats">3.1 mi &middot; 193'</div></div>
-        </div>
-        <div class="loop-toggle" data-loop="olympic" style="--loop-color:#2E7D32" onclick="toggleLoop('olympic')">
-          <div class="swatch" style="background:#2E7D32"></div>
-          <div class="info"><div class="name">Olympic Run</div><div class="stats">6.2 mi &middot; 218'</div></div>
-        </div>
-        <div class="loop-toggle active" data-loop="tinman" style="--loop-color:#C8102E" onclick="toggleLoop('tinman')">
-          <div class="swatch" style="background:#C8102E"></div>
-          <div class="info"><div class="name">Tinman Run</div><div class="stats">13.1 mi &middot; 407'</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <!-- Profile-section is moved into the essentials block at runtime by
+       editorial-runtime.js. The legacy controls + race-cards are kept as
+       hidden DOM stubs because override.js's selectRace() queries
+       [data-loop=...] and .race-card to update their .active state — a
+       missing element would throw and halt the race switch. -->
   <section class="profile-section">
     <div class="profile-header">
-      <h3 id="profileTitle">Elevation Profile</h3>
+      <h3 id="profileTitle">Elevation profile</h3>
       <div class="profile-stats" id="profileStats"></div>
     </div>
     <canvas id="profileCanvas"></canvas>
   </section>
-
-  <section class="cards-section">
-    <h3>Select Race Distance</h3>
-    <div class="race-cards" id="raceCards"></div>
-  </section>
-
-  <section class="course-info">
-    <h3>About the Run Course</h3>
-    <div class="course-description">
-      <p>The <strong>Tupper Lake Tinman</strong> is a beloved Adirondack triathlon now in its <strong>44th year</strong>. The flat, scenic run course winds through the village of Tupper Lake, NY, passing the History Museum, Civic Center, and the historic Train Station before turning around at Little Wolf Pond. Distances mirror the swim/bike: <strong>Sprint</strong> (0.5/12.6/3.1), <strong>Olympic</strong> (0.93/26/6.2), and the full <strong>Tinman</strong> (1.2/56/13.1). Rolling swim start at 8:00 AM with self-seeding by predicted swim time.</p>
-      <p>This map shows the <strong>run portions only</strong>. Eight aid stations along the Tinman course offer water, Powerade, Coca-Cola, oranges, pretzels, and gels.</p>
+  <div class="legacy-controls" hidden aria-hidden="true">
+    <div class="loop-toggles">
+      <div class="loop-toggle" data-loop="sprint"></div>
+      <div class="loop-toggle" data-loop="olympic"></div>
+      <div class="loop-toggle active" data-loop="tinman"></div>
     </div>
-  </section>
+  </div>
+  <div class="race-cards" id="raceCards" hidden></div>
   </div>
 
   ${weatherData ? `<aside class="weather-panel" id="weatherPanel">
@@ -377,7 +363,7 @@ module.exports = {
   trailsData: { type: 'FeatureCollection', features: [] },
 
   startCoords: [-74.46478, 44.22999],
-  startLabel: 'Bike Finish / Run Start (T2) - Tinman Beach',
+  startLabel: 'Run Start — Tinman Beach (T2 in real life; this map is run-only)',
   finishCoords: null,
   finishLabel: null,
 
