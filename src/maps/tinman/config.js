@@ -11,6 +11,12 @@ const olympicGeo = loadJSON('data/olympic.geojson');
 const olympicProfile = loadJSON('data/olympic-profile.json');
 const tinmanGeo = loadJSON('data/tinman.geojson');
 const tinmanProfile = loadJSON('data/tinman-profile.json');
+const sprintSteps = loadJSON('data/sprint-steps.json');
+const olympicSteps = loadJSON('data/olympic-steps.json');
+const tinmanSteps = loadJSON('data/tinman-steps.json');
+const sprintTurns = loadJSON('data/sprint-turnarounds.json');
+const olympicTurns = loadJSON('data/olympic-turnarounds.json');
+const tinmanTurns = loadJSON('data/tinman-turnarounds.json');
 const aidStationsRaw = loadJSON('data/aid-stations.json');
 const weatherData = fs.existsSync(path.join(__dirname, 'data/weather.json'))
   ? loadJSON('data/weather.json') : null;
@@ -29,9 +35,9 @@ const AID_STATIONS = aidStationsRaw.flatMap(a =>
 
 const configDataJs = `
 var LOOPS = {
-  sprint:  { color: '#F5C518', label: 'Sprint',  abbr: 'S', miles: 3.1,  gain: 193, geojson: null, profile: null, visible: true, swim: 0.5,  bike: 12.6, run: 3.1 },
-  olympic: { color: '#2E7D32', label: 'Olympic', abbr: 'O', miles: 6.2,  gain: 218, geojson: null, profile: null, visible: true, swim: 0.93, bike: 26,   run: 6.2 },
-  tinman:  { color: '#C8102E', label: 'Tinman',  abbr: 'T', miles: 13.1, gain: 407, geojson: null, profile: null, visible: true, swim: 1.2,  bike: 56,   run: 13.1 }
+  sprint:  { color: '#F5C518', label: 'Sprint',  abbr: 'S', miles: 3.1,  gain: 193, geojson: null, profile: null, visible: false, swim: 0.5,  bike: 12.6, run: 3.1 },
+  olympic: { color: '#2E7D32', label: 'Olympic', abbr: 'O', miles: 6.2,  gain: 218, geojson: null, profile: null, visible: false, swim: 0.93, bike: 26,   run: 6.2 },
+  tinman:  { color: '#C8102E', label: 'Tinman',  abbr: 'T', miles: 13.1, gain: 407, geojson: null, profile: null, visible: true,  swim: 1.2,  bike: 56,   run: 13.1 }
 };
 
 var RACES = {
@@ -48,14 +54,45 @@ var tinmanData  = ${JSON.stringify(Object.assign({}, tinmanGeo,  { profile: tinm
 
 var CONFIG = { mapCenter: [-74.4485, 44.2335], weather: ${JSON.stringify(weatherData)} };
 
-LOOPS.sprint.geojson  = sprintData.features[0];
+// The phase-split GeoJSONs ship as multi-feature FeatureCollections (one
+// LineString feature per out/back run). The map source needs the full
+// collection so all phase segments render with their own offsets/styles. Other
+// helpers (getCoordAtDist, mile markers, simulator) walk a single ordered list
+// of coordinates, so we also flatten all features back into one Feature for
+// LOOPS[id].geojson.
+function flattenFeatures(fc) {
+  var coords = [];
+  for (var i = 0; i < fc.features.length; i++) {
+    var c = fc.features[i].geometry.coordinates;
+    var startAt = (coords.length && i > 0) ? 1 : 0; // skip duplicated boundary
+    for (var j = startAt; j < c.length; j++) coords.push(c[j]);
+  }
+  return { type: 'Feature', properties: { name: fc.features[0] && fc.features[0].properties.name }, geometry: { type: 'LineString', coordinates: coords } };
+}
+
+LOOPS.sprint.geojsonAll  = sprintData;
+LOOPS.olympic.geojsonAll = olympicData;
+LOOPS.tinman.geojsonAll  = tinmanData;
+LOOPS.sprint.geojson  = flattenFeatures(sprintData);
+LOOPS.olympic.geojson = flattenFeatures(olympicData);
+LOOPS.tinman.geojson  = flattenFeatures(tinmanData);
 LOOPS.sprint.profile  = sprintData.profile;
-LOOPS.olympic.geojson = olympicData.features[0];
 LOOPS.olympic.profile = olympicData.profile;
-LOOPS.tinman.geojson  = tinmanData.features[0];
 LOOPS.tinman.profile  = tinmanData.profile;
 
 var AID_STATIONS = ${JSON.stringify(AID_STATIONS)};
+
+var DIRECTIONS = {
+  sprint:  ${JSON.stringify(sprintSteps)},
+  olympic: ${JSON.stringify(olympicSteps)},
+  tinman:  ${JSON.stringify(tinmanSteps)}
+};
+
+var TURNAROUNDS = {
+  sprint:  ${JSON.stringify(sprintTurns)},
+  olympic: ${JSON.stringify(olympicTurns)},
+  tinman:  ${JSON.stringify(tinmanTurns)}
+};
 
 // Pre-compute cumulative distances for each loop's coordinates
 var loopCoordDistances = {};
@@ -133,17 +170,22 @@ module.exports = {
       <button class="trail-btn" id="aidBtn" onclick="toggleAid()">Aid Stations</button>
       <button class="trail-btn" id="terrainBtn" onclick="toggle3D()">3D</button>
     </div>
+    <div class="course-legend" aria-label="Course direction legend">
+      <div class="legend-row"><span class="legend-line legend-line-out"></span><span class="legend-label">Outbound</span></div>
+      <div class="legend-row"><span class="legend-line legend-line-back"></span><span class="legend-label">Return</span></div>
+      <div class="legend-row"><span class="legend-icon legend-icon-turn"><svg viewBox="0 0 16 16" width="12" height="12"><circle cx="8" cy="8" r="6.5" fill="currentColor"/><path d="M5.5 9.5V6a2.5 2.5 0 0 1 5 0v4M4 8l1.5 1.5 1.5-1.5" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="legend-label">Turnaround</span></div>
+    </div>
   </div>
 
   <div class="controls">
     <div>
       <div class="section-label">Run Courses</div>
       <div class="loop-toggles">
-        <div class="loop-toggle active" data-loop="sprint" style="--loop-color:#F5C518" onclick="toggleLoop('sprint')">
+        <div class="loop-toggle" data-loop="sprint" style="--loop-color:#F5C518" onclick="toggleLoop('sprint')">
           <div class="swatch" style="background:#F5C518"></div>
           <div class="info"><div class="name">Sprint Run</div><div class="stats">3.1 mi &middot; 193'</div></div>
         </div>
-        <div class="loop-toggle active" data-loop="olympic" style="--loop-color:#2E7D32" onclick="toggleLoop('olympic')">
+        <div class="loop-toggle" data-loop="olympic" style="--loop-color:#2E7D32" onclick="toggleLoop('olympic')">
           <div class="swatch" style="background:#2E7D32"></div>
           <div class="info"><div class="name">Olympic Run</div><div class="stats">6.2 mi &middot; 218'</div></div>
         </div>
@@ -166,6 +208,18 @@ module.exports = {
   <section class="cards-section">
     <h3>Select Race Distance</h3>
     <div class="race-cards" id="raceCards"></div>
+  </section>
+
+  <section class="directions-section" id="directionsSection">
+    <button class="directions-header" type="button" onclick="toggleDirections()" aria-controls="directionsList" aria-expanded="false">
+      <div class="directions-titles">
+        <h3 class="directions-eyebrow">Turn-by-Turn</h3>
+        <span class="directions-race" id="directionsRaceLabel">Tinman Run · 13.1 mi</span>
+      </div>
+      <span class="directions-count" id="directionsCount"></span>
+      <svg class="directions-chevron" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <ol class="directions-list" id="directionsList"></ol>
   </section>
 
   <section class="course-info">

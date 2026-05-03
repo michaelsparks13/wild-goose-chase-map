@@ -100,6 +100,119 @@ describe('Tinman branding and content', () => {
   });
 });
 
+describe('Tinman directional arrows + turn-by-turn', () => {
+  it('removed the old symbol-layer arrows (replaced by parallel-offset rendering)', () => {
+    expect(html).not.toContain('registerArrowIcons');
+    expect(html).not.toContain("'arrow-' + id");
+    expect(html).not.toMatch(/id:\s*id\s*\+\s*'-arrows'/);
+  });
+
+  it('renders out segments with positive line-offset and back with negative', () => {
+    // Offsets live in shared `outOffset` / `backOffset` variables defined just
+    // above the layer block.
+    expect(html).toMatch(/var\s+outOffset\s*=\s*\[[^;]*17,\s*7\s*\]/);
+    expect(html).toMatch(/var\s+backOffset\s*=\s*\[[^;]*17,\s*-7\s*\]/);
+
+    const outIdx = html.indexOf("id: id + '-out',");
+    const outBlock = html.substr(outIdx, 600);
+    expect(outBlock).toContain("['==', ['get', 'phase'], 'out']");
+    expect(outBlock).toContain("'line-offset': outOffset");
+
+    const backIdx = html.indexOf("id: id + '-back',");
+    const backBlock = html.substr(backIdx, 600);
+    expect(backBlock).toContain("['==', ['get', 'phase'], 'back']");
+    expect(backBlock).toContain("'line-offset': backOffset");
+    expect(backBlock).toContain("'line-dasharray': [3, 1.8]");
+  });
+
+  it('renders the OUT/RETURN/Turnaround legend overlay', () => {
+    expect(html).toContain('class="course-legend"');
+    expect(html).toContain('Outbound');
+    expect(html).toContain('Return');
+    expect(html).toContain('Turnaround');
+  });
+
+  it('inlines TURNAROUNDS data and creates loop-scoped turnaround markers', () => {
+    expect(html).toContain('var TURNAROUNDS');
+    expect(html).toContain('loopTurnMarkers');
+    expect(html).toContain('turnaround-marker');
+  });
+
+  it('phase-split GeoJSON has features tagged out or back', () => {
+    for (const slug of ['sprint', 'olympic', 'tinman']) {
+      const geo = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tinman/data/${slug}.geojson`), 'utf-8'));
+      expect(geo.features.length, `${slug} should have multiple phase segments`).toBeGreaterThan(1);
+      const phases = new Set(geo.features.map(f => f.properties.phase));
+      expect(phases.has('out')).toBe(true);
+      expect(phases.has('back')).toBe(true);
+    }
+  });
+
+  it('emits a turnarounds JSON file with at least one entry per race', () => {
+    const expected = { sprint: 1, olympic: 1, tinman: 2 };
+    for (const slug of ['sprint', 'olympic', 'tinman']) {
+      const turns = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tinman/data/${slug}-turnarounds.json`), 'utf-8'));
+      expect(turns.length, `${slug} should have ~${expected[slug]} turnaround(s)`).toBeGreaterThanOrEqual(expected[slug]);
+      for (const t of turns) {
+        expect(t).toHaveProperty('lng');
+        expect(t).toHaveProperty('lat');
+        expect(t).toHaveProperty('mile');
+      }
+    }
+  });
+
+  it('inlines a DIRECTIONS object with per-race step lists', () => {
+    expect(html).toContain('var DIRECTIONS');
+    expect(html).toMatch(/sprint:\s*\[/);
+    expect(html).toMatch(/olympic:\s*\[/);
+    expect(html).toMatch(/tinman:\s*\[/);
+  });
+
+  it('renders the turn-by-turn UI section in the map view', () => {
+    expect(html).toContain('id="directionsSection"');
+    expect(html).toContain('id="directionsList"');
+    expect(html).toContain('id="directionsRaceLabel"');
+    expect(html).toContain('Turn-by-Turn');
+  });
+
+  it('renderDirections is called when a race is selected', () => {
+    expect(html).toContain('renderDirections(raceId)');
+    expect(html).toContain("renderDirections('tinman')"); // initial render
+  });
+
+  it('step JSON files match the expected schema', () => {
+    for (const slug of ['sprint', 'olympic', 'tinman']) {
+      const steps = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tinman/data/${slug}-steps.json`), 'utf-8'));
+      expect(steps.length, `${slug} should have at least 3 steps`).toBeGreaterThan(2);
+      for (const s of steps) {
+        expect(s).toHaveProperty('n');
+        expect(s).toHaveProperty('instruction');
+        expect(s).toHaveProperty('mile');
+        expect(s).toHaveProperty('distMi');
+      }
+    }
+  });
+
+  it('step miles are monotonic (cumulative across the run)', () => {
+    for (const slug of ['sprint', 'olympic', 'tinman']) {
+      const steps = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tinman/data/${slug}-steps.json`), 'utf-8'));
+      for (let i = 1; i < steps.length; i++) {
+        expect(steps[i].mile, `${slug} step ${i + 1} (${steps[i].instruction}) mile must be >= prior`).toBeGreaterThanOrEqual(steps[i - 1].mile);
+      }
+    }
+  });
+
+  it('every race ends with an arrive maneuver at total miles', () => {
+    const expectedMiles = { sprint: 3.1, olympic: 6.2, tinman: 13.1 };
+    for (const slug of ['sprint', 'olympic', 'tinman']) {
+      const steps = JSON.parse(readFileSync(resolve(__dirname, `../src/maps/tinman/data/${slug}-steps.json`), 'utf-8'));
+      const last = steps[steps.length - 1];
+      expect(last.type, `${slug} last step type`).toBe('arrive');
+      expect(Math.abs(last.mile - expectedMiles[slug])).toBeLessThan(0.05);
+    }
+  });
+});
+
 describe('Tinman course geometry (road-snapped)', () => {
   it('uses official course distances (3.1 / 6.2 / 13.1 mi)', () => {
     expect(html).toMatch(/sprint:\s*\{[^}]*miles:\s*3\.1\b/);
@@ -130,9 +243,10 @@ describe('Tinman course geometry (road-snapped)', () => {
     }
   });
 
-  it('snapped course coordinates are dense enough to follow roads', () => {
+  it('snapped course coordinates are dense enough to follow roads (sum across phase segments)', () => {
     const tinmanGeo = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/tinman/data/tinman.geojson'), 'utf-8'));
-    expect(tinmanGeo.features[0].geometry.coordinates.length).toBeGreaterThan(150);
+    const total = tinmanGeo.features.reduce((s, f) => s + f.geometry.coordinates.length, 0);
+    expect(total).toBeGreaterThan(150);
   });
 });
 
@@ -167,9 +281,46 @@ describe('Tinman map features', () => {
     expect(html).toContain('terrainBtn');
   });
 
-  it('uses dark course line with branded inner color (high-contrast pattern)', () => {
-    expect(html).toMatch(/-casing[\s\S]{0,100}'line-color':\s*'#000'/);
-    expect(html).toMatch(/-dark[\s\S]{0,100}'line-color':\s*'#111'/);
+  it('uses dark casing + dark inner backbone for low-zoom visibility', () => {
+    expect(html).toMatch(/-casing[\s\S]{0,300}'line-color':\s*'#000'/);
+    expect(html).toMatch(/-dark[\s\S]{0,300}'line-color':\s*'#111'/);
+  });
+
+  it('renders rotated turn-direction chevrons (depart + every navigable turn)', () => {
+    expect(html).toContain('registerTurnIcons');
+    expect(html).toContain('addTurnArrowLayers');
+    expect(html).toContain('buildTurnArrowSource');
+    // Two layers per loop — major decisions (default zoom) + minor turns
+    expect(html).toContain("'-turn-badges'");
+    expect(html).toContain("'-turn-badges-minor'");
+    // Chevron rotates per feature based on the OSRM bearing_after value
+    expect(html).toContain("'icon-rotate': ['get', 'bearing']");
+    expect(html).toContain("'icon-rotation-alignment': 'map'");
+  });
+
+  it('directions data includes bearings so the depart arrow can render', () => {
+    const t = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/tinman/data/tinman-steps.json'), 'utf-8'));
+    const depart = t.find(s => s.type === 'depart');
+    expect(depart, 'expected at least one depart maneuver').toBeDefined();
+    expect(typeof depart.bearingAfter).toBe('number');
+    // Every non-arrive step has a bearing-after that the symbol layer can use.
+    const navigables = t.filter(s => s.type !== 'arrive' && s.location);
+    for (const s of navigables) expect(typeof s.bearingAfter).toBe('number');
+  });
+
+  it('defaults to only the Tinman loop visible (Sprint + Olympic hidden)', () => {
+    expect(html).toMatch(/sprint:\s*\{[^}]*visible:\s*false/);
+    expect(html).toMatch(/olympic:\s*\{[^}]*visible:\s*false/);
+    expect(html).toMatch(/tinman:\s*\{[^}]*visible:\s*true/);
+  });
+
+  it('Tinman has multiple turnaround markers including a mid-course U-turn', () => {
+    const t = JSON.parse(readFileSync(resolve(__dirname, '../src/maps/tinman/data/tinman-turnarounds.json'), 'utf-8'));
+    expect(t.length).toBeGreaterThanOrEqual(3);
+    const miles = t.map(x => x.mile);
+    // Major turnarounds (Dugal, N. Little Wolf) plus at least one mid-course
+    // U-turn between miles 4 and 8.
+    expect(miles.some(m => m >= 4 && m <= 8), 'expected a mid-course U-turn marker').toBe(true);
   });
 
   it('does not contain checkered loop pattern (carryover from wild-goose)', () => {

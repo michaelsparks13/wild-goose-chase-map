@@ -1,0 +1,77 @@
+[
+  {
+    "n": 1,
+    "instruction": "Head south",
+    "name": null,
+    "type": "depart",
+    "modifier": "right",
+    "mile": 0,
+    "distMi": 0.19,
+    "location": [
+      -74.464662,
+      44.229975
+    ],
+    "bearingAfter": 190,
+    "bearingBefore": 0
+  },
+  {
+    "n": 2,
+    "instruction": "Turn left onto East Park Street",
+    "name": "East Park Street",
+    "type": "end of road",
+    "modifier": "left",
+    "mile": 0.19,
+    "distMi": 0.02,
+    "location": [
+      -74.456861,
+      44.224572
+    ],
+    "bearingAfter": 82,
+    "bearingBefore": 172
+  },
+  {
+    "n": 3,
+    "instruction": "Turn right onto Boyer Avenue",
+    "name": "Boyer Avenue",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 0.21,
+    "distMi": 2.73,
+    "location": [
+      -74.456861,
+      44.224572
+    ],
+    "bearingAfter": 352,
+    "bearingBefore": 262
+  },
+  {
+    "n": 4,
+    "instruction": "Make a U-turn",
+    "name": null,
+    "type": "continue",
+    "modifier": "uturn",
+    "mile": 2.93,
+    "distMi": 0.17,
+    "location": [
+      -74.465427,
+      44.228092
+    ],
+    "bearingAfter": 98,
+    "bearingBefore": 278
+  },
+  {
+    "n": 5,
+    "instruction": "Arrive at finish",
+    "name": null,
+    "type": "arrive",
+    "modifier": "left",
+    "mile": 3.1,
+    "distMi": 0,
+    "location": [
+      -74.464799,
+      44.229403
+    ],
+    "bearingAfter": 0,
+    "bearingBefore": 10
+  }
+]
