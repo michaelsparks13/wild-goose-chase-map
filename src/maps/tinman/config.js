@@ -178,6 +178,23 @@ module.exports = {
   </div>
 
   <section class="directions-section expanded" id="directionsSection">
+    <nav class="dir-race-tabs" role="tablist" aria-label="Choose race distance">
+      <button type="button" class="dir-race-tab" data-race="sprint" role="tab" aria-selected="false" onclick="selectRace('sprint')">
+        <span class="dir-race-dot" style="background:#F5C518"></span>
+        <span class="dir-race-name">Sprint</span>
+        <span class="dir-race-mi">3.1 mi</span>
+      </button>
+      <button type="button" class="dir-race-tab" data-race="olympic" role="tab" aria-selected="false" onclick="selectRace('olympic')">
+        <span class="dir-race-dot" style="background:#2E7D32"></span>
+        <span class="dir-race-name">Olympic</span>
+        <span class="dir-race-mi">6.2 mi</span>
+      </button>
+      <button type="button" class="dir-race-tab active" data-race="tinman" role="tab" aria-selected="true" onclick="selectRace('tinman')">
+        <span class="dir-race-dot" style="background:#C8102E"></span>
+        <span class="dir-race-name">Tinman</span>
+        <span class="dir-race-mi">13.1 mi</span>
+      </button>
+    </nav>
     <div class="directions-header">
       <button class="directions-toggle" type="button" onclick="toggleDirections()" aria-controls="directionsList" aria-expanded="true">
         <div class="directions-titles">

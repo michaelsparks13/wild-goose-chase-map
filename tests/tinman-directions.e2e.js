@@ -254,6 +254,42 @@ test.describe('Tinman interactive directions: Sprint + Olympic distances', () =>
     });
   }
 
+  test('in-panel race tabs are present, with Tinman selected by default', async ({ page }) => {
+    const tabs = page.locator('.dir-race-tab');
+    await expect(tabs).toHaveCount(3);
+    const activeTab = page.locator('.dir-race-tab.active');
+    await expect(activeTab).toHaveAttribute('data-race', 'tinman');
+    await expect(activeTab).toHaveAttribute('aria-selected', 'true');
+    // Each tab labels its distance and shows a colored dot for the loop.
+    await expect(page.locator('.dir-race-tab[data-race="sprint"]  .dir-race-mi')).toContainText('3.1');
+    await expect(page.locator('.dir-race-tab[data-race="olympic"] .dir-race-mi')).toContainText('6.2');
+    await expect(page.locator('.dir-race-tab[data-race="tinman"]  .dir-race-mi')).toContainText('13.1');
+    await expect(page.locator('.dir-race-tab[data-race="sprint"]  .dir-race-dot')).toBeVisible();
+  });
+
+  test('clicking an in-panel race tab switches the directions list', async ({ page }) => {
+    await page.locator('.dir-race-tab[data-race="olympic"]').click();
+    await expect(page.locator('.dir-race-tab[data-race="olympic"]')).toHaveClass(/active/);
+    await expect(page.locator('.dir-race-tab[data-race="olympic"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('.dir-race-tab[data-race="tinman"]')).not.toHaveClass(/active/);
+    await expect(page.locator('#directionsRaceLabel')).toContainText('Olympic');
+    // First step active in the new race; map highlight pipeline populated.
+    const first = page.locator('#directionsList .dir-step').first();
+    await expect(first).toHaveClass(/active/);
+  });
+
+  test('race-tab and race-card selectors stay in sync', async ({ page }) => {
+    // Switch via the bottom card; the in-panel tab should follow.
+    await page.locator('.race-card[data-race="sprint"]').click();
+    await expect(page.locator('.dir-race-tab[data-race="sprint"]')).toHaveClass(/active/);
+    await expect(page.locator('.dir-race-tab[data-race="tinman"]')).not.toHaveClass(/active/);
+
+    // Switch via the in-panel tab; the bottom card should follow.
+    await page.locator('.dir-race-tab[data-race="tinman"]').click();
+    await expect(page.locator('.race-card[data-race="tinman"]')).toHaveClass(/active/);
+    await expect(page.locator('.race-card[data-race="sprint"]')).not.toHaveClass(/active/);
+  });
+
   test('mode toggle stays in effect across race switches', async ({ page }) => {
     // Pick scrub on Tinman, then switch to Sprint — scrub should persist and
     // re-attach the IntersectionObserver to the new step list.

@@ -1163,6 +1163,12 @@ function selectRace(raceId) {
   // renderDirections rebuilds the step list and re-anchors activeStepIdx to 0.
   renderDirections(raceId);
   document.querySelectorAll('.race-card').forEach(function(c) { c.classList.toggle('active', c.dataset.race === raceId); });
+  // Sync the in-panel race tabs (the primary, in-context switcher).
+  document.querySelectorAll('.dir-race-tab').forEach(function(t) {
+    var on = t.dataset.race === raceId;
+    t.classList.toggle('active', on);
+    t.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
 }
 
 function buildCards() {
