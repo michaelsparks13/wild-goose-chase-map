@@ -438,6 +438,95 @@
   border-color: var(--primary); background: var(--bg); color: var(--text);
 }
 
+/* ═══ MAP + DIRECTIONS LAYOUT ═══
+   Goal: keep the map and the turn-by-turn list in the same viewport so the
+   bidirectional sync (click step → see segment glow) is actually usable.
+   Mobile stacks; desktop grids them side-by-side; weather panel becomes a
+   full-width strip below on desktop so it stops competing for horizontal
+   space. */
+
+/* Mobile (default): the directions section sits directly under the map
+   thanks to the new HTML order. The list is auto-expanded on load and caps
+   at ~45vh so the runner sees the map AND the first ~6-7 turns at once. */
+.directions-section {
+  border-top: 1px solid var(--border);
+}
+.directions-section.expanded .directions-list {
+  max-height: 45vh;
+}
+
+/* Desktop: map | directions side-by-side. The map column gets every spare
+   pixel; the directions column is a comfortable reading width. Below, the
+   loop toggles / elevation profile / race cards / course-info reflow as a
+   full-width column so they don't get squeezed against the directions rail. */
+@media (min-width: 1024px) {
+  .map-weather-layout {
+    flex-direction: column !important;
+    gap: 0 !important;
+  }
+  .map-main {
+    overflow-y: visible !important;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    /* Lock the map row to the map's own height (55vh, min 300px). Without
+       this the row would grow to fit the much taller directions list and
+       leave a chunk of empty space below the map. */
+    grid-template-rows: minmax(300px, 55vh) auto auto auto auto;
+    grid-template-areas:
+      "map  directions"
+      "ctrl ctrl"
+      "prof prof"
+      "card card"
+      "info info";
+    column-gap: 1px;
+    background: var(--border);
+  }
+  .map-main > .map-wrap        { grid-area: map; background: var(--bg-card); }
+  .map-main > .directions-section { grid-area: directions; background: var(--bg-card); border-top: 0; border-left: 1px solid var(--border); }
+  .map-main > .controls        { grid-area: ctrl; }
+  .map-main > .profile-section { grid-area: prof; }
+  .map-main > .cards-section   { grid-area: card; }
+  .map-main > .course-info     { grid-area: info; }
+
+  /* The map row defines the height of the side rail. The list inside the rail
+     should fill remaining vertical space (header + scrollable list). */
+  .directions-section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .directions-section .directions-header { flex-shrink: 0; }
+  .directions-section.expanded .directions-list {
+    flex: 1 1 auto;
+    max-height: none;
+    padding-bottom: 14px;
+  }
+
+  /* Weather panel becomes a full-width strip below the map row. Keep its
+     internal layout but let it stretch end-to-end; risk cards can spread to
+     four columns again when there's room. */
+  .weather-panel {
+    width: auto !important;
+    flex-shrink: 0 !important;
+    border-top: 1px solid var(--border);
+  }
+  .weather-panel .weather-risk-row { grid-template-columns: repeat(4, 1fr); }
+  .weather-panel .weather-panel-body {
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+/* On wider desktops the side rail can grow to give the list more breathing
+   room without crowding the map. */
+@media (min-width: 1440px) {
+  .map-main {
+    grid-template-columns: minmax(0, 1fr) 400px;
+  }
+}
+
 /* ═══ RESPONSIVE OVERRIDES ═══ */
 @media (min-width: 768px) {
   .controls { display: flex; align-items: flex-start; gap: 24px; }
