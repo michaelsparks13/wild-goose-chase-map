@@ -2,7 +2,10 @@
 **IMPORTANT:**
 1. Before making any changes, always create and checkout a feature branch named `feature_some_short_name` (where `some_short_name` describes the change). Make and then commit your changes in this branch.
 2. You must write automated tests for all code. Use **Vitest** for unit tests (JS logic, data transformations, coordinate helpers) and **Playwright** for end-to-end tests (map rendering, UI interactions, toggle behavior).
-3. You must compile the code and pass ALL tests before committing. Run `npx vitest run` and `npx playwright test` to verify.
+3. You must compile the code before committing — `node build.js` must succeed.
+4. **Test cadence:**
+   - **On a feature branch (per-commit):** run only the targeted tests for what you changed (e.g. `npx vitest run tests/<area>.test.js`, or the specific Playwright spec covering the touched UI). Do not run the full suite for every intermediate commit.
+   - **Before merging into `main`:** run the full suite — `npx vitest run` AND `npx playwright test` — and confirm all green. Do not merge on red.
 
 ## Deployment Quality Bar
 **IMPORTANT:** Every deploy is reviewed by multiple automated coding agents (OpenAI Code, Claude Code, Gemini) and a human design executive at Airbnb. Deploys that fail this review are rolled back. Ensure every commit meets a very high standard for both code quality and design quality:
