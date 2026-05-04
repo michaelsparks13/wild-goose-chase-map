@@ -116,3 +116,84 @@ test.describe('Tupper Lake Tinman — athlete-first race page (v2)', () => {
     expect(mapBox.height).toBeGreaterThanOrEqual(844 * 0.4);
   });
 });
+
+test.describe('Tupper Lake Tinman — Street View overlay', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/maps/tupper-lake-tinman/');
+    // Wait for map load — markers attach inside map.on('load')
+    await page.waitForSelector('.aid-marker', { state: 'attached', timeout: 10_000 });
+  });
+
+  test('toggle button is between Aid Stations and 3D', async ({ page }) => {
+    const buttons = await page.locator('.map-toggles button').allTextContents();
+    const trimmed = buttons.map((s) => s.trim());
+    const aidIdx = trimmed.findIndex((t) => /Aid stations/i.test(t));
+    const svIdx  = trimmed.findIndex((t) => /Street View/i.test(t));
+    const trIdx  = trimmed.findIndex((t) => /3D/i.test(t));
+    expect(aidIdx).toBeGreaterThanOrEqual(0);
+    expect(svIdx).toBeGreaterThan(aidIdx);
+    expect(trIdx).toBeGreaterThan(svIdx);
+  });
+
+  test('markers are hidden by default and revealed by toggle', async ({ page }) => {
+    // Use .map-toggles to target the visible button (two #streetviewBtn elements exist:
+    // one in .map-toggles and one in the CSS-hidden .map-btns row)
+    const svBtn = page.locator('.map-toggles #streetviewBtn');
+    await expect(page.locator('.streetview-marker').first()).toBeHidden();
+    await svBtn.click();
+    await expect(svBtn).toHaveClass(/active/);
+    await expect(page.locator('.streetview-marker').first()).toBeVisible();
+    const count = await page.locator('.streetview-marker').count();
+    expect(count).toBe(9);
+  });
+
+  test('clicking a marker opens a popup with photo, title, and rotated arrow', async ({ page }) => {
+    const svBtn = page.locator('.map-toggles #streetviewBtn');
+    await svBtn.click();
+    // Use data-turn-index="2" (Old Wawbeek / Dugal Loop Entry) — it sits at a
+    // unique map position so it can't be obscured by an overlapping marker.
+    // Turns 0 and 3 share the same base coordinate and render within 2px of
+    // each other at the default zoom, making turn-0 unreliable as a click target.
+    await page.locator('.streetview-marker[data-turn-index="2"]').click({ force: true });
+
+    const popup = page.locator('.streetview-popup');
+    await expect(popup).toBeVisible();
+
+    const title = popup.locator('.streetview-title');
+    await expect(title).toContainText('Wawbeek'); // turn 2 = "Old Wawbeek / Dugal Loop Entry"
+
+    const photo = popup.locator('.streetview-photo');
+    const src = await photo.getAttribute('src');
+    expect(src).toContain('panoid=aW84qtHD_VBgwzlvZuvSOg');
+    expect(src).toContain('streetviewpixels-pa.googleapis.com');
+
+    const arrow = popup.locator('.streetview-arrow');
+    const transform = await arrow.evaluate((el) => getComputedStyle(el).transform);
+    // matrix(...) means a transform was applied; rotate(0deg) would still
+    // produce matrix(1, 0, 0, 1, ..., ...). We just assert it's not 'none'.
+    expect(transform).not.toBe('none');
+    // Rotation for turn 2: normalizeAngle(bearingAfter=119 - yaw=98.82) = 20.18°.
+    // The matrix decomposes as matrix(cos, sin, -sin, cos, tx, ty);
+    // rotation = atan2(sin, cos).
+    const m = transform.match(/matrix\(([-0-9.,\s]+)\)/);
+    expect(m).not.toBeNull();
+    const parts = m[1].split(',').map(Number);
+    const rotationRad = Math.atan2(parts[1], parts[0]);
+    const rotationDeg = rotationRad * 180 / Math.PI;
+    expect(Math.abs(rotationDeg - 20.18)).toBeLessThan(1.0);
+  });
+
+  test('toggling off hides markers and removes any open popup', async ({ page }) => {
+    const svBtn = page.locator('.map-toggles #streetviewBtn');
+    await svBtn.click();
+    // Use turn index 2 (unique map position) to avoid the overlapping turns 0/3
+    await page.locator('.streetview-marker[data-turn-index="2"]').click({ force: true });
+    await expect(page.locator('.streetview-popup')).toBeVisible();
+
+    await svBtn.click();
+    await expect(svBtn).not.toHaveClass(/active/);
+    await expect(page.locator('.streetview-marker').first()).toBeHidden();
+    await expect(page.locator('.streetview-popup')).toHaveCount(0);
+  });
+});
