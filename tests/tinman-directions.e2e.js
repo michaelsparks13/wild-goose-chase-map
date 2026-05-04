@@ -53,11 +53,13 @@ test.describe('Tinman interactive directions', () => {
     await expect(steps.nth(1)).not.toHaveClass(/active/);
   });
 
-  test('clicking a step updates the dir-active-pin map source', async ({ page }) => {
-    // Wait for the map to finish loading and register the highlight sources.
+  test('clicking a step updates the dir-active-segment map source', async ({ page }) => {
+    // Wait for the map to finish loading and register the highlight source.
+    // (The dir-active-pin source was removed in feature_tinman_polish — the
+    // segment alone communicates the active step now.)
     await page.waitForFunction(() =>
       window.map && window.map.loaded && window.map.loaded() &&
-      window.map.getSource('dir-active-pin')
+      window.map.getSource('dir-active-segment')
     );
 
     const section = page.locator('#directionsSection');
@@ -69,12 +71,6 @@ test.describe('Tinman interactive directions', () => {
     // Read the source data via the public style accessor. MapLibre's
     // GeoJSONSource keeps the assigned data in style.sources[id].data once
     // setData has been called.
-    const pinFeatureCount = await page.evaluate(() => {
-      const data = window.map.getStyle().sources['dir-active-pin'].data;
-      return data && data.features ? data.features.length : 0;
-    });
-    expect(pinFeatureCount).toBe(1);
-
     const segCoordCount = await page.evaluate(() => {
       const data = window.map.getStyle().sources['dir-active-segment'].data;
       return data && data.geometry ? data.geometry.coordinates.length : 0;
@@ -184,7 +180,7 @@ test.describe('Tinman interactive directions: Sprint + Olympic distances', () =>
     await page.waitForSelector('#map');
     await page.waitForFunction(() =>
       window.map && window.map.loaded && window.map.loaded() &&
-      window.map.getSource('dir-active-pin')
+      window.map.getSource('dir-active-segment')
     );
     await page.waitForFunction(() =>
       document.querySelectorAll('#directionsList .dir-step').length > 0
@@ -223,19 +219,17 @@ test.describe('Tinman interactive directions: Sprint + Olympic distances', () =>
       await page.locator('#directionsList .dir-step').nth(stepIdx).click();
       await expect(page.locator('#directionsList .dir-step').nth(stepIdx)).toHaveClass(/active/);
 
-      // The highlight pipeline should populate both the segment AND the pin
-      // sources for whichever race is currently active. If either is empty
-      // the click→highlight contract is broken for that race.
+      // The highlight pipeline should populate the segment source for
+      // whichever race is currently active. (The pin source was removed in
+      // feature_tinman_polish — the segment alone is the highlight now.)
       const result = await page.evaluate(() => ({
         segCoords: window.map.getStyle().sources['dir-active-segment'].data.geometry.coordinates.length,
-        pinFeatures: window.map.getStyle().sources['dir-active-pin'].data.features.length,
         activeIdx: window.activeStepIdx,
         currentRaceId: window.currentRaceId,
       }));
       expect(result.currentRaceId).toBe(race.id);
       expect(result.activeIdx).toBe(stepIdx);
       expect(result.segCoords).toBeGreaterThan(1);
-      expect(result.pinFeatures).toBe(1);
     });
 
     test(`${race.id}: snapped step miles are precomputed and monotonic`, async ({ page }) => {

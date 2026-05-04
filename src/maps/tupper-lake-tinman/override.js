@@ -482,10 +482,9 @@ function stepSegmentCoords(raceId, stepIdx) {
   return segment;
 }
 
-// Empty placeholders so the GeoJSON sources can be created up front; setData()
-// replaces them whenever the active step changes.
+// Empty placeholder so the GeoJSON source can be created up front; setData()
+// replaces it whenever the active step changes.
 var EMPTY_LINE = { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } };
-var EMPTY_POINT = { type: 'FeatureCollection', features: [] };
 
 // ═══════════════════════════════════════════════════════════
 // MAP VIEW
@@ -952,7 +951,6 @@ function addTurnArrowLayers() {
 // ═══════════════════════════════════════════════════════════
 function addDirectionsHighlightLayers() {
   map.addSource('dir-active-segment', { type: 'geojson', data: EMPTY_LINE });
-  map.addSource('dir-active-pin', { type: 'geojson', data: EMPTY_POINT });
 
   // Soft halo behind the highlight so it lifts off the dimmed course beneath.
   map.addLayer({
@@ -978,45 +976,6 @@ function addDirectionsHighlightLayers() {
       'line-opacity': 1
     },
     layout: { 'line-cap': 'round', 'line-join': 'round' }
-  });
-
-  // Active-step pin: a labeled circle drawn ABOVE the existing turn chevrons.
-  // We use circle + symbol layers (rather than a maplibre Marker) so we can
-  // animate it implicitly when the data changes.
-  map.addLayer({
-    id: 'dir-active-pin-halo',
-    type: 'circle',
-    source: 'dir-active-pin',
-    paint: {
-      'circle-radius': ['interpolate', ['linear'], ['zoom'], 12, 18, 17, 28],
-      'circle-color': '#F5C518',
-      'circle-opacity': 0.18,
-      'circle-blur': 0.6
-    }
-  });
-  map.addLayer({
-    id: 'dir-active-pin-circle',
-    type: 'circle',
-    source: 'dir-active-pin',
-    paint: {
-      'circle-radius': ['interpolate', ['linear'], ['zoom'], 12, 11, 17, 16],
-      'circle-color': '#1a1a1a',
-      'circle-stroke-color': '#F5C518',
-      'circle-stroke-width': 3
-    }
-  });
-  map.addLayer({
-    id: 'dir-active-pin-label',
-    type: 'symbol',
-    source: 'dir-active-pin',
-    layout: {
-      'text-field': ['get', 'label'],
-      'text-font': ['Noto Sans Medium'],
-      'text-size': ['interpolate', ['linear'], ['zoom'], 12, 11, 17, 15],
-      'text-allow-overlap': true,
-      'text-ignore-placement': true
-    },
-    paint: { 'text-color': '#ffffff' }
   });
 }
 
@@ -1072,8 +1031,6 @@ function setActiveStep(idx, opts) {
     if (map) {
       var segSrcEmpty = map.getSource('dir-active-segment');
       if (segSrcEmpty) segSrcEmpty.setData(EMPTY_LINE);
-      var pinSrcEmpty = map.getSource('dir-active-pin');
-      if (pinSrcEmpty) pinSrcEmpty.setData(EMPTY_POINT);
       setCourseDimmed(false);
     }
     drawProfileFromVisible();
@@ -1099,23 +1056,6 @@ function setActiveStep(idx, opts) {
     geometry: { type: 'LineString', coordinates: segCoords }
   });
 
-  // Pin: use the route-snapped projection of step.location so the badge
-  // sits ON the rendered course (locations are sometimes a few feet off
-  // the snapped centerline). Fall back to segment start as a last resort.
-  var snapPts = SNAPPED_STEP_COORDS[currentRaceId];
-  var pinLoc = (snapPts && snapPts[idx])
-    ? snapPts[idx]
-    : (step.location && step.location.length === 2 ? step.location : (segCoords[0] || null));
-  if (pinLoc) {
-    map.getSource('dir-active-pin').setData({
-      type: 'FeatureCollection',
-      features: [{
-        type: 'Feature',
-        properties: { label: String(step.n) },
-        geometry: { type: 'Point', coordinates: pinLoc }
-      }]
-    });
-  }
 
   setCourseDimmed(true);
 

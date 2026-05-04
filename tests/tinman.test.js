@@ -403,14 +403,17 @@ describe('Tinman interactive directions', () => {
     expect(html).toContain("localStorage.setItem('tinman.dirMode', mode)");
   });
 
-  it('adds highlight sources/layers (active segment + numbered active pin)', () => {
+  it('adds highlight layers for the active segment only (no pin)', () => {
+    // Pin layers were removed in feature_tinman_polish — the highlighted
+    // segment alone communicates which step is active without overlaying a
+    // numbered badge on the course.
     expect(html).toContain("'dir-active-segment'");
-    expect(html).toContain("'dir-active-pin'");
     expect(html).toContain("'dir-active-segment-halo'");
     expect(html).toContain("'dir-active-segment-line'");
-    expect(html).toContain("'dir-active-pin-halo'");
-    expect(html).toContain("'dir-active-pin-circle'");
-    expect(html).toContain("'dir-active-pin-label'");
+    expect(html).not.toContain("'dir-active-pin'");
+    expect(html).not.toContain("'dir-active-pin-halo'");
+    expect(html).not.toContain("'dir-active-pin-circle'");
+    expect(html).not.toContain("'dir-active-pin-label'");
   });
 
   it('binds click + Enter + Arrow keys for keyboard step navigation', () => {
@@ -496,8 +499,12 @@ describe('Tinman directions–route alignment', () => {
     expect(block).toContain('SNAPPED_STEP_MILES[raceId]');
   });
 
-  it('active pin uses the snapped projection of step.location', () => {
-    expect(html).toContain('SNAPPED_STEP_COORDS[currentRaceId]');
+  it('SNAPPED_STEP_COORDS is consumed by the turn-arrow renderer', () => {
+    // The active-pin consumer was removed in feature_tinman_polish (no more
+    // numbered badge on the course). The remaining consumer is
+    // buildTurnArrowSource, which uses snapped coords so OSRM step locations
+    // that sit ~60m off the road-snapped centerline don't render mid-block.
+    expect(html).toContain('SNAPPED_STEP_COORDS[loopId]');
   });
 
   it('elevation marker uses the snapped active mile, not step.mile', () => {
