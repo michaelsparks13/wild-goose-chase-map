@@ -122,16 +122,17 @@ describe('Tinman directional arrows + turn-by-turn', () => {
   it('renders the course as a single line at all zoom levels', () => {
     // The previous parallel-offset out/back rendering (one solid line + one
     // dashed offset line at zoom >= 14.5) was removed in feature_tinman_polish.
-    // The course is now a single `{id}-casing` + `{id}-dark` + `{id}` backbone
-    // visible at every zoom; the offset-pair layers and `phase` filters are
-    // gone.
+    // Round 7 added back a phase=out filter on the single backbone — it
+    // renders each road exactly once instead of doubling on the BACK pass,
+    // which was producing visible thickening / darker bands.
     expect(html).not.toContain("id: id + '-out',");
     expect(html).not.toContain("id: id + '-back',");
     expect(html).not.toContain("id: id + '-out-halo',");
     expect(html).not.toContain("id: id + '-back-halo',");
     expect(html).not.toContain("'line-dasharray': [3, 1.8]");
-    expect(html).not.toContain("['==', ['get', 'phase'], 'out']");
     expect(html).not.toContain("['==', ['get', 'phase'], 'back']");
+    // The single backbone renders only the OUT phase features
+    expect(html).toContain("['==', ['get', 'phase'], 'out']");
   });
 
   it('omits the OUT/RETURN/Turnaround legend (single-line course in feature_tinman_polish)', () => {
@@ -290,9 +291,13 @@ describe('Tinman map features', () => {
     expect(html).toContain('terrainBtn');
   });
 
-  it('uses dark casing + dark inner backbone for low-zoom visibility', () => {
+  it('uses a dark casing halo + branded color top (no -dark inner)', () => {
+    // The -dark intermediate inner layer was dropped in feature_tinman_polish
+    // round 7 — it was redundant with the wider top layer and contributed to
+    // an alpha-blending issue at OUT/BACK overlap zones. Two layers per loop
+    // now: a casing halo and the branded color.
     expect(html).toMatch(/-casing[\s\S]{0,300}'line-color':\s*'#000'/);
-    expect(html).toMatch(/-dark[\s\S]{0,300}'line-color':\s*'#111'/);
+    expect(html).not.toContain("'line-color': '#111'");
   });
 
   it('renders one rotated start arrow per loop (no per-intersection arrows)', () => {

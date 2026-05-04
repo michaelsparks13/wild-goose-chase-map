@@ -484,39 +484,34 @@ function initMap() {
     for (var li = 0; li < loopOrder.length; li++) {
       var id = loopOrder[li];
       var loop = LOOPS[id];
-      // Use the FLATTENED single-LineString geometry. The phase-split
-      // multi-feature collection (loop.geojsonAll) padded each feature's
-      // boundaries with 2-coord overlap, which re-rendered the overlap
-      // pixels and read as faint darker patches once we dropped the
-      // parallel offset. A single LineString draws each road segment once
-      // (or twice in the case of an out-and-back, but exactly aligned).
-      map.addSource(id, { type: 'geojson', data: loop.geojson });
+      // Use the multi-feature source so we can filter by phase. The flattened
+      // single-LineString rendered the OUT and BACK passes through the same
+      // road as two slightly-offset traces (snap noise puts them ~1m apart),
+      // which read as visible thickening / darker bands.
+      map.addSource(id, { type: 'geojson', data: loop.geojsonAll || loop.geojson });
 
-      // Single course line at all zoom levels: black casing + dark inner +
-      // branded color. The previous parallel-offset out/back rendering was
-      // dropped — it read as two confusingly-similar parallel roads, which
-      // the cue list already disambiguates better.
+      // Single course line at all zoom levels, drawn ONCE per road segment.
+      // We render only the OUT phase features. For a true out-and-back course
+      // every road appears in an OUT feature exactly once; the BACK features
+      // are dropped because they would re-render the same physical roads with
+      // micro-offsets and produce the darker-bands artifact.
+      var phaseOut = ['==', ['get', 'phase'], 'out'];
       map.addLayer({
         id: id + '-casing',
         type: 'line',
         source: id,
-        paint: { 'line-color': '#000', 'line-width': 7, 'line-opacity': 0.35 },
-        layout: { 'line-cap': 'round', 'line-join': 'round' }
-      });
-      map.addLayer({
-        id: id + '-dark',
-        type: 'line',
-        source: id,
-        paint: { 'line-color': '#111', 'line-width': 4, 'line-opacity': 1 },
+        filter: phaseOut,
+        paint: { 'line-color': '#000', 'line-width': 6, 'line-opacity': 0.28 },
         layout: { 'line-cap': 'round', 'line-join': 'round' }
       });
       map.addLayer({
         id: id,
         type: 'line',
         source: id,
+        filter: phaseOut,
         paint: {
           'line-color': loop.color,
-          'line-width': 2.5,
+          'line-width': 3,
           'line-opacity': 1
         },
         layout: { 'line-cap': 'round', 'line-join': 'round' }
@@ -826,10 +821,11 @@ function addDirectionsHighlightLayers() {
 function setCourseDimmed(dimmed) {
   if (!map) return;
   var loopIds = ['sprint', 'olympic', 'tinman'];
-  // The three layers per loop that render the course line, in stack order:
-  // casing (black halo), dark (inner), and the branded-color top.
-  var fullOpacity = { '-casing': 0.35, '-dark': 1,    '': 1 };
-  var dimOpacity  = { '-casing': 0.18, '-dark': 0.35, '': 0.35 };
+  // Two layers per loop now: the casing halo and the branded-color top.
+  // The intermediate dark inner layer was dropped — its only purpose was to
+  // give weight to the line, which is now carried by the wider top layer.
+  var fullOpacity = { '-casing': 0.28, '': 1 };
+  var dimOpacity  = { '-casing': 0.14, '': 0.35 };
   loopIds.forEach(function(lid) {
     Object.keys(fullOpacity).forEach(function(suf) {
       var layerId = lid + suf;
@@ -950,7 +946,7 @@ function toggleLoop(id) {
 function setLoopVisibility(id, visible) {
   if (!map || !map.getLayer(id)) return;
   var v = visible ? 'visible' : 'none';
-  var layerSuffixes = ['', '-casing', '-dark', '-miles-circle', '-miles-label', '-start-arrow'];
+  var layerSuffixes = ['', '-casing', '-miles-circle', '-miles-label', '-start-arrow'];
   for (var i = 0; i < layerSuffixes.length; i++) {
     var lid = id + layerSuffixes[i];
     if (map.getLayer(lid)) map.setLayoutProperty(lid, 'visibility', v);
