@@ -484,34 +484,37 @@ function initMap() {
     for (var li = 0; li < loopOrder.length; li++) {
       var id = loopOrder[li];
       var loop = LOOPS[id];
-      // Use the multi-feature source so we can filter by phase. The flattened
-      // single-LineString rendered the OUT and BACK passes through the same
-      // road as two slightly-offset traces (snap noise puts them ~1m apart),
-      // which read as visible thickening / darker bands.
+      // Multi-feature source — every feature (out and back) renders so the
+      // entire route is visible. The phase tag is no longer used as a filter
+      // (round 7's OUT-only filter dropped real route segments and was
+      // reverted in round 8).
       map.addSource(id, { type: 'geojson', data: loop.geojsonAll || loop.geojson });
 
-      // Single course line at all zoom levels, drawn ONCE per road segment.
-      // We render only the OUT phase features. For a true out-and-back course
-      // every road appears in an OUT feature exactly once; the BACK features
-      // are dropped because they would re-render the same physical roads with
-      // micro-offsets and produce the darker-bands artifact.
-      var phaseOut = ['==', ['get', 'phase'], 'out'];
+      // Single course line: black casing halo + dark inner + branded color.
+      // The slight thickening where OUT and BACK passes overlap on shared
+      // roads is an inherent artifact of out-and-back rendering — preferable
+      // to dropping route segments via filtering.
       map.addLayer({
         id: id + '-casing',
         type: 'line',
         source: id,
-        filter: phaseOut,
-        paint: { 'line-color': '#000', 'line-width': 6, 'line-opacity': 0.28 },
+        paint: { 'line-color': '#000', 'line-width': 7, 'line-opacity': 0.28 },
+        layout: { 'line-cap': 'round', 'line-join': 'round' }
+      });
+      map.addLayer({
+        id: id + '-dark',
+        type: 'line',
+        source: id,
+        paint: { 'line-color': '#111', 'line-width': 4, 'line-opacity': 1 },
         layout: { 'line-cap': 'round', 'line-join': 'round' }
       });
       map.addLayer({
         id: id,
         type: 'line',
         source: id,
-        filter: phaseOut,
         paint: {
           'line-color': loop.color,
-          'line-width': 3,
+          'line-width': 2.5,
           'line-opacity': 1
         },
         layout: { 'line-cap': 'round', 'line-join': 'round' }
@@ -821,11 +824,9 @@ function addDirectionsHighlightLayers() {
 function setCourseDimmed(dimmed) {
   if (!map) return;
   var loopIds = ['sprint', 'olympic', 'tinman'];
-  // Two layers per loop now: the casing halo and the branded-color top.
-  // The intermediate dark inner layer was dropped — its only purpose was to
-  // give weight to the line, which is now carried by the wider top layer.
-  var fullOpacity = { '-casing': 0.28, '': 1 };
-  var dimOpacity  = { '-casing': 0.14, '': 0.35 };
+  // Three layers per loop: casing halo + dark inner + branded-color top.
+  var fullOpacity = { '-casing': 0.28, '-dark': 1,    '': 1 };
+  var dimOpacity  = { '-casing': 0.14, '-dark': 0.35, '': 0.35 };
   loopIds.forEach(function(lid) {
     Object.keys(fullOpacity).forEach(function(suf) {
       var layerId = lid + suf;
@@ -946,7 +947,7 @@ function toggleLoop(id) {
 function setLoopVisibility(id, visible) {
   if (!map || !map.getLayer(id)) return;
   var v = visible ? 'visible' : 'none';
-  var layerSuffixes = ['', '-casing', '-miles-circle', '-miles-label', '-start-arrow'];
+  var layerSuffixes = ['', '-casing', '-dark', '-miles-circle', '-miles-label', '-start-arrow'];
   for (var i = 0; i < layerSuffixes.length; i++) {
     var lid = id + layerSuffixes[i];
     if (map.getLayer(lid)) map.setLayoutProperty(lid, 'visibility', v);
