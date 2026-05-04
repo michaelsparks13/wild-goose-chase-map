@@ -223,12 +223,6 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.directions-chevron {
-  color: var(--text-muted);
-  transition: transform 0.2s;
-}
-.directions-section.expanded .directions-chevron { transform: rotate(180deg); }
-
 /* ─── Mode toggle (Click vs Scrub) ─── */
 .dir-mode-toggle {
   display: inline-flex;

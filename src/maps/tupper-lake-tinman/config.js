@@ -211,7 +211,6 @@ module.exports = {
           <h3 class="directions-eyebrow">Turn-by-Turn</h3>
           <span class="directions-race" id="directionsRaceLabel">Tinman Run · 13.1 mi</span>
         </div>
-        <svg class="directions-chevron" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="dir-mode-toggle" role="tablist" aria-label="Directions interaction mode">
         <button type="button" class="dir-mode-btn active" data-mode="click" role="tab" aria-selected="true" onclick="setDirMode('click')">

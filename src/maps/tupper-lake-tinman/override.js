@@ -810,7 +810,7 @@ function fitVisibleLoopsToView() {
 // MILE MARKERS
 // ═══════════════════════════════════════════════════════════
 // Per-race priority-1 mile-marker set. These are the markers visible at
-// default zoom; all other integer miles appear once zoomed past 13.5.
+// default zoom; all other integer miles appear once zoomed past 16.
 var DEFAULT_MILE_MARKERS = {
   sprint:  [1.5],
   olympic: [2, 4],
@@ -850,7 +850,7 @@ function addMileMarkers() {
         'circle-stroke-color': loop.color,
         'circle-stroke-width': 2
       },
-      filter: ['step', ['zoom'], ['==', ['get', 'priority'], 1], 13.5, ['>=', ['get', 'priority'], 1]]
+      filter: ['step', ['zoom'], ['==', ['get', 'priority'], 1], 16, ['>=', ['get', 'priority'], 1]]
     });
 
     map.addLayer({
@@ -865,7 +865,7 @@ function addMileMarkers() {
         'text-ignore-placement': true
       },
       paint: { 'text-color': '#ffffff' },
-      filter: ['step', ['zoom'], ['==', ['get', 'priority'], 1], 13.5, ['>=', ['get', 'priority'], 1]]
+      filter: ['step', ['zoom'], ['==', ['get', 'priority'], 1], 16, ['>=', ['get', 'priority'], 1]]
     });
   });
 }
