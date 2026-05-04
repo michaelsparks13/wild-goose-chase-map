@@ -1,0 +1,1037 @@
+[
+  {
+    "n": 1,
+    "instruction": "Head south",
+    "name": null,
+    "type": "depart",
+    "modifier": "right",
+    "mile": 0,
+    "distMi": 0.01,
+    "location": [
+      -74.46466,
+      44.229983
+    ],
+    "bearingAfter": 190,
+    "bearingBefore": 0
+  },
+  {
+    "n": 2,
+    "instruction": "Make a U-turn",
+    "name": null,
+    "type": "continue",
+    "modifier": "uturn",
+    "mile": 0.01,
+    "distMi": 0.02,
+    "location": [
+      -74.465427,
+      44.228092
+    ],
+    "bearingAfter": 98,
+    "bearingBefore": 278
+  },
+  {
+    "n": 3,
+    "instruction": "Make a U-turn",
+    "name": null,
+    "type": "continue",
+    "modifier": "uturn",
+    "mile": 0.03,
+    "distMi": 0.02,
+    "location": [
+      -74.465427,
+      44.228092
+    ],
+    "bearingAfter": 98,
+    "bearingBefore": 278
+  },
+  {
+    "n": 4,
+    "instruction": "Turn right onto Boyer Avenue",
+    "name": "Boyer Avenue",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 0.04,
+    "distMi": 0.3,
+    "location": [
+      -74.457537,
+      44.228058
+    ],
+    "bearingAfter": 171,
+    "bearingBefore": 82
+  },
+  {
+    "n": 5,
+    "instruction": "Turn left onto East Park Street",
+    "name": "East Park Street",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 0.35,
+    "distMi": 0.81,
+    "location": [
+      -74.456861,
+      44.224572
+    ],
+    "bearingAfter": 82,
+    "bearingBefore": 172
+  },
+  {
+    "n": 6,
+    "instruction": "New name straight onto Tupper-Saranac Highway",
+    "name": "Tupper-Saranac Highway",
+    "type": "new name",
+    "modifier": "straight",
+    "mile": 1.16,
+    "distMi": 0.41,
+    "location": [
+      -74.444053,
+      44.225648
+    ],
+    "bearingAfter": 82,
+    "bearingBefore": 82
+  },
+  {
+    "n": 7,
+    "instruction": "Turn left onto Old Wawbeek Road",
+    "name": "Old Wawbeek Road",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 1.56,
+    "distMi": 0.07,
+    "location": [
+      -74.436202,
+      44.226456
+    ],
+    "bearingAfter": 355,
+    "bearingBefore": 70
+  },
+  {
+    "n": 8,
+    "instruction": "Turn right onto Dugal Road",
+    "name": "Dugal Road",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 1.63,
+    "distMi": 0.05,
+    "location": [
+      -74.429089,
+      44.234926
+    ],
+    "bearingAfter": 119,
+    "bearingBefore": 60
+  },
+  {
+    "n": 9,
+    "instruction": "Turn left onto Old Wawbeek Road",
+    "name": "Old Wawbeek Road",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 1.69,
+    "distMi": 0.01,
+    "location": [
+      -74.429089,
+      44.234926
+    ],
+    "bearingAfter": 240,
+    "bearingBefore": 299
+  },
+  {
+    "n": 10,
+    "instruction": "Turn left onto Old Wawbeek Road",
+    "name": "Old Wawbeek Road",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 1.7,
+    "distMi": 0.01,
+    "location": [
+      -74.429089,
+      44.234926
+    ],
+    "bearingAfter": 240,
+    "bearingBefore": 299
+  },
+  {
+    "n": 11,
+    "instruction": "Turn right onto Tupper-Saranac Highway",
+    "name": "Tupper-Saranac Highway",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 1.71,
+    "distMi": 0.5,
+    "location": [
+      -74.436202,
+      44.226456
+    ],
+    "bearingAfter": 250,
+    "bearingBefore": 175
+  },
+  {
+    "n": 12,
+    "instruction": "New name straight onto East Park Street",
+    "name": "East Park Street",
+    "type": "new name",
+    "modifier": "straight",
+    "mile": 2.22,
+    "distMi": 0.82,
+    "location": [
+      -74.444053,
+      44.225648
+    ],
+    "bearingAfter": 262,
+    "bearingBefore": 262
+  },
+  {
+    "n": 13,
+    "instruction": "Turn right onto Boyer Avenue",
+    "name": "Boyer Avenue",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 3.04,
+    "distMi": 0.31,
+    "location": [
+      -74.456861,
+      44.224572
+    ],
+    "bearingAfter": 352,
+    "bearingBefore": 262
+  },
+  {
+    "n": 14,
+    "instruction": "Turn left onto Pleasant Avenue",
+    "name": "Pleasant Avenue",
+    "type": "end of road",
+    "modifier": "left",
+    "mile": 3.35,
+    "distMi": 0.07,
+    "location": [
+      -74.457537,
+      44.228058
+    ],
+    "bearingAfter": 262,
+    "bearingBefore": 351
+  },
+  {
+    "n": 15,
+    "instruction": "Turn left onto McLaughlin Avenue",
+    "name": "McLaughlin Avenue",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 3.42,
+    "distMi": 0.06,
+    "location": [
+      -74.45976,
+      44.227848
+    ],
+    "bearingAfter": 355,
+    "bearingBefore": 71
+  },
+  {
+    "n": 16,
+    "instruction": "Turn left onto Santa Clara Avenue",
+    "name": "Santa Clara Avenue",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 3.47,
+    "distMi": 0.26,
+    "location": [
+      -74.46037,
+      44.232908
+    ],
+    "bearingAfter": 258,
+    "bearingBefore": 352
+  },
+  {
+    "n": 17,
+    "instruction": "Turn right onto Demars Boulevard",
+    "name": "Demars Boulevard",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 3.73,
+    "distMi": 0.16,
+    "location": [
+      -74.464357,
+      44.232301
+    ],
+    "bearingAfter": 340,
+    "bearingBefore": 255
+  },
+  {
+    "n": 18,
+    "instruction": "Turn right onto Dish Street",
+    "name": "Dish Street",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 3.89,
+    "distMi": 0.02,
+    "location": [
+      -74.465462,
+      44.233922
+    ],
+    "bearingAfter": 35,
+    "bearingBefore": 326
+  },
+  {
+    "n": 19,
+    "instruction": "Turn right",
+    "name": null,
+    "type": "turn",
+    "modifier": "right",
+    "mile": 3.92,
+    "distMi": 0.02,
+    "location": [
+      -74.465263,
+      44.234122
+    ],
+    "bearingAfter": 102,
+    "bearingBefore": 35
+  },
+  {
+    "n": 20,
+    "instruction": "Turn left",
+    "name": null,
+    "type": "turn",
+    "modifier": "left",
+    "mile": 3.93,
+    "distMi": 0.06,
+    "location": [
+      -74.464975,
+      44.234074
+    ],
+    "bearingAfter": 23,
+    "bearingBefore": 102
+  },
+  {
+    "n": 21,
+    "instruction": "Turn right",
+    "name": null,
+    "type": "turn",
+    "modifier": "right",
+    "mile": 3.99,
+    "distMi": 0.05,
+    "location": [
+      -74.464421,
+      44.234591
+    ],
+    "bearingAfter": 153,
+    "bearingBefore": 61
+  },
+  {
+    "n": 22,
+    "instruction": "Turn right",
+    "name": null,
+    "type": "turn",
+    "modifier": "right",
+    "mile": 4.04,
+    "distMi": 0.05,
+    "location": [
+      -74.464009,
+      44.233996
+    ],
+    "bearingAfter": 243,
+    "bearingBefore": 153
+  },
+  {
+    "n": 23,
+    "instruction": "Turn left",
+    "name": null,
+    "type": "turn",
+    "modifier": "left",
+    "mile": 4.09,
+    "distMi": 0.01,
+    "location": [
+      -74.464714,
+      44.233745
+    ],
+    "bearingAfter": 150,
+    "bearingBefore": 243
+  },
+  {
+    "n": 24,
+    "instruction": "Turn right",
+    "name": null,
+    "type": "turn",
+    "modifier": "right",
+    "mile": 4.1,
+    "distMi": 0.03,
+    "location": [
+      -74.464634,
+      44.233643
+    ],
+    "bearingAfter": 241,
+    "bearingBefore": 150
+  },
+  {
+    "n": 25,
+    "instruction": "Turn left onto Demars Boulevard",
+    "name": "Demars Boulevard",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 4.14,
+    "distMi": 0.11,
+    "location": [
+      -74.465098,
+      44.233472
+    ],
+    "bearingAfter": 153,
+    "bearingBefore": 241
+  },
+  {
+    "n": 26,
+    "instruction": "Turn left onto Santa Clara Avenue",
+    "name": "Santa Clara Avenue",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 4.25,
+    "distMi": 0.26,
+    "location": [
+      -74.464357,
+      44.232301
+    ],
+    "bearingAfter": 75,
+    "bearingBefore": 160
+  },
+  {
+    "n": 27,
+    "instruction": "Turn left onto McLaughlin Avenue",
+    "name": "McLaughlin Avenue",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 4.51,
+    "distMi": 0.54,
+    "location": [
+      -74.46037,
+      44.232908
+    ],
+    "bearingAfter": 351,
+    "bearingBefore": 78
+  },
+  {
+    "n": 28,
+    "instruction": "Turn left onto Chemical Street",
+    "name": "Chemical Street",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 5.05,
+    "distMi": 0.29,
+    "location": [
+      -74.462567,
+      44.238488
+    ],
+    "bearingAfter": 201,
+    "bearingBefore": 285
+  },
+  {
+    "n": 29,
+    "instruction": "Make a U-turn on Chemical Street",
+    "name": "Chemical Street",
+    "type": "continue",
+    "modifier": "uturn",
+    "mile": 5.34,
+    "distMi": 0.02,
+    "location": [
+      -74.465573,
+      44.236193
+    ],
+    "bearingAfter": 35,
+    "bearingBefore": 215
+  },
+  {
+    "n": 30,
+    "instruction": "Turn left onto McLaughlin Avenue",
+    "name": "McLaughlin Avenue",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 5.36,
+    "distMi": 0.44,
+    "location": [
+      -74.462567,
+      44.238488
+    ],
+    "bearingAfter": 285,
+    "bearingBefore": 21
+  },
+  {
+    "n": 31,
+    "instruction": "New name straight onto Leboeuf Street",
+    "name": "Leboeuf Street",
+    "type": "new name",
+    "modifier": "straight",
+    "mile": 5.8,
+    "distMi": 0.54,
+    "location": [
+      -74.467177,
+      44.24197
+    ],
+    "bearingAfter": 281,
+    "bearingBefore": 296
+  },
+  {
+    "n": 32,
+    "instruction": "Turn left",
+    "name": null,
+    "type": "end of road",
+    "modifier": "left",
+    "mile": 6.34,
+    "distMi": 0.05,
+    "location": [
+      -74.475634,
+      44.241222
+    ],
+    "bearingAfter": 164,
+    "bearingBefore": 260
+  },
+  {
+    "n": 33,
+    "instruction": "New name slight left onto Pine Street",
+    "name": "Pine Street",
+    "type": "new name",
+    "modifier": "slight left",
+    "mile": 6.39,
+    "distMi": 0.11,
+    "location": [
+      -74.476295,
+      44.240705
+    ],
+    "bearingAfter": 244,
+    "bearingBefore": 268
+  },
+  {
+    "n": 34,
+    "instruction": "Turn right onto Oak Street",
+    "name": "Oak Street",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 6.5,
+    "distMi": 0.11,
+    "location": [
+      -74.477669,
+      44.240047
+    ],
+    "bearingAfter": 327,
+    "bearingBefore": 237
+  },
+  {
+    "n": 35,
+    "instruction": "Turn right onto Main Street",
+    "name": "Main Street",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 6.61,
+    "distMi": 0.1,
+    "location": [
+      -74.47941,
+      44.240725
+    ],
+    "bearingAfter": 327,
+    "bearingBefore": 234
+  },
+  {
+    "n": 36,
+    "instruction": "Turn right onto Washington Street",
+    "name": "Washington Street",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 6.71,
+    "distMi": 0.75,
+    "location": [
+      -74.480248,
+      44.241649
+    ],
+    "bearingAfter": 25,
+    "bearingBefore": 312
+  },
+  {
+    "n": 37,
+    "instruction": "Turn left onto 4th Avenue",
+    "name": "4th Avenue",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 7.46,
+    "distMi": 0.16,
+    "location": [
+      -74.470266,
+      44.246163
+    ],
+    "bearingAfter": 329,
+    "bearingBefore": 59
+  },
+  {
+    "n": 38,
+    "instruction": "Keep slight right onto Wolf Pond Road",
+    "name": "Wolf Pond Road",
+    "type": "fork",
+    "modifier": "slight right",
+    "mile": 7.61,
+    "distMi": 0.09,
+    "location": [
+      -74.471396,
+      44.250555
+    ],
+    "bearingAfter": 330,
+    "bearingBefore": 322
+  },
+  {
+    "n": 39,
+    "instruction": "Make a U-turn on North Little Wolf Road",
+    "name": "North Little Wolf Road",
+    "type": "continue",
+    "modifier": "uturn",
+    "mile": 7.7,
+    "distMi": 0.34,
+    "location": [
+      -74.482641,
+      44.256213
+    ],
+    "bearingAfter": 113,
+    "bearingBefore": 293
+  },
+  {
+    "n": 40,
+    "instruction": "New name right onto Wolf Pond Road",
+    "name": "Wolf Pond Road",
+    "type": "new name",
+    "modifier": "right",
+    "mile": 8.04,
+    "distMi": 0.2,
+    "location": [
+      -74.470241,
+      44.253657
+    ],
+    "bearingAfter": 187,
+    "bearingBefore": 133
+  },
+  {
+    "n": 41,
+    "instruction": "New name straight onto South Little Wolf Road",
+    "name": "South Little Wolf Road",
+    "type": "new name",
+    "modifier": "straight",
+    "mile": 8.24,
+    "distMi": 0.46,
+    "location": [
+      -74.471397,
+      44.250927
+    ],
+    "bearingAfter": 230,
+    "bearingBefore": 223
+  },
+  {
+    "n": 42,
+    "instruction": "Turn left onto Fuller Avenue",
+    "name": "Fuller Avenue",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 8.7,
+    "distMi": 0.15,
+    "location": [
+      -74.481567,
+      44.249212
+    ],
+    "bearingAfter": 180,
+    "bearingBefore": 264
+  },
+  {
+    "n": 43,
+    "instruction": "Turn right onto Murray Street",
+    "name": "Murray Street",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 8.85,
+    "distMi": 0.43,
+    "location": [
+      -74.48007,
+      44.247962
+    ],
+    "bearingAfter": 215,
+    "bearingBefore": 127
+  },
+  {
+    "n": 44,
+    "instruction": "New name slight left onto Hurd Avenue",
+    "name": "Hurd Avenue",
+    "type": "new name",
+    "modifier": "slight left",
+    "mile": 9.29,
+    "distMi": 0.14,
+    "location": [
+      -74.484166,
+      44.244032
+    ],
+    "bearingAfter": 171,
+    "bearingBefore": 191
+  },
+  {
+    "n": 45,
+    "instruction": "Continue right on Underwood Road",
+    "name": "Underwood Road",
+    "type": "continue",
+    "modifier": "right",
+    "mile": 9.43,
+    "distMi": 0.07,
+    "location": [
+      -74.482567,
+      44.243093
+    ],
+    "bearingAfter": 209,
+    "bearingBefore": 167
+  },
+  {
+    "n": 46,
+    "instruction": "Turn left onto Main Street",
+    "name": "Main Street",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 9.5,
+    "distMi": 0.25,
+    "location": [
+      -74.483151,
+      44.242362
+    ],
+    "bearingAfter": 118,
+    "bearingBefore": 206
+  },
+  {
+    "n": 47,
+    "instruction": "Turn left onto Depot Street",
+    "name": "Depot Street",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 9.76,
+    "distMi": 0.08,
+    "location": [
+      -74.47941,
+      44.240725
+    ],
+    "bearingAfter": 54,
+    "bearingBefore": 147
+  },
+  {
+    "n": 48,
+    "instruction": "Turn right onto Pine Street",
+    "name": "Pine Street",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 9.84,
+    "distMi": 0.06,
+    "location": [
+      -74.477669,
+      44.240047
+    ],
+    "bearingAfter": 239,
+    "bearingBefore": 147
+  },
+  {
+    "n": 49,
+    "instruction": "Turn left onto Main Street",
+    "name": "Main Street",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 9.9,
+    "distMi": 0.17,
+    "location": [
+      -74.478488,
+      44.239702
+    ],
+    "bearingAfter": 147,
+    "bearingBefore": 239
+  },
+  {
+    "n": 50,
+    "instruction": "New name straight onto Demars Boulevard",
+    "name": "Demars Boulevard",
+    "type": "new name",
+    "modifier": "straight",
+    "mile": 10.07,
+    "distMi": 0.61,
+    "location": [
+      -74.477093,
+      44.23808
+    ],
+    "bearingAfter": 147,
+    "bearingBefore": 147
+  },
+  {
+    "n": 51,
+    "instruction": "Turn left onto OWD Lane",
+    "name": "OWD Lane",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 10.68,
+    "distMi": 0.15,
+    "location": [
+      -74.46853,
+      44.235165
+    ],
+    "bearingAfter": 23,
+    "bearingBefore": 109
+  },
+  {
+    "n": 52,
+    "instruction": "Turn left onto Main Street",
+    "name": "Main Street",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 10.83,
+    "distMi": 0.17,
+    "location": [
+      -74.478488,
+      44.239702
+    ],
+    "bearingAfter": 147,
+    "bearingBefore": 239
+  },
+  {
+    "n": 53,
+    "instruction": "New name straight onto Demars Boulevard",
+    "name": "Demars Boulevard",
+    "type": "new name",
+    "modifier": "straight",
+    "mile": 11,
+    "distMi": 0.61,
+    "location": [
+      -74.477093,
+      44.23808
+    ],
+    "bearingAfter": 147,
+    "bearingBefore": 147
+  },
+  {
+    "n": 54,
+    "instruction": "Turn left onto OWD Lane",
+    "name": "OWD Lane",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 11.61,
+    "distMi": 0.15,
+    "location": [
+      -74.46853,
+      44.235165
+    ],
+    "bearingAfter": 23,
+    "bearingBefore": 109
+  },
+  {
+    "n": 55,
+    "instruction": "Turn left onto Demars Boulevard",
+    "name": "Demars Boulevard",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 11.76,
+    "distMi": 0.23,
+    "location": [
+      -74.46853,
+      44.235165
+    ],
+    "bearingAfter": 111,
+    "bearingBefore": 203
+  },
+  {
+    "n": 56,
+    "instruction": "Turn left onto Dish Street",
+    "name": "Dish Street",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 11.99,
+    "distMi": 0.02,
+    "location": [
+      -74.465462,
+      44.233922
+    ],
+    "bearingAfter": 35,
+    "bearingBefore": 136
+  },
+  {
+    "n": 57,
+    "instruction": "Turn right",
+    "name": null,
+    "type": "turn",
+    "modifier": "right",
+    "mile": 12.01,
+    "distMi": 0.02,
+    "location": [
+      -74.465263,
+      44.234122
+    ],
+    "bearingAfter": 102,
+    "bearingBefore": 35
+  },
+  {
+    "n": 58,
+    "instruction": "Turn right",
+    "name": null,
+    "type": "turn",
+    "modifier": "right",
+    "mile": 12.03,
+    "distMi": 0.08,
+    "location": [
+      -74.464975,
+      44.234074
+    ],
+    "bearingAfter": 149,
+    "bearingBefore": 102
+  },
+  {
+    "n": 59,
+    "instruction": "Turn right",
+    "name": null,
+    "type": "turn",
+    "modifier": "right",
+    "mile": 12.11,
+    "distMi": 0.05,
+    "location": [
+      -74.46387,
+      44.233796
+    ],
+    "bearingAfter": 243,
+    "bearingBefore": 153
+  },
+  {
+    "n": 60,
+    "instruction": "Turn right",
+    "name": null,
+    "type": "turn",
+    "modifier": "right",
+    "mile": 12.16,
+    "distMi": 0.01,
+    "location": [
+      -74.464559,
+      44.233556
+    ],
+    "bearingAfter": 327,
+    "bearingBefore": 243
+  },
+  {
+    "n": 61,
+    "instruction": "Turn left",
+    "name": null,
+    "type": "turn",
+    "modifier": "left",
+    "mile": 12.17,
+    "distMi": 0.03,
+    "location": [
+      -74.464634,
+      44.233643
+    ],
+    "bearingAfter": 241,
+    "bearingBefore": 327
+  },
+  {
+    "n": 62,
+    "instruction": "Turn left onto Demars Boulevard",
+    "name": "Demars Boulevard",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 12.2,
+    "distMi": 0.11,
+    "location": [
+      -74.465098,
+      44.233472
+    ],
+    "bearingAfter": 153,
+    "bearingBefore": 241
+  },
+  {
+    "n": 63,
+    "instruction": "Turn left onto Santa Clara Avenue",
+    "name": "Santa Clara Avenue",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 12.32,
+    "distMi": 0.26,
+    "location": [
+      -74.464357,
+      44.232301
+    ],
+    "bearingAfter": 75,
+    "bearingBefore": 160
+  },
+  {
+    "n": 64,
+    "instruction": "Turn right onto McLaughlin Avenue",
+    "name": "McLaughlin Avenue",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 12.57,
+    "distMi": 0.22,
+    "location": [
+      -74.46037,
+      44.232908
+    ],
+    "bearingAfter": 172,
+    "bearingBefore": 78
+  },
+  {
+    "n": 65,
+    "instruction": "Turn right onto Pleasant Avenue",
+    "name": "Pleasant Avenue",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 12.79,
+    "distMi": 0.04,
+    "location": [
+      -74.45976,
+      44.227848
+    ],
+    "bearingAfter": 251,
+    "bearingBefore": 175
+  },
+  {
+    "n": 66,
+    "instruction": "Turn right onto Demars Boulevard",
+    "name": "Demars Boulevard",
+    "type": "end of road",
+    "modifier": "right",
+    "mile": 12.83,
+    "distMi": 0.11,
+    "location": [
+      -74.463211,
+      44.226127
+    ],
+    "bearingAfter": 358,
+    "bearingBefore": 267
+  },
+  {
+    "n": 67,
+    "instruction": "Turn left",
+    "name": null,
+    "type": "turn",
+    "modifier": "left",
+    "mile": 12.95,
+    "distMi": 0.14,
+    "location": [
+      -74.463218,
+      44.227421
+    ],
+    "bearingAfter": 299,
+    "bearingBefore": 0
+  },
+  {
+    "n": 68,
+    "instruction": "Turn right",
+    "name": null,
+    "type": "turn",
+    "modifier": "right",
+    "mile": 13.08,
+    "distMi": 0.02,
+    "location": [
+      -74.465133,
+      44.228057
+    ],
+    "bearingAfter": 9,
+    "bearingBefore": 277
+  },
+  {
+    "n": 69,
+    "instruction": "Arrive at finish",
+    "name": null,
+    "type": "arrive",
+    "modifier": "left",
+    "mile": 13.1,
+    "distMi": 0,
+    "location": [
+      -74.464832,
+      44.229267
+    ],
+    "bearingAfter": 0,
+    "bearingBefore": 10
+  }
+]

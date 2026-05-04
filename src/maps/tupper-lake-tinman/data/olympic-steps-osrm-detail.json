@@ -1,0 +1,182 @@
+[
+  {
+    "n": 1,
+    "instruction": "Head south",
+    "name": null,
+    "type": "depart",
+    "modifier": "right",
+    "mile": 0,
+    "distMi": 0.06,
+    "location": [
+      -74.464659,
+      44.229989
+    ],
+    "bearingAfter": 190,
+    "bearingBefore": 0
+  },
+  {
+    "n": 2,
+    "instruction": "Turn left onto East Park Street",
+    "name": "East Park Street",
+    "type": "end of road",
+    "modifier": "left",
+    "mile": 0.06,
+    "distMi": 0.01,
+    "location": [
+      -74.456861,
+      44.224572
+    ],
+    "bearingAfter": 82,
+    "bearingBefore": 172
+  },
+  {
+    "n": 3,
+    "instruction": "New name straight onto Tupper-Saranac Highway",
+    "name": "Tupper-Saranac Highway",
+    "type": "new name",
+    "modifier": "straight",
+    "mile": 0.07,
+    "distMi": 1.47,
+    "location": [
+      -74.444053,
+      44.225648
+    ],
+    "bearingAfter": 82,
+    "bearingBefore": 82
+  },
+  {
+    "n": 4,
+    "instruction": "Turn left onto Old Wawbeek Road",
+    "name": "Old Wawbeek Road",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 1.54,
+    "distMi": 0.72,
+    "location": [
+      -74.436202,
+      44.226456
+    ],
+    "bearingAfter": 355,
+    "bearingBefore": 70
+  },
+  {
+    "n": 5,
+    "instruction": "Turn left onto Old Wawbeek Road",
+    "name": "Old Wawbeek Road",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 2.25,
+    "distMi": 0.01,
+    "location": [
+      -74.429089,
+      44.234926
+    ],
+    "bearingAfter": 240,
+    "bearingBefore": 299
+  },
+  {
+    "n": 6,
+    "instruction": "Turn right onto Tupper-Saranac Highway",
+    "name": "Tupper-Saranac Highway",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 2.26,
+    "distMi": 0.01,
+    "location": [
+      -74.436202,
+      44.226456
+    ],
+    "bearingAfter": 250,
+    "bearingBefore": 175
+  },
+  {
+    "n": 7,
+    "instruction": "New name straight onto East Park Street",
+    "name": "East Park Street",
+    "type": "new name",
+    "modifier": "straight",
+    "mile": 2.27,
+    "distMi": 2.86,
+    "location": [
+      -74.444053,
+      44.225648
+    ],
+    "bearingAfter": 262,
+    "bearingBefore": 262
+  },
+  {
+    "n": 8,
+    "instruction": "Turn right onto Boyer Avenue",
+    "name": "Boyer Avenue",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 5.13,
+    "distMi": 1.03,
+    "location": [
+      -74.456861,
+      44.224572
+    ],
+    "bearingAfter": 352,
+    "bearingBefore": 262
+  },
+  {
+    "n": 9,
+    "instruction": "Turn right onto Demars Boulevard",
+    "name": "Demars Boulevard",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 6.16,
+    "distMi": 0.01,
+    "location": [
+      -74.463211,
+      44.226127
+    ],
+    "bearingAfter": 358,
+    "bearingBefore": 267
+  },
+  {
+    "n": 10,
+    "instruction": "Make a U-turn",
+    "name": null,
+    "type": "continue",
+    "modifier": "uturn",
+    "mile": 6.17,
+    "distMi": 0.01,
+    "location": [
+      -74.465427,
+      44.228092
+    ],
+    "bearingAfter": 98,
+    "bearingBefore": 278
+  },
+  {
+    "n": 11,
+    "instruction": "Turn left",
+    "name": null,
+    "type": "turn",
+    "modifier": "left",
+    "mile": 6.18,
+    "distMi": 0.02,
+    "location": [
+      -74.465133,
+      44.228057
+    ],
+    "bearingAfter": 9,
+    "bearingBefore": 98
+  },
+  {
+    "n": 12,
+    "instruction": "Arrive at finish",
+    "name": null,
+    "type": "arrive",
+    "modifier": "left",
+    "mile": 6.2,
+    "distMi": 0,
+    "location": [
+      -74.464776,
+      44.229495
+    ],
+    "bearingAfter": 0,
+    "bearingBefore": 10
+  }
+]
