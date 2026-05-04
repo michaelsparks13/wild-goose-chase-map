@@ -248,6 +248,11 @@ function registerTurnIcons() {
 // FIRST occurrence (the outbound pass).
 function buildTurnArrowSource(loopId) {
   var steps = (DIRECTIONS[loopId] || []);
+  // Use snapped-to-route coords (computed at module init) instead of raw OSRM
+  // step locations — for two Tinman steps the OSRM coordinate sits ~62 m off
+  // the road-snapped course geometry, which would otherwise render a turn
+  // arrow stranded mid-block.
+  var snapped = SNAPPED_STEP_COORDS[loopId] || [];
   var DEDUPE_M = 25;
   var DEG_PER_M = 1 / 111000; // rough latitude conversion
   var DEDUPE_DEG_SQ = (DEDUPE_M * DEG_PER_M) * (DEDUPE_M * DEG_PER_M);
@@ -260,13 +265,14 @@ function buildTurnArrowSource(loopId) {
     var isDepart = s.type === 'depart';
     var isStraight = s.modifier === 'straight' && (s.type === 'continue' || s.type === 'new name' || s.type === '');
     if (isStraight && !isDepart) continue;
+    var loc = snapped[i] || s.location;
     // Suppress if a kept arrow is within ~25m — same physical intersection.
     var collides = false;
     for (var k = 0; k < kept.length; k++) {
-      var dx = (kept[k].location[0] - s.location[0]);
-      var dy = (kept[k].location[1] - s.location[1]);
+      var dx = (kept[k].location[0] - loc[0]);
+      var dy = (kept[k].location[1] - loc[1]);
       // Adjust dx for latitude scaling (lng degrees shrink with cos(lat))
-      var cosLat = Math.cos(s.location[1] * Math.PI / 180);
+      var cosLat = Math.cos(loc[1] * Math.PI / 180);
       if ((dx * cosLat) * (dx * cosLat) + dy * dy < DEDUPE_DEG_SQ) {
         collides = true; break;
       }
@@ -280,7 +286,7 @@ function buildTurnArrowSource(loopId) {
       || s.modifier === 'sharp left' || s.modifier === 'sharp right';
     if (s.modifier === 'slight left' || s.modifier === 'slight right') major = false;
     kept.push({
-      location: s.location,
+      location: loc,
       bearing: s.bearingAfter,
       priority: major ? 1 : 2,
       kind: isDepart ? 'depart' : 'turn',
@@ -516,8 +522,6 @@ function initMap() {
     var attrib = document.querySelector('.maplibregl-ctrl-attrib');
     if (attrib) { attrib.removeAttribute('open'); attrib.classList.remove('maplibregl-compact-show'); }
   });
-
-  map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
   map.on('load', function() {
     ['roads_other','roads_bridges_other','roads_bridges_other_casing',
@@ -805,19 +809,34 @@ function fitVisibleLoopsToView() {
 // ═══════════════════════════════════════════════════════════
 // MILE MARKERS
 // ═══════════════════════════════════════════════════════════
+// Per-race priority-1 mile-marker set. These are the markers visible at
+// default zoom; all other integer miles appear once zoomed past 13.5.
+var DEFAULT_MILE_MARKERS = {
+  sprint:  [1.5],
+  olympic: [2, 4],
+  tinman:  [3, 6, 9, 12]
+};
+
 function addMileMarkers() {
   var loopIds = ['tinman', 'olympic', 'sprint'];
   loopIds.forEach(function(id) {
     var loop = LOOPS[id];
     var totalMi = loop.run;
-    var features = [];
-    for (var m = 1; m <= Math.floor(totalMi); m++) {
-      features.push({
+    var defaults = DEFAULT_MILE_MARKERS[id] || [];
+    // Combine integer miles with the per-race default-visible set, dedupe.
+    var milesSet = {};
+    for (var m = 1; m <= Math.floor(totalMi); m++) milesSet[m] = true;
+    defaults.forEach(function(m) { milesSet[m] = true; });
+    var miles = Object.keys(milesSet).map(parseFloat).sort(function(a, b) { return a - b; });
+    var features = miles.map(function(m) {
+      var isDefault = defaults.indexOf(m) !== -1;
+      var label = Number.isInteger(m) ? String(m) : m.toFixed(1);
+      return {
         type: 'Feature',
-        properties: { mile: m, label: String(m), priority: (m % 5 === 0) ? 1 : 2 },
+        properties: { mile: m, label: label, priority: isDefault ? 1 : 2 },
         geometry: { type: 'Point', coordinates: getCoordAtDist(m, id) }
-      });
-    }
+      };
+    });
     var sourceId = id + '-miles';
     map.addSource(sourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: features } });
 
@@ -870,7 +889,7 @@ function addTurnArrowLayers() {
       'icon-pitch-alignment': 'map',
       'icon-allow-overlap': true,
       'icon-ignore-placement': true,
-      'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.5, 13, 0.7, 14, 0.85, 17, 1.05]
+      'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.35, 13, 0.49, 14, 0.595, 17, 0.735]
     };
 
     // Major decisions (depart, turn, sharp turn, fork): visible from default
