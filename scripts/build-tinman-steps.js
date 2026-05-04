@@ -810,7 +810,13 @@ async function processRace(filename, slug) {
     dedupedByName.push(c);
   }
 
-  console.log(`  After bend + same-name merge: ${dedupedByName.length} cues`);
+  // Drop "exit the parking lot" pseudo-cues: any cue whose next road is the
+  // high school driveway is just the runner leaving the start area. Real
+  // navigation begins at the next cue.
+  const filteredCues = dedupedByName.filter(c =>
+    c.nextName !== 'high school driveway' && c.prevName !== 'high school driveway');
+
+  console.log(`  After bend + same-name merge + driveway filter: ${filteredCues.length} cues`);
 
   // Add synthetic depart and arrive bookends. Depart bearing = first ~25m
   // forward bearing. Arrive uses the final bearing.
@@ -843,7 +849,7 @@ async function processRace(filename, slug) {
     prevName: null,
     nextName: startName,
   });
-  for (const r of dedupedByName) {
+  for (const r of filteredCues) {
     allSteps.push({
       n: 0, // numbered later
       type: r.type,
@@ -864,7 +870,7 @@ async function processRace(filename, slug) {
     coord: coords[coords.length - 1],
     bearingBefore: arriveBearing,
     bearingAfter: 0,
-    prevName: dedupedByName.length ? dedupedByName[dedupedByName.length - 1].nextName : startName,
+    prevName: filteredCues.length ? filteredCues[filteredCues.length - 1].nextName : startName,
     nextName: null,
   });
 

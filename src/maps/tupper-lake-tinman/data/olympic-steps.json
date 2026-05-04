@@ -6,7 +6,7 @@
     "type": "depart",
     "modifier": null,
     "mile": 0,
-    "distMi": 0.1,
+    "distMi": 0.31,
     "location": [
       -74.464659,
       44.229989
@@ -16,21 +16,6 @@
   },
   {
     "n": 2,
-    "instruction": "Turn left onto high school driveway",
-    "name": "high school driveway",
-    "type": "turn",
-    "modifier": "left",
-    "mile": 0.1,
-    "distMi": 0.21,
-    "location": [
-      -74.464994,
-      44.228615
-    ],
-    "bearingAfter": 152,
-    "bearingBefore": 190
-  },
-  {
-    "n": 3,
     "instruction": "Turn left onto Pleasant Avenue",
     "name": "Pleasant Avenue",
     "type": "turn",
@@ -45,7 +30,7 @@
     "bearingBefore": 152
   },
   {
-    "n": 4,
+    "n": 3,
     "instruction": "Turn right onto Boyer Avenue",
     "name": "Boyer Avenue",
     "type": "turn",
@@ -60,7 +45,7 @@
     "bearingBefore": 82
   },
   {
-    "n": 5,
+    "n": 4,
     "instruction": "Turn left onto East Park Street",
     "name": "East Park Street",
     "type": "turn",
@@ -75,7 +60,7 @@
     "bearingBefore": 172
   },
   {
-    "n": 6,
+    "n": 5,
     "instruction": "Turn left onto Old Wawbeek Road",
     "name": "Old Wawbeek Road",
     "type": "turn",
@@ -90,7 +75,7 @@
     "bearingBefore": 74
   },
   {
-    "n": 7,
+    "n": 6,
     "instruction": "Bear right onto Dugal Road",
     "name": "Dugal Road",
     "type": "turn",
@@ -105,7 +90,7 @@
     "bearingBefore": 77
   },
   {
-    "n": 8,
+    "n": 7,
     "instruction": "Make a U-turn on Dugal Road",
     "name": "Dugal Road",
     "type": "continue",
@@ -120,7 +105,7 @@
     "bearingBefore": 90
   },
   {
-    "n": 9,
+    "n": 8,
     "instruction": "Bear left onto Old Wawbeek Road",
     "name": "Old Wawbeek Road",
     "type": "turn",
@@ -135,7 +120,7 @@
     "bearingBefore": 289
   },
   {
-    "n": 10,
+    "n": 9,
     "instruction": "Turn right onto Tupper-Saranac Highway",
     "name": "Tupper-Saranac Highway",
     "type": "turn",
@@ -150,7 +135,7 @@
     "bearingBefore": 181
   },
   {
-    "n": 11,
+    "n": 10,
     "instruction": "Turn right onto Boyer Avenue",
     "name": "Boyer Avenue",
     "type": "turn",
@@ -165,7 +150,7 @@
     "bearingBefore": 263
   },
   {
-    "n": 12,
+    "n": 11,
     "instruction": "Turn left onto Pleasant Avenue",
     "name": "Pleasant Avenue",
     "type": "turn",
@@ -180,7 +165,7 @@
     "bearingBefore": 352
   },
   {
-    "n": 13,
+    "n": 12,
     "instruction": "Turn right onto Demars Boulevard",
     "name": "Demars Boulevard",
     "type": "turn",
@@ -195,7 +180,7 @@
     "bearingBefore": 238
   },
   {
-    "n": 14,
+    "n": 13,
     "instruction": "Arrive at the finish",
     "name": null,
     "type": "arrive",
