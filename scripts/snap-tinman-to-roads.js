@@ -529,12 +529,15 @@ async function processRace(filename, slug) {
   fs.writeFileSync(path.join(OUT_DIR, `${slug}-turnarounds.json`), JSON.stringify(dedupedTurns, null, 2));
   console.log(`  Wrote ${slug}.geojson (${features.length} features) and ${slug}-profile.json (${profile.length} pts)`);
 
-  // Build clean turn-by-turn steps: drop OSRM "depart"/"arrive", merge consecutive
-  // segments that share a street name, label u-turns explicitly, and project each
-  // step's start point onto the snapped path to derive a cumulative mile value.
+  // Build the OSRM-derived turn list. This is reference data only — the
+  // *authoritative* `${slug}-steps.json` is now produced by
+  // `scripts/build-tinman-steps.js`, which applies stronger turn detection,
+  // chunk-boundary noise filtering, and OSM-bbox name resolution. The raw
+  // OSRM output saved here remains useful for spot-checking and as a
+  // recovery point if the new pipeline regresses.
   const cleanSteps = buildSteps(rawSteps, outCoords, outDists, officialMiles);
-  fs.writeFileSync(path.join(OUT_DIR, `${slug}-steps.json`), JSON.stringify(cleanSteps, null, 2));
-  console.log(`  Wrote ${slug}-steps.json (${cleanSteps.length} turn-by-turn steps)`);
+  fs.writeFileSync(path.join(OUT_DIR, `${slug}-steps-osrm-detail.json`), JSON.stringify(cleanSteps, null, 2));
+  console.log(`  Wrote ${slug}-steps-osrm-detail.json (${cleanSteps.length} OSRM steps; reference only)`);
 
   // For waypoints: derive mile from ORIGINAL GPX cumulative distance (preserves
   // out-and-back two-pass distinction), then rescale to official miles. Also
