@@ -151,17 +151,18 @@ test.describe('Tupper Lake Tinman — Street View overlay', () => {
   test('clicking a marker opens a popup with photo, title, and rotated arrow', async ({ page }) => {
     const svBtn = page.locator('.map-toggles #streetviewBtn');
     await svBtn.click();
-    // Use data-turn-index="2" (Old Wawbeek / Dugal Loop Entry) — it sits at a
-    // unique map position so it can't be obscured by an overlapping marker.
-    // Turns 0 and 3 share the same base coordinate and render within 2px of
-    // each other at the default zoom, making turn-0 unreliable as a click target.
-    await page.locator('.streetview-marker[data-turn-index="2"]').click({ force: true });
+    // Use the pano ID selector (stable across data-file reordering) for the
+    // Old Wawbeek / Dugal Loop Entry marker — it sits at a unique map position
+    // so it can't be obscured by an overlapping marker. Turns 0 and 3 share
+    // the same base coordinate and render within 2px of each other at the
+    // default zoom, making them unreliable as click targets.
+    await page.locator('.streetview-marker[data-pano-id="aW84qtHD_VBgwzlvZuvSOg"]').click({ force: true });
 
     const popup = page.locator('.streetview-popup');
     await expect(popup).toBeVisible();
 
     const title = popup.locator('.streetview-title');
-    await expect(title).toContainText('Wawbeek'); // turn 2 = "Old Wawbeek / Dugal Loop Entry"
+    await expect(title).toContainText('Wawbeek'); // pano aW84qtHD... = "Old Wawbeek / Dugal Loop Entry"
 
     const photo = popup.locator('.streetview-photo');
     const src = await photo.getAttribute('src');
@@ -187,8 +188,8 @@ test.describe('Tupper Lake Tinman — Street View overlay', () => {
   test('toggling off hides markers and removes any open popup', async ({ page }) => {
     const svBtn = page.locator('.map-toggles #streetviewBtn');
     await svBtn.click();
-    // Use turn index 2 (unique map position) to avoid the overlapping turns 0/3
-    await page.locator('.streetview-marker[data-turn-index="2"]').click({ force: true });
+    // Use the pano ID selector (stable across data-file reordering) to avoid the overlapping turns 0/3
+    await page.locator('.streetview-marker[data-pano-id="aW84qtHD_VBgwzlvZuvSOg"]').click({ force: true });
     await expect(page.locator('.streetview-popup')).toBeVisible();
 
     await svBtn.click();

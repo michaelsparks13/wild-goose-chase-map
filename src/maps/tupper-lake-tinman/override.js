@@ -717,7 +717,7 @@ function initMap() {
 
       var svEl = document.createElement('div');
       svEl.className = 'streetview-marker';
-      svEl.dataset.turnIndex = String(STREETVIEW_TURNS.indexOf(turn));
+      svEl.dataset.panoId = turn.pano;
       svEl.style.display = 'none';
       // Camera glyph: black disc, yellow border, white camera body, black lens.
       setHtml(svEl,
