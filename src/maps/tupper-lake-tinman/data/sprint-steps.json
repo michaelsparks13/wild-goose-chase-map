@@ -1,12 +1,12 @@
 [
   {
     "n": 1,
-    "instruction": "Head south",
-    "name": null,
+    "instruction": "Head south on Park Street",
+    "name": "Park Street",
     "type": "depart",
-    "modifier": "right",
+    "modifier": null,
     "mile": 0,
-    "distMi": 0.19,
+    "distMi": 0.34,
     "location": [
       -74.464662,
       44.229975
@@ -16,18 +16,18 @@
   },
   {
     "n": 2,
-    "instruction": "Turn left onto East Park Street",
-    "name": "East Park Street",
-    "type": "end of road",
-    "modifier": "left",
-    "mile": 0.19,
-    "distMi": 0.02,
+    "instruction": "Turn sharp left onto Martin Street",
+    "name": "Martin Street",
+    "type": "turn",
+    "modifier": "sharp left",
+    "mile": 0.34,
+    "distMi": 0.46,
     "location": [
-      -74.456861,
-      44.224572
+      -74.465932,
+      44.225304
     ],
-    "bearingAfter": 82,
-    "bearingBefore": 172
+    "bearingAfter": 69,
+    "bearingBefore": 204
   },
   {
     "n": 3,
@@ -35,36 +35,96 @@
     "name": "Boyer Avenue",
     "type": "turn",
     "modifier": "right",
-    "mile": 0.21,
-    "distMi": 2.73,
+    "mile": 0.8,
+    "distMi": 0.24,
+    "location": [
+      -74.457537,
+      44.228058
+    ],
+    "bearingAfter": 172,
+    "bearingBefore": 82
+  },
+  {
+    "n": 4,
+    "instruction": "Turn left onto East Park Street",
+    "name": "East Park Street",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 1.04,
+    "distMi": 0.61,
+    "location": [
+      -74.456861,
+      44.224572
+    ],
+    "bearingAfter": 83,
+    "bearingBefore": 172
+  },
+  {
+    "n": 5,
+    "instruction": "Make a U-turn on East Park Street",
+    "name": "East Park Street",
+    "type": "continue",
+    "modifier": "uturn",
+    "mile": 1.65,
+    "distMi": 0.62,
+    "location": [
+      -74.44411,
+      44.225643
+    ],
+    "bearingAfter": 263,
+    "bearingBefore": 83
+  },
+  {
+    "n": 6,
+    "instruction": "Turn right onto Boyer Avenue",
+    "name": "Boyer Avenue",
+    "type": "turn",
+    "modifier": "right",
+    "mile": 2.27,
+    "distMi": 0.24,
     "location": [
       -74.456861,
       44.224572
     ],
     "bearingAfter": 352,
-    "bearingBefore": 262
+    "bearingBefore": 263
   },
   {
-    "n": 4,
-    "instruction": "Make a U-turn",
-    "name": null,
-    "type": "continue",
-    "modifier": "uturn",
-    "mile": 2.93,
-    "distMi": 0.17,
+    "n": 7,
+    "instruction": "Turn left onto Pleasant Avenue",
+    "name": "Pleasant Avenue",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 2.51,
+    "distMi": 0.31,
     "location": [
-      -74.465427,
-      44.228092
+      -74.457537,
+      44.228058
     ],
-    "bearingAfter": 98,
-    "bearingBefore": 278
+    "bearingAfter": 262,
+    "bearingBefore": 352
   },
   {
-    "n": 5,
-    "instruction": "Arrive at finish",
+    "n": 8,
+    "instruction": "Turn sharp right onto Demars Boulevard",
+    "name": "Demars Boulevard",
+    "type": "turn",
+    "modifier": "sharp right",
+    "mile": 2.82,
+    "distMi": 0.28,
+    "location": [
+      -74.463211,
+      44.226127
+    ],
+    "bearingAfter": 360,
+    "bearingBefore": 238
+  },
+  {
+    "n": 9,
+    "instruction": "Arrive at the finish",
     "name": null,
     "type": "arrive",
-    "modifier": "left",
+    "modifier": null,
     "mile": 3.1,
     "distMi": 0,
     "location": [

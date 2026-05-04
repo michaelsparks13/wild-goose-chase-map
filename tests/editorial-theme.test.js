@@ -183,20 +183,19 @@ describe('Athlete-first chrome in dist/maps/tupper-lake-tinman/index.html', () =
     expect(builtHtml).toContain('Embed');
   });
 
-  it('renders the cartographer note as run-scoped', () => {
-    expect(builtHtml).toContain('id="essentialsNotes"');
-    expect(builtHtml).toContain('From the cartographer');
-    // v2 note opens with run-leg observations, not heritage flattery
-    expect(builtHtml).toMatch(/paved village streets|sun exposure|open road with no shade/);
-    expect(builtHtml).not.toMatch(/swim leg|bike leg|cycling/i);
-  });
-
-  it('renders cross-links and a quiet footer credit', () => {
-    expect(builtHtml).toContain('class="cross-grid"');
-    expect(builtHtml).toContain('href="/maps/escarpment/"');
+  it('renders a quiet footer credit', () => {
     expect(builtHtml).toContain('class="page-footer"');
     expect(builtHtml).toContain('Cartography by');
     expect(builtHtml).toContain('falsesummitstudio.com');
+  });
+
+  it('omits the cartographer-note and cross-link sections', () => {
+    // Removed in feature_tinman_polish — the editorial layout no longer
+    // includes "From the cartographer" or "Other race maps from the studio"
+    // sections, per design feedback.
+    expect(builtHtml).not.toContain('id="essentialsNotes"');
+    expect(builtHtml).not.toContain('From the cartographer');
+    expect(builtHtml).not.toContain('class="cross-grid"');
   });
 
   it('imports the v2 race-branded type stack and avoids the v1 archival serif', () => {

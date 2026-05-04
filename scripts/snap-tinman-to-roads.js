@@ -9,7 +9,7 @@ const path = require('path');
 const https = require('https');
 
 const GPX_DIR = '/Users/Sparks/Documents/false-summit-studio/tinman/gpx';
-const OUT_DIR = path.join(__dirname, '..', 'src', 'maps', 'tinman', 'data');
+const OUT_DIR = path.join(__dirname, '..', 'src', 'maps', 'tupper-lake-tinman', 'data');
 
 // OSRM public demo. Profile 'driving' = vehicular roads only (cleaner than 'foot' for paved courses).
 const OSRM_HOST = 'router.project-osrm.org';
@@ -17,7 +17,12 @@ const OSRM_PROFILE = 'driving';
 
 const CHUNK = 10;        // OSRM public demo caps /match at ~10 trace coords
 const OVERLAP = 2;       // overlap between chunks to avoid stitch jumps
-const RADIUS = 25;       // meters of search radius (demo server caps the radius)
+const RADIUS = 40;       // meters of search radius. Was 25 originally; bumped
+                         // to 40 because the denser Tinman input (250 pts vs
+                         // the previous 120) exposes a few noisy GPS samples
+                         // that wouldn't match within 25m. 40m still snaps
+                         // each point to its nearest paved road without
+                         // jumping to parallel streets in this area.
 
 // Official course distances from tupperlaketinman.com — used to rescale snapped
 // paths so mile markers and aid-station mileages match published values.
@@ -249,9 +254,11 @@ async function matchChunk(chunk) {
 }
 
 async function snapTrack(trkpts) {
-  // Simplify input to ~120 points (CHUNK=10 → 12 OSRM requests). More points
-  // helps OSRM disambiguate close-by parallel roads.
-  const inputCount = Math.min(trkpts.length, 120);
+  // Simplify input to ~250 points (CHUNK=10 → 25 OSRM requests). More points
+  // helps OSRM disambiguate close-by parallel roads, especially through dense
+  // intersections like the Faust / Lumberjack Inn area where the Tinman route
+  // makes several quick turns within ~150m.
+  const inputCount = Math.min(trkpts.length, 250);
   const simplified = simplify(trkpts, inputCount);
   console.log(`  Simplified ${trkpts.length} → ${simplified.length} input points before matching`);
 
@@ -336,8 +343,10 @@ async function processRace(filename, slug) {
   const origScale = officialMiles / origTotal;
   const totalMiles = officialMiles;
 
-  // Reduce coordinate count for runtime perf (keep ~500 max — already close)
-  const targetCount = Math.min(500, snapped.length);
+  // Reduce coordinate count for runtime perf. 2000 points keeps avg spacing
+  // around ~10m on a 13.1mi course — dense enough to follow corner curves
+  // without the previous "cuts across" artifact at sub-150m gap intersections.
+  const targetCount = Math.min(2000, snapped.length);
   let outCoords = snapped;
   let outDists = dists;
   let outEles = eles;
@@ -520,12 +529,15 @@ async function processRace(filename, slug) {
   fs.writeFileSync(path.join(OUT_DIR, `${slug}-turnarounds.json`), JSON.stringify(dedupedTurns, null, 2));
   console.log(`  Wrote ${slug}.geojson (${features.length} features) and ${slug}-profile.json (${profile.length} pts)`);
 
-  // Build clean turn-by-turn steps: drop OSRM "depart"/"arrive", merge consecutive
-  // segments that share a street name, label u-turns explicitly, and project each
-  // step's start point onto the snapped path to derive a cumulative mile value.
+  // Build the OSRM-derived turn list. This is reference data only — the
+  // *authoritative* `${slug}-steps.json` is now produced by
+  // `scripts/build-tinman-steps.js`, which applies stronger turn detection,
+  // chunk-boundary noise filtering, and OSM-bbox name resolution. The raw
+  // OSRM output saved here remains useful for spot-checking and as a
+  // recovery point if the new pipeline regresses.
   const cleanSteps = buildSteps(rawSteps, outCoords, outDists, officialMiles);
-  fs.writeFileSync(path.join(OUT_DIR, `${slug}-steps.json`), JSON.stringify(cleanSteps, null, 2));
-  console.log(`  Wrote ${slug}-steps.json (${cleanSteps.length} turn-by-turn steps)`);
+  fs.writeFileSync(path.join(OUT_DIR, `${slug}-steps-osrm-detail.json`), JSON.stringify(cleanSteps, null, 2));
+  console.log(`  Wrote ${slug}-steps-osrm-detail.json (${cleanSteps.length} OSRM steps; reference only)`);
 
   // For waypoints: derive mile from ORIGINAL GPX cumulative distance (preserves
   // out-and-back two-pass distinction), then rescale to official miles. Also

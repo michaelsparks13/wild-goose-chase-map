@@ -223,49 +223,33 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.directions-chevron {
-  color: var(--text-muted);
-  transition: transform 0.2s;
-}
-.directions-section.expanded .directions-chevron { transform: rotate(180deg); }
-
-/* ─── Mode toggle (Click vs Scrub) ─── */
-.dir-mode-toggle {
+/* ─── Zoom-to-step checkbox ─── */
+.dir-zoom-toggle {
   display: inline-flex;
   align-items: center;
   align-self: center;
   margin: 0 14px 0 0;
-  padding: 3px;
-  background: var(--bg-alt);
-  border-radius: 999px;
-  flex-shrink: 0;
-}
-.dir-mode-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  border: 0;
-  background: transparent;
-  border-radius: 999px;
+  gap: 7px;
   font-family: inherit;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
-  letter-spacing: 0.02em;
+  user-select: none;
+  flex-shrink: 0;
 }
-.dir-mode-btn svg { display: block; }
-.dir-mode-btn:hover { color: var(--text); }
-.dir-mode-btn.active {
-  background: var(--bg-card);
-  color: var(--text);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+.dir-zoom-toggle:hover { color: var(--text); }
+.dir-zoom-toggle input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--primary);
 }
-.dir-mode-btn:focus-visible {
+.dir-zoom-toggle input[type="checkbox"]:focus-visible {
   outline: 2px solid var(--primary);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 .directions-list {
@@ -356,17 +340,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* In Scrub mode the list is the camera, so a small visual cue helps users
-   understand that scrolling drives the highlight. Pin-prick on the left edge. */
-.directions-section.mode-scrub .directions-list {
-  background:
-    linear-gradient(to bottom, transparent calc(50% - 60px), rgba(245,197,24,0.06) calc(50% - 60px) calc(50% + 60px), transparent calc(50% + 60px))
-    no-repeat;
-  background-size: 3px 100%;
-  background-position: 0 0;
-}
 @media (prefers-reduced-motion: reduce) {
-  .dir-step, .dir-icon, .directions-toggle, .dir-mode-btn { transition: none; }
+  .dir-step, .dir-icon, .directions-toggle { transition: none; }
   .directions-section.expanded .directions-list { scroll-behavior: auto; }
 }
 
@@ -388,51 +363,6 @@
 .aid-marker svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
 .turnaround-marker { width: 28px; height: 28px; cursor: pointer; }
 .turnaround-marker svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
-
-/* ═══ COURSE DIRECTION LEGEND (overlay on map) ═══ */
-.course-legend {
-  position: absolute;
-  bottom: 30px;
-  left: 10px;
-  z-index: 10;
-  background: var(--bg);
-  border-radius: var(--radius);
-  padding: 10px 12px;
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  pointer-events: none;
-}
-.legend-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.7rem;
-  color: var(--text);
-  font-weight: 500;
-}
-.legend-line {
-  display: inline-block;
-  width: 28px;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--text);
-}
-.legend-line-out { background: var(--text); }
-.legend-line-back {
-  background: transparent;
-  background-image: linear-gradient(to right, var(--text) 0 60%, transparent 60% 100%);
-  background-size: 8px 3px;
-  background-repeat: repeat-x;
-}
-.legend-icon {
-  display: inline-flex;
-  width: 28px;
-  justify-content: center;
-  color: var(--primary-dark);
-}
-.legend-label { color: var(--text-secondary); }
 
 /* ═══ FOOTER ═══ */
 .footer a { color: var(--primary-dark); }
@@ -633,4 +563,113 @@
 
 @media (min-width: 1440px) {
   .sim-panel { width: 400px; }
+}
+
+/* ─── Street View markers + popup ─────────────────────────────── */
+
+.streetview-marker {
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+.streetview-marker svg {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+.streetview-popup .maplibregl-popup-content {
+  padding: 0 !important;
+  background: var(--paper) !important;
+  border: none !important;
+  border-radius: var(--radius) !important;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.18) !important;
+}
+.streetview-popup .maplibregl-popup-tip {
+  border-top-color: var(--paper);
+  border-bottom-color: var(--paper);
+}
+.streetview-popup .maplibregl-popup-close-button {
+  right: 6px !important;
+  top: 6px !important;
+  width: 26px !important;
+  height: 26px !important;
+  background: rgba(0,0,0,0.55) !important;
+  color: #fff !important;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px !important;
+  line-height: 1 !important;
+}
+
+.streetview-popup-inner {
+  width: 360px;
+  max-width: calc(100vw - 32px);
+}
+
+.streetview-title {
+  padding: 10px 14px 2px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+.streetview-meta {
+  padding: 0 14px 8px;
+  font-family: var(--font-micro);
+  font-weight: 500;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: rgba(26, 26, 26, 0.6);
+}
+
+.streetview-photo-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #1a1a1a;
+  overflow: hidden;
+}
+.streetview-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.streetview-arrow {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.45));
+}
+.streetview-arrow svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.streetview-link {
+  display: block;
+  padding: 10px 14px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--ink);
+  text-decoration: none;
+  border-top: 1px solid rgba(26, 26, 26, 0.08);
+  transition: background-color 120ms ease;
+}
+.streetview-link:hover,
+.streetview-link:focus-visible {
+  background: rgba(26, 26, 26, 0.05);
+  text-decoration: underline;
 }

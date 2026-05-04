@@ -18,6 +18,7 @@ const sprintTurns = loadJSON('data/sprint-turnarounds.json');
 const olympicTurns = loadJSON('data/olympic-turnarounds.json');
 const tinmanTurns = loadJSON('data/tinman-turnarounds.json');
 const aidStationsRaw = loadJSON('data/aid-stations.json');
+const streetviewTurns = loadJSON('data/streetview.json');
 const weatherData = fs.existsSync(path.join(__dirname, 'data/weather.json'))
   ? loadJSON('data/weather.json') : null;
 
@@ -116,6 +117,8 @@ var loopCoordDistances = {};
   }
 })();
 
+var STREETVIEW_TURNS = ${JSON.stringify(streetviewTurns)};
+
 `;
 
 const tinmanTheme = require('../../themes/tupper-lake-tinman.js');
@@ -174,12 +177,8 @@ module.exports = {
     <div class="hq-badge"><div class="dot"></div><div class="text">RUN START</div></div>
     <div class="map-btns">
       <button class="trail-btn" id="aidBtn" onclick="toggleAid()">Aid Stations</button>
+      <button class="trail-btn" id="streetviewBtn" onclick="toggleStreetview()">Street View</button>
       <button class="trail-btn" id="terrainBtn" onclick="toggle3D()">3D</button>
-    </div>
-    <div class="course-legend" aria-label="Course direction legend">
-      <div class="legend-row"><span class="legend-line legend-line-out"></span><span class="legend-label">Outbound</span></div>
-      <div class="legend-row"><span class="legend-line legend-line-back"></span><span class="legend-label">Return</span></div>
-      <div class="legend-row"><span class="legend-icon legend-icon-turn"><svg viewBox="0 0 16 16" width="12" height="12"><circle cx="8" cy="8" r="6.5" fill="currentColor"/><path d="M5.5 9.5V6a2.5 2.5 0 0 1 5 0v4M4 8l1.5 1.5 1.5-1.5" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="legend-label">Turnaround</span></div>
     </div>
   </div>
 
@@ -207,19 +206,11 @@ module.exports = {
           <h3 class="directions-eyebrow">Turn-by-Turn</h3>
           <span class="directions-race" id="directionsRaceLabel">Tinman Run · 13.1 mi</span>
         </div>
-        <span class="directions-count" id="directionsCount"></span>
-        <svg class="directions-chevron" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <div class="dir-mode-toggle" role="tablist" aria-label="Directions interaction mode">
-        <button type="button" class="dir-mode-btn active" data-mode="click" role="tab" aria-selected="true" onclick="setDirMode('click')">
-          <svg viewBox="0 0 14 14" width="11" height="11" aria-hidden="true"><path d="M5 2v6l2-2 2 4 1.5-.6L8.5 6H11L5 2z" fill="currentColor"/></svg>
-          <span>Click</span>
-        </button>
-        <button type="button" class="dir-mode-btn" data-mode="scrub" role="tab" aria-selected="false" onclick="setDirMode('scrub')">
-          <svg viewBox="0 0 14 14" width="11" height="11" aria-hidden="true"><path d="M2 7h10M2 7l3-3M2 7l3 3M12 7l-3-3M12 7l-3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>Scrub</span>
-        </button>
-      </div>
+      <label class="dir-zoom-toggle">
+        <input type="checkbox" id="zoomToStepCheckbox" checked onchange="setZoomToStep(this.checked)">
+        <span>Zoom to step</span>
+      </label>
     </div>
     <ol class="directions-list" id="directionsList"></ol>
   </section>
