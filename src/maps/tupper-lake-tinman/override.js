@@ -484,10 +484,13 @@ function initMap() {
     for (var li = 0; li < loopOrder.length; li++) {
       var id = loopOrder[li];
       var loop = LOOPS[id];
-      // Use the multi-feature FeatureCollection (kept from the old phase-split
-      // layout). The unsuffixed loop layer renders the entire collection
-      // without filtering, so out/back features render together as one line.
-      map.addSource(id, { type: 'geojson', data: loop.geojsonAll || loop.geojson });
+      // Use the FLATTENED single-LineString geometry. The phase-split
+      // multi-feature collection (loop.geojsonAll) padded each feature's
+      // boundaries with 2-coord overlap, which re-rendered the overlap
+      // pixels and read as faint darker patches once we dropped the
+      // parallel offset. A single LineString draws each road segment once
+      // (or twice in the case of an out-and-back, but exactly aligned).
+      map.addSource(id, { type: 'geojson', data: loop.geojson });
 
       // Single course line at all zoom levels: black casing + dark inner +
       // branded color. The previous parallel-offset out/back rendering was

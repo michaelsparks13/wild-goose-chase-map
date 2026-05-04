@@ -486,7 +486,7 @@
     "type": "new name",
     "modifier": "straight",
     "mile": 11.12,
-    "distMi": 1.46,
+    "distMi": 0.49,
     "location": [
       -74.477093,
       44.23808
@@ -495,9 +495,54 @@
     "bearingBefore": 147
   },
   {
-    "n": 34,
-    "instruction": "Turn right",
-    "name": null,
+    "instruction": "Turn left onto OWD Lane",
+    "name": "OWD Lane",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 11.61,
+    "distMi": 0.15,
+    "location": [
+      -74.46853,
+      44.235165
+    ],
+    "bearingAfter": 23,
+    "bearingBefore": 109,
+    "n": 34
+  },
+  {
+    "instruction": "Turn left onto Demars Boulevard",
+    "name": "Demars Boulevard",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 11.76,
+    "distMi": 0.56,
+    "location": [
+      -74.46853,
+      44.235165
+    ],
+    "bearingAfter": 111,
+    "bearingBefore": 203,
+    "n": 35
+  },
+  {
+    "instruction": "Turn left onto Santa Clara Avenue",
+    "name": "Santa Clara Avenue",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 12.32,
+    "distMi": 0.25,
+    "location": [
+      -74.464357,
+      44.232301
+    ],
+    "bearingAfter": 75,
+    "bearingBefore": 160,
+    "n": 36
+  },
+  {
+    "n": 37,
+    "instruction": "Turn right onto McLaughlin Avenue",
+    "name": "McLaughlin Avenue",
     "type": "turn",
     "modifier": "right",
     "mile": 12.58,
@@ -510,7 +555,7 @@
     "bearingBefore": 168
   },
   {
-    "n": 35,
+    "n": 38,
     "instruction": "Turn right",
     "name": null,
     "type": "turn",
@@ -525,7 +570,7 @@
     "bearingBefore": 189
   },
   {
-    "n": 36,
+    "n": 39,
     "instruction": "Make a U-turn",
     "name": null,
     "type": "continue",
@@ -540,7 +585,7 @@
     "bearingBefore": 278
   },
   {
-    "n": 37,
+    "n": 40,
     "instruction": "Turn left",
     "name": null,
     "type": "turn",
@@ -555,7 +600,7 @@
     "bearingBefore": 98
   },
   {
-    "n": 38,
+    "n": 41,
     "instruction": "Arrive at finish",
     "name": null,
     "type": "arrive",
