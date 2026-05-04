@@ -238,80 +238,26 @@ function registerTurnIcons() {
   }
 }
 
-// Build a GeoJSON FeatureCollection of "turn arrow" features for one loop.
-// Each feature has properties.bearing (degrees) and properties.priority
-// (1 = major decision; 2 = minor, only at high zoom).
-//
-// Out-and-back routes pass through the same intersection twice — once
-// outbound, once return — so OSRM emits two steps at near-identical
-// coordinates with different bearings. We dedupe by spatial proximity
-// (~25 m) so each physical intersection gets ONE arrow, keeping the
-// FIRST occurrence (the outbound pass).
-function buildTurnArrowSource(loopId) {
+// Build a GeoJSON FeatureCollection containing exactly one feature: the
+// start arrow at the loop's first step. The runner sees this at T2 — it
+// communicates the initial direction of travel. No arrows are rendered
+// elsewhere on the course; the cue list is the navigation tool past the
+// start, and the segment highlight is the active-step affordance.
+function buildStartArrowSource(loopId) {
   var steps = (DIRECTIONS[loopId] || []);
-  // Use snapped-to-route coords (computed at module init) instead of raw OSRM
-  // step locations — for two Tinman steps the OSRM coordinate sits ~62 m off
-  // the road-snapped course geometry, which would otherwise render a turn
-  // arrow stranded mid-block.
+  if (!steps.length) return { type: 'FeatureCollection', features: [] };
+  var first = steps[0];
+  if (!first || first.bearingAfter == null) return { type: 'FeatureCollection', features: [] };
   var snapped = SNAPPED_STEP_COORDS[loopId] || [];
-  var DEDUPE_M = 25;
-  var DEG_PER_M = 1 / 111000; // rough latitude conversion
-  var DEDUPE_DEG_SQ = (DEDUPE_M * DEG_PER_M) * (DEDUPE_M * DEG_PER_M);
-  var kept = [];
-  for (var i = 0; i < steps.length; i++) {
-    var s = steps[i];
-    if (!s.location || s.bearingAfter == null) continue;
-    if (s.type === 'arrive') continue;
-    if (s.modifier === 'uturn') continue;
-    var isDepart = s.type === 'depart';
-    var isStraight = s.modifier === 'straight' && (s.type === 'continue' || s.type === 'new name' || s.type === '');
-    if (isStraight && !isDepart) continue;
-    var loc = snapped[i] || s.location;
-    // Suppress if a kept arrow is within ~25m — same physical intersection.
-    var collides = false;
-    for (var k = 0; k < kept.length; k++) {
-      var dx = (kept[k].location[0] - loc[0]);
-      var dy = (kept[k].location[1] - loc[1]);
-      // Adjust dx for latitude scaling (lng degrees shrink with cos(lat))
-      var cosLat = Math.cos(loc[1] * Math.PI / 180);
-      if ((dx * cosLat) * (dx * cosLat) + dy * dy < DEDUPE_DEG_SQ) {
-        collides = true; break;
-      }
-    }
-    if (collides) continue;
-    var major = isDepart
-      || s.type === 'turn'
-      || s.type === 'fork'
-      || s.type === 'end of road'
-      || s.type === 'roundabout' || s.type === 'rotary'
-      || s.modifier === 'sharp left' || s.modifier === 'sharp right';
-    if (s.modifier === 'slight left' || s.modifier === 'slight right') major = false;
-    kept.push({
-      location: loc,
-      bearing: s.bearingAfter,
-      priority: major ? 1 : 2,
-      kind: isDepart ? 'depart' : 'turn',
-      name: s.name || '',
-      mile: s.mile,
-      instruction: s.instruction || '',
-    });
-  }
+  var loc = snapped[0] || first.location;
+  if (!loc) return { type: 'FeatureCollection', features: [] };
   return {
     type: 'FeatureCollection',
-    features: kept.map(function(k) {
-      return {
-        type: 'Feature',
-        properties: {
-          bearing: k.bearing,
-          priority: k.priority,
-          kind: k.kind,
-          name: k.name,
-          mile: k.mile,
-          instruction: k.instruction,
-        },
-        geometry: { type: 'Point', coordinates: k.location },
-      };
-    })
+    features: [{
+      type: 'Feature',
+      properties: { bearing: first.bearingAfter, kind: 'depart' },
+      geometry: { type: 'Point', coordinates: loc }
+    }]
   };
 }
 
@@ -538,32 +484,27 @@ function initMap() {
     for (var li = 0; li < loopOrder.length; li++) {
       var id = loopOrder[li];
       var loop = LOOPS[id];
-      // Use the multi-feature FeatureCollection (one feature per phase run) so
-      // the out/back filters can target individual segments.
+      // Use the multi-feature FeatureCollection (kept from the old phase-split
+      // layout). The unsuffixed loop layer renders the entire collection
+      // without filtering, so out/back features render together as one line.
       map.addSource(id, { type: 'geojson', data: loop.geojsonAll || loop.geojson });
 
-      // ZOOM ≤ 13.5: A clearly-readable single centered route (casing + dark
-      // inner + branded color). At default zoom the offset pair would be too
-      // tight to distinguish, so we just show one line.
-      // ZOOM ≥ 14.5: The backbone fades out and the parallel offset pair takes
-      // over. Each phase gets its own halo+color stack for legibility.
-      var backboneOpacity = ['interpolate', ['linear'], ['zoom'], 13.5, 1, 14.5, 0];
-      var offsetOpacity   = ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 1];
-      var outOffset  = ['interpolate', ['linear'], ['zoom'], 13.5, 0, 15, 5, 17, 7];
-      var backOffset = ['interpolate', ['linear'], ['zoom'], 13.5, 0, 15, -5, 17, -7];
-
+      // Single course line at all zoom levels: black casing + dark inner +
+      // branded color. The previous parallel-offset out/back rendering was
+      // dropped — it read as two confusingly-similar parallel roads, which
+      // the cue list already disambiguates better.
       map.addLayer({
         id: id + '-casing',
         type: 'line',
         source: id,
-        paint: { 'line-color': '#000', 'line-width': 7, 'line-opacity': ['interpolate', ['linear'], ['zoom'], 13.5, 0.35, 14.5, 0] },
+        paint: { 'line-color': '#000', 'line-width': 7, 'line-opacity': 0.35 },
         layout: { 'line-cap': 'round', 'line-join': 'round' }
       });
       map.addLayer({
         id: id + '-dark',
         type: 'line',
         source: id,
-        paint: { 'line-color': '#111', 'line-width': 4, 'line-opacity': backboneOpacity },
+        paint: { 'line-color': '#111', 'line-width': 4, 'line-opacity': 1 },
         layout: { 'line-cap': 'round', 'line-join': 'round' }
       });
       map.addLayer({
@@ -573,64 +514,7 @@ function initMap() {
         paint: {
           'line-color': loop.color,
           'line-width': 2.5,
-          'line-opacity': backboneOpacity
-        },
-        layout: { 'line-cap': 'round', 'line-join': 'round' }
-      });
-
-      // Outbound: black halo + solid colored line offset to one side.
-      map.addLayer({
-        id: id + '-out-halo',
-        type: 'line',
-        source: id,
-        filter: ['==', ['get', 'phase'], 'out'],
-        paint: {
-          'line-color': '#000',
-          'line-width': 6,
-          'line-opacity': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.4],
-          'line-offset': outOffset
-        },
-        layout: { 'line-cap': 'round', 'line-join': 'round' }
-      });
-      map.addLayer({
-        id: id + '-out',
-        type: 'line',
-        source: id,
-        filter: ['==', ['get', 'phase'], 'out'],
-        paint: {
-          'line-color': loop.color,
-          'line-width': 3.5,
-          'line-opacity': offsetOpacity,
-          'line-offset': outOffset
-        },
-        layout: { 'line-cap': 'round', 'line-join': 'round' }
-      });
-
-      // Return: black halo + dashed colored line offset to opposite side.
-      map.addLayer({
-        id: id + '-back-halo',
-        type: 'line',
-        source: id,
-        filter: ['==', ['get', 'phase'], 'back'],
-        paint: {
-          'line-color': '#000',
-          'line-width': 6,
-          'line-opacity': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.35],
-          'line-offset': backOffset
-        },
-        layout: { 'line-cap': 'round', 'line-join': 'round' }
-      });
-      map.addLayer({
-        id: id + '-back',
-        type: 'line',
-        source: id,
-        filter: ['==', ['get', 'phase'], 'back'],
-        paint: {
-          'line-color': loop.color,
-          'line-width': 3.5,
-          'line-opacity': offsetOpacity,
-          'line-offset': backOffset,
-          'line-dasharray': [3, 1.8]
+          'line-opacity': 1
         },
         layout: { 'line-cap': 'round', 'line-join': 'round' }
       });
@@ -652,7 +536,7 @@ function initMap() {
 
     addMileMarkers();
     registerTurnIcons();
-    addTurnArrowLayers();
+    addStartArrowLayers();
     addDirectionsHighlightLayers();
 
     var el = document.createElement('div');
@@ -869,75 +753,30 @@ function addMileMarkers() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// TURN ARROWS — rotated chevrons at each intersection.
-// At default zoom only `priority=1` (major decisions) show. At zoom ≥ 14.5
-// minor turns appear too. The "depart" feature next to T2 is always major,
-// so the start-direction arrow reads at any zoom.
+// START ARROW — one rotated chevron at each loop's start point.
+// Replaces the old per-intersection turn-arrow grid. Past the start, the
+// course line and cue list together carry direction; an arrow at every
+// intersection just adds noise.
 // ═══════════════════════════════════════════════════════════
-function addTurnArrowLayers() {
+function addStartArrowLayers() {
   ['sprint', 'olympic', 'tinman'].forEach(function(id) {
-    var sourceId = id + '-turn-arrows';
-    var data = buildTurnArrowSource(id);
-    map.addSource(sourceId, { type: 'geojson', data: data });
-
-    var commonLayout = {
-      'icon-image': 'turn-' + id,
-      'icon-rotate': ['get', 'bearing'],
-      'icon-rotation-alignment': 'map',
-      'icon-pitch-alignment': 'map',
-      'icon-allow-overlap': true,
-      'icon-ignore-placement': true,
-      'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.35, 13, 0.49, 14, 0.595, 17, 0.735]
-    };
-
-    // Major decisions (depart, turn, sharp turn, fork): visible from default
-    // zoom. Two separate layers because MapLibre forbids nesting zoom
-    // expressions inside a `case`.
+    var sourceId = id + '-start-arrow';
+    map.addSource(sourceId, { type: 'geojson', data: buildStartArrowSource(id) });
     map.addLayer({
-      id: id + '-turn-badges',
+      id: id + '-start-arrow',
       type: 'symbol',
       source: sourceId,
-      filter: ['==', ['get', 'priority'], 1],
-      layout: commonLayout,
+      layout: {
+        'icon-image': 'turn-' + id,
+        'icon-rotate': ['get', 'bearing'],
+        'icon-rotation-alignment': 'map',
+        'icon-pitch-alignment': 'map',
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+        'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.45, 13, 0.6, 14, 0.7, 17, 0.85]
+      },
       paint: { 'icon-opacity': ['interpolate', ['linear'], ['zoom'], 11.5, 0, 12.5, 1] }
     });
-    // Minor turns (slight, merge, etc): only visible when zoomed in close.
-    map.addLayer({
-      id: id + '-turn-badges-minor',
-      type: 'symbol',
-      source: sourceId,
-      filter: ['==', ['get', 'priority'], 2],
-      layout: commonLayout,
-      paint: { 'icon-opacity': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.95] }
-    });
-
-    // Make the existing turn-badge layers clickable so the runner can pick a
-    // step from the map directly (bidirectional sync with the directions list).
-    (function(id) {
-      var enter = function() { map.getCanvas().style.cursor = 'pointer'; };
-      var leave = function() { map.getCanvas().style.cursor = ''; };
-      var pick = function(e) {
-        if (!e.features || !e.features.length) return;
-        var f = e.features[0];
-        var mile = f.properties && f.properties.mile;
-        if (mile == null) return;
-        // Find the directions step closest to this badge by mile. Badges dedupe
-        // by ~25m so multiple steps may map to one badge — we prefer the first.
-        var steps = (DIRECTIONS && DIRECTIONS[currentRaceId]) || [];
-        var bestIdx = -1, bestDelta = Infinity;
-        for (var i = 0; i < steps.length; i++) {
-          var d = Math.abs(steps[i].mile - mile);
-          if (d < bestDelta) { bestDelta = d; bestIdx = i; }
-        }
-        if (bestIdx >= 0) setActiveStep(bestIdx, { fitCamera: false, scrollList: true });
-      };
-      map.on('mouseenter', id + '-turn-badges', enter);
-      map.on('mouseleave', id + '-turn-badges', leave);
-      map.on('click', id + '-turn-badges', pick);
-      map.on('mouseenter', id + '-turn-badges-minor', enter);
-      map.on('mouseleave', id + '-turn-badges-minor', leave);
-      map.on('click', id + '-turn-badges-minor', pick);
-    })(id);
   });
 }
 
@@ -984,21 +823,12 @@ function addDirectionsHighlightLayers() {
 function setCourseDimmed(dimmed) {
   if (!map) return;
   var loopIds = ['sprint', 'olympic', 'tinman'];
-  var phaseSuffixes = ['-out', '-out-halo', '-back', '-back-halo'];
-  var fullOpacity = {
-    '-out': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 1],
-    '-out-halo': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.4],
-    '-back': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 1],
-    '-back-halo': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.35]
-  };
-  var dimOpacity = {
-    '-out': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.32],
-    '-out-halo': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.18],
-    '-back': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.32],
-    '-back-halo': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.5, 0.15]
-  };
+  // The three layers per loop that render the course line, in stack order:
+  // casing (black halo), dark (inner), and the branded-color top.
+  var fullOpacity = { '-casing': 0.35, '-dark': 1,    '': 1 };
+  var dimOpacity  = { '-casing': 0.18, '-dark': 0.35, '': 0.35 };
   loopIds.forEach(function(lid) {
-    phaseSuffixes.forEach(function(suf) {
+    Object.keys(fullOpacity).forEach(function(suf) {
       var layerId = lid + suf;
       if (!map.getLayer(layerId)) return;
       map.setPaintProperty(layerId, 'line-opacity', dimmed ? dimOpacity[suf] : fullOpacity[suf]);
@@ -1117,7 +947,7 @@ function toggleLoop(id) {
 function setLoopVisibility(id, visible) {
   if (!map || !map.getLayer(id)) return;
   var v = visible ? 'visible' : 'none';
-  var layerSuffixes = ['', '-casing', '-dark', '-out', '-out-halo', '-back', '-back-halo', '-miles-circle', '-miles-label', '-turn-badges', '-turn-badges-minor'];
+  var layerSuffixes = ['', '-casing', '-dark', '-miles-circle', '-miles-label', '-start-arrow'];
   for (var i = 0; i < layerSuffixes.length; i++) {
     var lid = id + layerSuffixes[i];
     if (map.getLayer(lid)) map.setLayoutProperty(lid, 'visibility', v);

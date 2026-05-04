@@ -180,11 +180,6 @@ module.exports = {
       <button class="trail-btn" id="streetviewBtn" onclick="toggleStreetview()">Street View</button>
       <button class="trail-btn" id="terrainBtn" onclick="toggle3D()">3D</button>
     </div>
-    <div class="course-legend" aria-label="Course direction legend">
-      <div class="legend-row"><span class="legend-line legend-line-out"></span><span class="legend-label">Outbound</span></div>
-      <div class="legend-row"><span class="legend-line legend-line-back"></span><span class="legend-label">Return</span></div>
-      <div class="legend-row"><span class="legend-icon legend-icon-turn"><svg viewBox="0 0 16 16" width="12" height="12"><circle cx="8" cy="8" r="6.5" fill="currentColor"/><path d="M5.5 9.5V6a2.5 2.5 0 0 1 5 0v4M4 8l1.5 1.5 1.5-1.5" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="legend-label">Turnaround</span></div>
-    </div>
   </div>
 
   <section class="directions-section expanded" id="directionsSection">
