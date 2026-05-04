@@ -6,7 +6,7 @@
     "type": "depart",
     "modifier": "right",
     "mile": 0,
-    "distMi": 0.19,
+    "distMi": 0.08,
     "location": [
       -74.464662,
       44.229975
@@ -16,12 +16,27 @@
   },
   {
     "n": 2,
+    "instruction": "Turn right",
+    "name": null,
+    "type": "turn",
+    "modifier": "right",
+    "mile": 0.08,
+    "distMi": 0.84,
+    "location": [
+      -74.465133,
+      44.228057
+    ],
+    "bearingAfter": 278,
+    "bearingBefore": 189
+  },
+  {
+    "n": 3,
     "instruction": "Turn left onto East Park Street",
     "name": "East Park Street",
     "type": "end of road",
     "modifier": "left",
-    "mile": 0.19,
-    "distMi": 0.02,
+    "mile": 0.92,
+    "distMi": 0.43,
     "location": [
       -74.456861,
       44.224572
@@ -30,13 +45,28 @@
     "bearingBefore": 172
   },
   {
-    "n": 3,
+    "n": 4,
+    "instruction": "Make a U-turn",
+    "name": null,
+    "type": "continue",
+    "modifier": "uturn",
+    "mile": 1.35,
+    "distMi": 1.23,
+    "location": [
+      -74.44411,
+      44.225643
+    ],
+    "bearingAfter": 270,
+    "bearingBefore": 90
+  },
+  {
+    "n": 5,
     "instruction": "Turn right onto Boyer Avenue",
     "name": "Boyer Avenue",
     "type": "turn",
     "modifier": "right",
-    "mile": 0.21,
-    "distMi": 2.73,
+    "mile": 2.58,
+    "distMi": 0.15,
     "location": [
       -74.456861,
       44.224572
@@ -45,13 +75,43 @@
     "bearingBefore": 262
   },
   {
-    "n": 4,
+    "n": 6,
+    "instruction": "Turn left onto Pleasant Avenue",
+    "name": "Pleasant Avenue",
+    "type": "turn",
+    "modifier": "left",
+    "mile": 2.73,
+    "distMi": 0.25,
+    "location": [
+      -74.457537,
+      44.228058
+    ],
+    "bearingAfter": 262,
+    "bearingBefore": 351
+  },
+  {
+    "n": 7,
+    "instruction": "Turn left",
+    "name": null,
+    "type": "turn",
+    "modifier": "left",
+    "mile": 2.98,
+    "distMi": 0.06,
+    "location": [
+      -74.463218,
+      44.227421
+    ],
+    "bearingAfter": 299,
+    "bearingBefore": 0
+  },
+  {
+    "n": 8,
     "instruction": "Make a U-turn",
     "name": null,
     "type": "continue",
     "modifier": "uturn",
-    "mile": 2.93,
-    "distMi": 0.17,
+    "mile": 3.04,
+    "distMi": 0.06,
     "location": [
       -74.465427,
       44.228092
@@ -60,7 +120,7 @@
     "bearingBefore": 278
   },
   {
-    "n": 5,
+    "n": 9,
     "instruction": "Arrive at finish",
     "name": null,
     "type": "arrive",
