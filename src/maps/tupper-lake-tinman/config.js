@@ -212,16 +212,10 @@ module.exports = {
           <span class="directions-race" id="directionsRaceLabel">Tinman Run · 13.1 mi</span>
         </div>
       </button>
-      <div class="dir-mode-toggle" role="tablist" aria-label="Directions interaction mode">
-        <button type="button" class="dir-mode-btn active" data-mode="click" role="tab" aria-selected="true" onclick="setDirMode('click')">
-          <svg viewBox="0 0 14 14" width="11" height="11" aria-hidden="true"><path d="M5 2v6l2-2 2 4 1.5-.6L8.5 6H11L5 2z" fill="currentColor"/></svg>
-          <span>Click</span>
-        </button>
-        <button type="button" class="dir-mode-btn" data-mode="scrub" role="tab" aria-selected="false" onclick="setDirMode('scrub')">
-          <svg viewBox="0 0 14 14" width="11" height="11" aria-hidden="true"><path d="M2 7h10M2 7l3-3M2 7l3 3M12 7l-3-3M12 7l-3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>Scrub</span>
-        </button>
-      </div>
+      <label class="dir-zoom-toggle">
+        <input type="checkbox" id="zoomToStepCheckbox" checked onchange="setZoomToStep(this.checked)">
+        <span>Zoom to step</span>
+      </label>
     </div>
     <ol class="directions-list" id="directionsList"></ol>
   </section>

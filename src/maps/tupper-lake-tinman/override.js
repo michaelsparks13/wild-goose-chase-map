@@ -134,17 +134,18 @@ var loopTurnMarkers = { sprint: [], olympic: [], tinman: [] };
 // authoritative source for which step list lives in the DOM.
 // `activeStepIdx` is -1 when no step is selected (initial state before
 // renderDirections runs); >=0 when a specific step is highlighted.
-// `dirMode` selects the interaction model: 'click' = bidirectional click-to-
-// activate; 'scrub' = scroll-driven active step (IntersectionObserver).
+// `zoomToStep` controls whether clicking a step also flies the camera to
+// that step's segment. Persisted across reloads via localStorage.
 var currentRaceId = 'tinman';
 var activeStepIdx = -1;
-var dirMode = (function() {
+var zoomToStep = (function() {
   try {
-    var saved = localStorage.getItem('tinman.dirMode');
-    return (saved === 'scrub' || saved === 'click') ? saved : 'click';
-  } catch (e) { return 'click'; }
+    var saved = localStorage.getItem('tinman.zoomToStep');
+    if (saved === '1') return true;
+    if (saved === '0') return false;
+    return true;
+  } catch (e) { return true; }
 })();
-var stepObserver = null;
 
 // ═══════════════════════════════════════════════════════════
 // VIEW SWITCHING
@@ -771,11 +772,9 @@ function initDomOnly() {
     c.classList.toggle('active', c.dataset.race === 'tinman');
   });
 
-  // Hydrate the saved interaction mode AFTER the list exists so the
-  // IntersectionObserver in scrub mode has elements to attach to.
-  var savedMode = dirMode;
-  dirMode = 'click';
-  setDirMode(savedMode);
+  // Reflect the persisted zoom-to-step preference on the checkbox.
+  var box = getEl('zoomToStepCheckbox');
+  if (box) box.checked = zoomToStep;
 }
 
 // Fit the map viewport to the bounding box of every currently-visible loop.
@@ -1093,69 +1092,13 @@ function syncListActiveDom(idx, opts) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MODE TOGGLE — Click vs Scrub
+// ZOOM-TO-STEP TOGGLE
 // ═══════════════════════════════════════════════════════════
-function setDirMode(mode) {
-  if (mode !== 'click' && mode !== 'scrub') return;
-  if (mode === dirMode) return;
-  dirMode = mode;
-  try { localStorage.setItem('tinman.dirMode', mode); } catch (e) { /* private mode */ }
-  document.querySelectorAll('.dir-mode-btn').forEach(function(btn) {
-    var on = btn.getAttribute('data-mode') === mode;
-    btn.classList.toggle('active', on);
-    btn.setAttribute('aria-selected', on ? 'true' : 'false');
-  });
-  var section = getEl('directionsSection');
-  if (section) section.classList.toggle('mode-scrub', mode === 'scrub');
-
-  if (mode === 'scrub') {
-    // Scrub mode is meaningless when the list is collapsed.
-    if (section && !section.classList.contains('expanded')) toggleDirections();
-    attachScrubObserver();
-  } else {
-    detachScrubObserver();
-  }
-}
-
-function attachScrubObserver() {
-  detachScrubObserver();
-  var listEl = getEl('directionsList');
-  if (!listEl) return;
-  var items = listEl.querySelectorAll('.dir-step');
-  if (!items.length) return;
-
-  // We want the step nearest the TOP of the scroll viewport to be active —
-  // the "you're reading this one right now" step. Tightening rootMargin to
-  // a thin band at the top gives that effect without flicker.
-  stepObserver = new IntersectionObserver(function(entries) {
-    if (dirMode !== 'scrub') return;
-    var best = null, bestRatio = 0;
-    entries.forEach(function(entry) {
-      if (entry.intersectionRatio > bestRatio) {
-        bestRatio = entry.intersectionRatio;
-        best = entry.target;
-      }
-    });
-    if (best) {
-      var idx = parseInt(best.getAttribute('data-step-idx'), 10);
-      if (!isNaN(idx) && idx !== activeStepIdx) {
-        // No scroll, no camera fit — the user IS the camera in scrub mode.
-        setActiveStep(idx, { fitCamera: false, scrollList: false, smooth: false });
-      }
-    }
-  }, {
-    root: listEl,
-    rootMargin: '0px 0px -70% 0px',
-    threshold: [0, 0.25, 0.5, 0.75, 1]
-  });
-  items.forEach(function(it) { stepObserver.observe(it); });
-}
-
-function detachScrubObserver() {
-  if (stepObserver) {
-    stepObserver.disconnect();
-    stepObserver = null;
-  }
+function setZoomToStep(checked) {
+  zoomToStep = !!checked;
+  try { localStorage.setItem('tinman.zoomToStep', zoomToStep ? '1' : '0'); } catch (e) { /* private mode */ }
+  var box = getEl('zoomToStepCheckbox');
+  if (box) box.checked = zoomToStep;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1212,7 +1155,6 @@ function selectRace(raceId) {
   currentRaceId = raceId;
   // Switching races feels like a fresh study session — drop any prior step
   // selection so the user starts at step 1 of the new course every time.
-  detachScrubObserver();
   activeStepIdx = -1;
   for (var id in LOOPS) {
     var show = (race.loops.indexOf(id) >= 0);
@@ -1329,22 +1271,22 @@ function renderDirections(raceId) {
       el.addEventListener('click', function() {
         // Camera fit only fires in click mode — in scrub mode the user is
         // driving the highlight via scroll and an unsolicited fly-to is jarring.
-        setActiveStep(idx, { fitCamera: dirMode === 'click', scrollList: false });
+        setActiveStep(idx, { fitCamera: zoomToStep, scrollList: false });
       });
       el.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          setActiveStep(idx, { fitCamera: dirMode === 'click', scrollList: false });
+          setActiveStep(idx, { fitCamera: zoomToStep, scrollList: false });
         } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
           e.preventDefault();
           var next = Math.min(steps.length - 1, idx + 1);
-          setActiveStep(next, { fitCamera: dirMode === 'click', scrollList: true });
+          setActiveStep(next, { fitCamera: zoomToStep, scrollList: true });
           var nextEl = listEl.querySelector('[data-step-idx="' + next + '"]');
           if (nextEl) nextEl.focus();
         } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
           e.preventDefault();
           var prev = Math.max(0, idx - 1);
-          setActiveStep(prev, { fitCamera: dirMode === 'click', scrollList: true });
+          setActiveStep(prev, { fitCamera: zoomToStep, scrollList: true });
           var prevEl = listEl.querySelector('[data-step-idx="' + prev + '"]');
           if (prevEl) prevEl.focus();
         }
@@ -1356,9 +1298,6 @@ function renderDirections(raceId) {
   // race switches). Skip camera-fit on the initial render so the load-time
   // fitVisibleLoopsToView() call wins.
   setActiveStep(0, { fitCamera: false, scrollList: false, smooth: false });
-
-  // Re-attach the IntersectionObserver if scrub mode was active before.
-  if (dirMode === 'scrub') attachScrubObserver();
 }
 
 function toggleDirections() {

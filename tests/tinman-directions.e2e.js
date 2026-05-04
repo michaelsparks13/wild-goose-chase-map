@@ -22,13 +22,11 @@ test.describe('Tinman interactive directions', () => {
     );
   });
 
-  test('mode toggle is present with Click selected by default', async ({ page }) => {
-    const clickBtn = page.locator('.dir-mode-btn[data-mode="click"]');
-    const scrubBtn = page.locator('.dir-mode-btn[data-mode="scrub"]');
-    await expect(clickBtn).toBeVisible();
-    await expect(scrubBtn).toBeVisible();
-    await expect(clickBtn).toHaveClass(/active/);
-    await expect(scrubBtn).not.toHaveClass(/active/);
+  test('zoom-to-step checkbox is present and checked by default', async ({ page }) => {
+    const cb = page.locator('#zoomToStepCheckbox');
+    await expect(cb).toBeVisible();
+    await expect(cb).toBeChecked();
+    await expect(page.locator('label.dir-zoom-toggle')).toContainText('Zoom to step');
   });
 
   test('first step is active on initial render', async ({ page }) => {
@@ -78,34 +76,25 @@ test.describe('Tinman interactive directions', () => {
     expect(segCoordCount).toBeGreaterThan(1);
   });
 
-  test('mode toggle switches between Click and Scrub', async ({ page }) => {
-    const scrubBtn = page.locator('.dir-mode-btn[data-mode="scrub"]');
-    const clickBtn = page.locator('.dir-mode-btn[data-mode="click"]');
-    await scrubBtn.click();
-    await expect(scrubBtn).toHaveClass(/active/);
-    await expect(clickBtn).not.toHaveClass(/active/);
-
-    // Section auto-expands when entering Scrub (the list is the camera in scrub mode).
-    await expect(page.locator('#directionsSection')).toHaveClass(/mode-scrub/);
-    await expect(page.locator('#directionsSection')).toHaveClass(/expanded/);
-
-    await clickBtn.click();
-    await expect(clickBtn).toHaveClass(/active/);
-    await expect(scrubBtn).not.toHaveClass(/active/);
-    await expect(page.locator('#directionsSection')).not.toHaveClass(/mode-scrub/);
+  test('zoom-to-step checkbox toggles cleanly', async ({ page }) => {
+    const cb = page.locator('#zoomToStepCheckbox');
+    await expect(cb).toBeChecked();
+    await cb.uncheck();
+    await expect(cb).not.toBeChecked();
+    await cb.check();
+    await expect(cb).toBeChecked();
   });
 
-  test('mode preference persists across page reloads via localStorage', async ({ page }) => {
-    await page.locator('.dir-mode-btn[data-mode="scrub"]').click();
-    await expect(page.locator('.dir-mode-btn[data-mode="scrub"]')).toHaveClass(/active/);
+  test('zoom-to-step preference persists across page reloads via localStorage', async ({ page }) => {
+    await page.locator('#zoomToStepCheckbox').uncheck();
+    await expect(page.locator('#zoomToStepCheckbox')).not.toBeChecked();
 
     await page.reload();
     await page.waitForSelector('#map');
     await page.waitForFunction(() =>
       document.querySelectorAll('#directionsList .dir-step').length > 0
     );
-    await expect(page.locator('.dir-mode-btn[data-mode="scrub"]')).toHaveClass(/active/);
-    await expect(page.locator('#directionsSection')).toHaveClass(/mode-scrub/);
+    await expect(page.locator('#zoomToStepCheckbox')).not.toBeChecked();
   });
 
   test('switching races resets active step to step 1 of the new race', async ({ page }) => {
@@ -156,15 +145,15 @@ test.describe('Tinman interactive directions', () => {
     await expect(section).toHaveClass(/expanded/);
   });
 
-  test('clicking the mode toggle does not collapse the section', async ({ page }) => {
+  test('toggling the zoom-to-step checkbox does not collapse the section', async ({ page }) => {
     const section = page.locator('#directionsSection');
     if (!(await section.evaluate(el => el.classList.contains('expanded')))) {
       await page.locator('.directions-toggle').click();
     }
     await expect(section).toHaveClass(/expanded/);
-    await page.locator('.dir-mode-btn[data-mode="scrub"]').click();
+    await page.locator('#zoomToStepCheckbox').uncheck();
     await expect(section).toHaveClass(/expanded/);
-    await page.locator('.dir-mode-btn[data-mode="click"]').click();
+    await page.locator('#zoomToStepCheckbox').check();
     await expect(section).toHaveClass(/expanded/);
   });
 });
@@ -284,15 +273,13 @@ test.describe('Tinman interactive directions: Sprint + Olympic distances', () =>
     await expect(page.locator('.dir-race-tab[data-race="sprint"]')).not.toHaveClass(/active/);
   });
 
-  test('mode toggle stays in effect across race switches', async ({ page }) => {
-    // Pick scrub on Tinman, then switch to Sprint — scrub should persist and
-    // re-attach the IntersectionObserver to the new step list.
-    await page.locator('.dir-mode-btn[data-mode="scrub"]').click();
-    await expect(page.locator('.dir-mode-btn[data-mode="scrub"]')).toHaveClass(/active/);
+  test('zoom-to-step preference stays in effect across race switches', async ({ page }) => {
+    // Uncheck on Tinman, then switch to Sprint — preference should persist.
+    await page.locator('#zoomToStepCheckbox').uncheck();
+    await expect(page.locator('#zoomToStepCheckbox')).not.toBeChecked();
 
     await page.locator('.dir-race-tab[data-race="sprint"]').click();
     await expect(page.locator('#directionsRaceLabel')).toContainText('Sprint');
-    await expect(page.locator('.dir-mode-btn[data-mode="scrub"]')).toHaveClass(/active/);
-    await expect(page.locator('#directionsSection')).toHaveClass(/mode-scrub/);
+    await expect(page.locator('#zoomToStepCheckbox')).not.toBeChecked();
   });
 });

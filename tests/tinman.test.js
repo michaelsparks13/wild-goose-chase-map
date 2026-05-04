@@ -363,12 +363,16 @@ describe('Tinman simulator', () => {
 });
 
 describe('Tinman interactive directions', () => {
-  it('renders the Click vs Scrub mode toggle in the directions header', () => {
-    expect(html).toContain('class="dir-mode-toggle"');
-    expect(html).toContain('data-mode="click"');
-    expect(html).toContain('data-mode="scrub"');
-    expect(html).toContain("setDirMode('click')");
-    expect(html).toContain("setDirMode('scrub')");
+  it('renders the "Zoom to step" checkbox in the directions header', () => {
+    // Replaced the dual-button Click/Scrub mode toggle in feature_tinman_polish.
+    // A single checkbox now controls whether clicking a step also flies the
+    // map camera. Scrub mode (scroll-driven highlight) was removed.
+    expect(html).toContain('class="dir-zoom-toggle"');
+    expect(html).toContain('id="zoomToStepCheckbox"');
+    expect(html).toContain('Zoom to step');
+    expect(html).toContain('onchange="setZoomToStep(this.checked)"');
+    expect(html).not.toContain('class="dir-mode-toggle"');
+    expect(html).not.toContain('data-mode="scrub"');
   });
 
   it('header is a div wrapper (not button-in-button) with a separate toggle button', () => {
@@ -388,19 +392,21 @@ describe('Tinman interactive directions', () => {
   it('declares the interactive-directions runtime symbols', () => {
     expect(html).toContain('var activeStepIdx');
     expect(html).toContain('var currentRaceId');
-    expect(html).toContain('var dirMode');
+    expect(html).toContain('var zoomToStep');
     expect(html).toContain('function setActiveStep');
-    expect(html).toContain('function setDirMode');
+    expect(html).toContain('function setZoomToStep');
     expect(html).toContain('function stepSegmentCoords');
-    expect(html).toContain('function attachScrubObserver');
-    expect(html).toContain('function detachScrubObserver');
     expect(html).toContain('function setCourseDimmed');
     expect(html).toContain('function addDirectionsHighlightLayers');
+    // Scrub mode (and its IntersectionObserver helpers) was removed.
+    expect(html).not.toContain('function attachScrubObserver');
+    expect(html).not.toContain('function detachScrubObserver');
   });
 
-  it('persists the chosen mode in localStorage under tinman.dirMode', () => {
-    expect(html).toContain("localStorage.getItem('tinman.dirMode')");
-    expect(html).toContain("localStorage.setItem('tinman.dirMode', mode)");
+  it('persists the zoom-to-step preference in localStorage under tinman.zoomToStep', () => {
+    expect(html).toContain("localStorage.getItem('tinman.zoomToStep')");
+    expect(html).toContain("localStorage.setItem('tinman.zoomToStep'");
+    expect(html).not.toContain("localStorage.getItem('tinman.dirMode')");
   });
 
   it('adds highlight layers for the active segment only (no pin)', () => {
@@ -431,7 +437,6 @@ describe('Tinman interactive directions', () => {
     expect(sel).toBeGreaterThan(0);
     const block = html.substr(sel, 1200);
     expect(block).toContain('activeStepIdx = -1');
-    expect(block).toContain('detachScrubObserver()');
     expect(block).toContain('renderDirections(raceId)');
   });
 
@@ -451,26 +456,16 @@ describe('Tinman interactive directions', () => {
     expect(html).toContain('setActiveStep(bestIdx');
   });
 
-  it('Scrub mode uses IntersectionObserver scoped to the directions list', () => {
-    expect(html).toContain('new IntersectionObserver');
-    // root must be the list element so scrolling the list (not the page) drives
-    // the observer.
-    expect(html).toMatch(/root:\s*listEl/);
-    // Negative bottom rootMargin is what makes the "topmost visible" step win.
-    expect(html).toMatch(/rootMargin:\s*'0px 0px -70% 0px'/);
-  });
-
   it('elevation profile draws the active-mile vertical marker', () => {
     expect(html).toContain('activeStepIdx >= 0');
     expect(html).toContain("ctx.setLineDash([3, 3])");
     expect(html).toContain("loopSeq.indexOf(RACES[currentRaceId].loops[0])");
   });
 
-  it('CSS defines active-step styling and the mode-toggle pill', () => {
+  it('CSS defines active-step styling and the zoom-to-step checkbox', () => {
     expect(html).toContain('.dir-step.active');
-    expect(html).toContain('.dir-mode-toggle');
-    expect(html).toContain('.dir-mode-btn');
-    expect(html).toContain('.dir-mode-btn.active');
+    expect(html).toContain('.dir-zoom-toggle');
+    expect(html).toContain('.dir-zoom-toggle input[type="checkbox"]');
   });
 
   it('respects prefers-reduced-motion for transitions and smooth scroll', () => {
