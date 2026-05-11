@@ -140,6 +140,29 @@ test.describe('Wild Goose Trail Festival — editorial chrome', () => {
     expect(gapPx).toBeGreaterThanOrEqual(28);
   });
 
+  test('Zoom to step toggle exists in the directions header + reflects state', async ({ page }) => {
+    const cb = page.locator('#zoomToStepCheckbox');
+    await expect(cb).toBeAttached();
+    await expect(cb).toBeChecked(); // checked by default
+    // Toggling updates the window-level flag
+    await page.evaluate(() => window.setZoomToStep(false));
+    const v = await page.evaluate(() => window.zoomToStep);
+    expect(v).toBe(false);
+    await page.evaluate(() => window.setZoomToStep(true));
+    const v2 = await page.evaluate(() => window.zoomToStep);
+    expect(v2).toBe(true);
+  });
+
+  test('sim panel has internal right padding so content does not run flush to its column edge', async ({ page }) => {
+    await page.locator('#essentialsSimulator').scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+    const padRight = await page.evaluate(() => {
+      const p = document.querySelector('.sim-panel');
+      return getComputedStyle(p).paddingRight;
+    });
+    expect(parseFloat(padRight)).toBeGreaterThanOrEqual(10);
+  });
+
   test('toggleAid hides/shows the Squatch HQ marker', async ({ page }) => {
     await page.waitForSelector('.hq-marker', { timeout: 5000 });
     // HQ is visible by default

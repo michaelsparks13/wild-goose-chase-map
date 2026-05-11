@@ -335,6 +335,35 @@ body.race-page.race-wild-goose {
   border: 1px solid rgba(181,53,40,0.32);
 }
 
+/* Zoom-to-step toggle — matches Tinman's pattern. Checked by default;
+ * unchecking lets the user scan the cue list without the map auto-
+ * panning to each clicked chip. */
+.race-wild-goose .dir-zoom-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-micro);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #4a4a3e;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+.race-wild-goose .dir-zoom-toggle input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--race-brand);
+  cursor: pointer;
+  margin: 0;
+}
+.race-wild-goose .dir-zoom-toggle:hover { color: var(--ink); }
+@media (max-width: 480px) {
+  .race-wild-goose .dir-zoom-toggle span { display: none; }
+  /* Keeps the checkbox visible on narrow phones; drops the label */
+}
+
 /* Assembly chip strip */
 .race-wild-goose .assembly-strip {
   display: flex;
@@ -946,6 +975,15 @@ body.race-page.race-wild-goose {
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
+}
+/* v6: panel column content reaches its column boundary on the right,
+ * meeting the 32px sim-container gap. Visually that asymmetry reads
+ * weird against the panel's left edge, which sits 14px from the host
+ * wall (essentials__sim-host padding). Adding 14px right padding INSIDE
+ * the panel column gives the race-info content the same breathing
+ * room on both sides relative to its enclosing container. */
+.race-wild-goose .sim-panel {
+  padding-right: 14px;
 }
 /* Belt-and-suspenders for inner rows. The .sim-races wraps its 6
  * distance buttons; the others have content that can compress. */

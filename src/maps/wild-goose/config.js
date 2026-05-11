@@ -134,6 +134,10 @@ function buildDirectionsHtml() {
         <h3 class="directions-eyebrow">Loop assembly</h3>
         <span class="directions-race" id="directionsRaceLabel">— mi · — ft</span>
       </div>
+      <label class="dir-zoom-toggle">
+        <input type="checkbox" id="zoomToStepCheckbox" checked onchange="setZoomToStep(this.checked)">
+        <span>Zoom to step</span>
+      </label>
       <span class="dir-cutoff-pill" id="dirCutoffPill"></span>
     </div>
 

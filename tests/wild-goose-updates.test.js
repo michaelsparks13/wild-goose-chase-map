@@ -180,6 +180,25 @@ describe('wild-goose editorial chrome', () => {
     it('un-hides .map-btns that shared editorial.css line 224 sets to display:none', () => {
       expect(html).toMatch(/\.race-wild-goose\s+\.course__map\s+\.map-btns\s*\{[^}]*display:\s*flex\s*!important/);
     });
+  });
+
+  describe('v6 design review contracts', () => {
+    it('surface-warm is barely-warmer-than-ivory (no longer a khaki #f4eed5)', () => {
+      expect(html).toContain('--surface-warm: #f7f3df');
+      expect(html).not.toContain('--surface-warm: #f4eed5'); // retired khaki
+    });
+    it('includes the Zoom-to-step checkbox in the directions header', () => {
+      expect(html).toContain('id="zoomToStepCheckbox"');
+      expect(html).toContain('class="dir-zoom-toggle"');
+      expect(html).toContain('function setZoomToStep(');
+    });
+    it('selectAssemblyStep respects the zoomToStep flag', () => {
+      expect(html).toContain('var zoomToStep = true');
+      expect(html).toMatch(/if\s*\(\s*zoomToStep\s*&&\s*map/);
+    });
+    it('sim panel has internal right padding for visual symmetry inside its column', () => {
+      expect(html).toMatch(/\.race-wild-goose\s+\.sim-panel\s*\{[^}]*padding-right:\s*14px/);
+    });
     it('assembly chips no longer render CW/CCW direction pills', () => {
       expect(html).not.toContain('class="assembly-chip__dir"');
     });

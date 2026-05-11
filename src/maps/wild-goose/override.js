@@ -80,6 +80,14 @@ var turnMarkers = [];
 var hqMarker = null;             // expose for toggleAid()
 var currentRaceId = (typeof DEFAULT_DISTANCE_ID === 'string') ? DEFAULT_DISTANCE_ID : '50k';
 var currentAssemblyStepIdx = 0;
+var zoomToStep = true;          // honored by selectAssemblyStep; toggled via checkbox
+
+// Wires the "Zoom to step" checkbox in the directions header. When
+// checked (default), clicking an assembly chip fits the map bounds to
+// that loop. When unchecked, the chip click still updates the cue list
+// + active state but the map stays put — useful for athletes scanning
+// the cue sheet without losing the overall course context.
+function setZoomToStep(on) { zoomToStep = !!on; }
 
 function initMap() {
   map = new maplibregl.Map({
@@ -349,7 +357,7 @@ function selectAssemblyStep(idx) {
     setHtml(listEl, listHtml);
   }
 
-  if (map && loop.geojson && loop.geojson.geometry) {
+  if (zoomToStep && map && loop.geojson && loop.geojson.geometry) {
     var coords = loop.geojson.geometry.coordinates;
     var minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
     for (var i = 0; i < coords.length; i++) {

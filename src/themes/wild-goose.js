@@ -42,7 +42,7 @@ module.exports = {
     raceBrand:    '#353F1E', // Sassquad dark forest (Wix --color_25)
     raceInk:      '#1a1a1a', // near-black, matches Sassquad body ink
     paper:        '#FFFFF0', // ivory — user-specified v5 substrate
-    surfaceWarm:  '#f4eed5', // recessed kraft, distinct from ivory paper
+    surfaceWarm:  '#f7f3df', // recessed near-paper, barely warmer than ivory (was #f4eed5 — too khaki)
     routeColor:   '#1a1a1a', // course default ink when no loop highlighted
     aidStation:   '#FDD80D', // Sassquad golden yellow (Wix --color_28)
     hazard:       '#B53528', // warm rust — no-aid-on-course strip + bears
