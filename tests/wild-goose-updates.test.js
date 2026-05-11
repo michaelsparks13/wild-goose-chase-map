@@ -110,21 +110,20 @@ describe('wild-goose editorial chrome', () => {
     });
   });
 
-  describe('palette (Sassquad-extracted Wix tokens, v3 cream-white + deeper olive)', () => {
-    it('uses cream-white paper (barely tinted off-white), not pure white or khaki', () => {
-      expect(html).toContain('--paper: #faf7ed');
+  describe('palette (Sassquad-extracted Wix tokens, v4 near-neutral white + dark forest)', () => {
+    it('uses near-neutral off-white paper, not pure white or khaki', () => {
+      expect(html).toContain('--paper: #fbfaf5');
       expect(html).not.toMatch(/--paper:\s*#fff(?:fff)?(?:;|\s)/i);
-      expect(html).not.toContain('--paper: #f4eee0'); // khaki paper retired
+      expect(html).not.toContain('--paper: #f4eee0'); // khaki retired
+      expect(html).not.toContain('--paper: #faf7ed'); // cream retired
     });
-    it('uses deeper Sassquad olive (between Wix color_24 and color_25) as race-brand', () => {
-      expect(html).toContain('--race-brand: #4F5F2D');
-      expect(html).not.toContain('--race-brand: #6A7E3D'); // washed-out olive retired
+    it('uses Sassquad dark forest (Wix --color_25) as race-brand', () => {
+      expect(html).toContain('--race-brand: #353F1E');
+      expect(html).not.toContain('--race-brand: #6A7E3D'); // washed olive retired
+      expect(html).not.toContain('--race-brand: #4F5F2D'); // mid olive retired
     });
     it('exposes Sassquad chartreuse (Wix --color_22) as accent token', () => {
       expect(html).toContain('--accent-chartreuse: #D4FC79');
-    });
-    it('exposes Sassquad dark forest (Wix --color_25) as deep tone', () => {
-      expect(html).toContain('--dark-forest: #353F1E');
     });
     it('uses trail-blaze pink + blue for loops', () => {
       expect(html).toContain('#E7338C'); // pink
@@ -141,11 +140,38 @@ describe('wild-goose editorial chrome', () => {
     });
     it('override.js reorders directions-section to be first in cue column', () => {
       expect(html).toContain('function reorderCueColumn(');
-      // Anchor selectors used to find the insertion point
       expect(html).toContain('h1.visually-hidden');
     });
     it('essentials sections cap at 720px max-width', () => {
       expect(html).toMatch(/main\s*>\s*section\.essentials[\s\S]{0,80}max-width:\s*720px/);
+    });
+  });
+
+  describe('v4 design review contracts', () => {
+    it('removes the MapLibre NavigationControl from the main map', () => {
+      // The weather radar mini-map keeps its own NavigationControl
+      // (different map instance); only the main `map.addControl` call
+      // is removed.
+      expect(html).not.toMatch(/\bmap\.addControl\s*\(\s*new\s+maplibregl\.NavigationControl/);
+    });
+    it('implements toggleAid bound to the HQ marker', () => {
+      expect(html).toContain('function toggleAid(');
+      expect(html).toContain('hqMarker.addTo(map)');
+      expect(html).toContain('hqMarker.remove()');
+    });
+    it('implements toggleStreetview (replaces toggleTurns)', () => {
+      expect(html).toContain('function toggleStreetview(');
+      // back-compat alias still defined
+      expect(html).toContain('function toggleTurns()');
+    });
+    it('hides the editorial template duplicate map controls', () => {
+      expect(html).toMatch(/\.race-wild-goose\s+\.course__map\s*>\s*\.map-controls\s*\{[^}]*display:\s*none/);
+    });
+    it('sim panel + visual get min-width:0 to stop grid overflow', () => {
+      expect(html).toMatch(/\.race-wild-goose\s+\.sim-panel[,\s\S]{0,60}\.race-wild-goose\s+\.sim-visual\s*\{[^}]*min-width:\s*0/);
+    });
+    it('assembly chips no longer render CW/CCW direction pills', () => {
+      expect(html).not.toContain('class="assembly-chip__dir"');
     });
   });
 

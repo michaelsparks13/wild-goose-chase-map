@@ -33,15 +33,21 @@ module.exports = {
   // color_24 and color_25, and paper is a near-white cream that still
   // avoids pure #ffffff per the brief.
   palette: {
-    raceBrand:    '#4F5F2D', // deep Sassquad olive (between Wix color_24 + color_25)
+    // v4: user feedback said v3's olive was still too light and the cream
+    // substrate still read as brown. Going to Sassquad's actual dark
+    // forest (#353F1E, Wix color_25) for raceBrand — the deepest forest
+    // green in their token table — and dropping paper to a near-neutral
+    // off-white (#fbfaf5) that has just enough warmth to avoid clinical
+    // pure-white without reading as kraft paper.
+    raceBrand:    '#353F1E', // Sassquad dark forest (Wix --color_25)
     raceInk:      '#1a1a1a', // near-black, matches Sassquad body ink
-    paper:        '#faf7ed', // cream-white substrate — barely tinted, no pure white
-    surfaceWarm:  '#efe9d5', // recessed kraft surface, distinct from paper
+    paper:        '#fbfaf5', // near-neutral off-white, barest cream warmth
+    surfaceWarm:  '#f1ecd9', // recessed kraft, distinct from paper but not muddy
     routeColor:   '#1a1a1a', // course default ink when no loop highlighted
     aidStation:   '#FDD80D', // Sassquad golden yellow (Wix --color_28)
     hazard:       '#B53528', // warm rust — no-aid-on-course strip + bears
     accent:       '#D4FC79', // Sassquad chartreuse (Wix --color_22) — active states
-    darkForest:   '#353F1E', // Sassquad dark forest (Wix --color_25) — deep tone
+    darkForest:   '#353F1E', // Sassquad dark forest (Wix --color_25) — same as raceBrand now
   },
 
   type: {

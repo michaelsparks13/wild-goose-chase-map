@@ -73,9 +73,11 @@ var BASEMAP_STYLE = {
 
 var map;
 var trailsOn = false;
-var turnsOn = false;
+var streetviewOn = false;       // formerly "turnsOn"; renamed for clarity
+var aidOn = true;               // HQ marker visible by default (it IS the start/finish)
 var terrain3D = false;
 var turnMarkers = [];
+var hqMarker = null;             // expose for toggleAid()
 var currentRaceId = (typeof DEFAULT_DISTANCE_ID === 'string') ? DEFAULT_DISTANCE_ID : '50k';
 var currentAssemblyStepIdx = 0;
 
@@ -98,7 +100,9 @@ function initMap() {
     if (attrib) { attrib.removeAttribute('open'); attrib.classList.remove('maplibregl-compact-show'); }
   });
 
-  map.addControl(new maplibregl.NavigationControl(), 'top-right');
+  // Navigation controls (zoom +/- + compass) removed per design review.
+  // Users can pinch/scroll-zoom + drag-pan; the buttons added visual
+  // clutter without earning their space on a map this small.
 
   map.on('load', function() {
     ['roads_other','roads_bridges_other','roads_bridges_other_casing',
@@ -174,6 +178,8 @@ function initMap() {
     addHqMarker();
     addTurnMarkers();
     selectRace(currentRaceId);
+    // HQ is on by default; reflect that in both button sets.
+    syncToggleButtons('aid', aidOn);
   });
 }
 
@@ -182,15 +188,15 @@ function addHqMarker() {
   el.className = 'hq-marker';
   setHtml(el,
     '<svg viewBox="0 0 32 32">' +
-    '<circle cx="16" cy="16" r="12" fill="var(--aid-color, #E07A1F)" stroke="#1f1d18" stroke-width="2"/>' +
-    '<text x="16" y="20" text-anchor="middle" font-size="12" font-weight="700" fill="#1f1d18">HQ</text>' +
+    '<circle cx="16" cy="16" r="12" fill="var(--aid-color, #FDD80D)" stroke="#1a1a1a" stroke-width="2"/>' +
+    '<text x="16" y="20" text-anchor="middle" font-size="11" font-weight="700" fill="#1a1a1a">HQ</text>' +
     '</svg>'
   );
-  new maplibregl.Marker({ element: el })
+  hqMarker = new maplibregl.Marker({ element: el })
     .setLngLat(HQ)
     .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML(
-      '<strong style="color:#2F6B2A">Squatch HQ</strong><br>' +
-      '<span style="color:#52503f">Start/Finish · the only aid station on course</span>'
+      '<strong style="color:#353F1E">Squatch HQ</strong><br>' +
+      '<span style="color:#4a4a3e">Start / Finish · the only aid station on course</span>'
     ))
     .addTo(map);
 }
@@ -284,15 +290,16 @@ function buildAssemblyStrip() {
   for (var i = 0; i < race.loops.length; i++) {
     var lid = race.loops[i];
     var loop = LOOPS[lid];
-    var dir = (race.directions && race.directions[i]) ? race.directions[i] : loop.defaultDirection || 'CW';
     var dotMarkup = loop.pattern === 'checkered'
       ? '<span class="assembly-chip__dot assembly-chip__dot--checkered"></span>'
       : '<span class="assembly-chip__dot" style="background:' + loop.color + '"></span>';
     var arrow = i < race.loops.length - 1 ? '<span class="assembly-chip__arrow" aria-hidden="true">→</span>' : '';
+    // CW/CCW direction pill removed — felt like jargon to anyone who
+    // hasn't run a loop ultra. Direction info still lives in the theme
+    // for any future use (printable cue sheet, accessibility text, etc.)
     html += '<button type="button" class="assembly-chip" role="listitem" data-step="' + i + '" onclick="selectAssemblyStep(' + i + ')">' +
       dotMarkup +
       '<span class="assembly-chip__label">' + loop.label + '</span>' +
-      '<span class="assembly-chip__dir">' + dir + '</span>' +
       '</button>' + arrow;
   }
   setHtml(strip, html);
@@ -314,13 +321,12 @@ function selectAssemblyStep(idx) {
 
   var lid = race.loops[idx];
   var loop = LOOPS[lid];
-  var dir = (race.directions && race.directions[idx]) ? race.directions[idx] : loop.defaultDirection || 'CW';
 
   var nowLabel = document.getElementById('assemblyNowLabel');
   if (nowLabel) {
     setHtml(nowLabel,
       'Loop <strong>' + (idx + 1) + '</strong> of <strong>' + race.loops.length + '</strong> · ' +
-      '<span class="assembly-now__loop" style="color:' + (loop.pattern === 'checkered' ? '#1f1d18' : loop.color) + '">' + loop.label + ' ' + dir + '</span> · ' +
+      '<span class="assembly-now__loop" style="color:' + (loop.pattern === 'checkered' ? '#1a1a1a' : loop.color) + '">' + loop.label + '</span> · ' +
       loop.miles + ' mi · ' + loop.gain + ' ft'
     );
   }
@@ -380,7 +386,7 @@ function escapeText(s) {
 
 function toggleTrails() {
   trailsOn = !trailsOn;
-  document.getElementById('trailBtn').classList.toggle('active', trailsOn);
+  syncToggleButtons('trails', trailsOn);
   if (!map) return;
 
   if (trailsOn) {
@@ -431,15 +437,52 @@ function toggleTrails() {
   }
 }
 
-function toggleTurns() {
-  turnsOn = !turnsOn;
-  document.getElementById('turnsBtn').classList.toggle('active', turnsOn);
-  turnMarkers.forEach(function(t) { t.element.style.display = turnsOn ? 'block' : 'none'; });
+// Aid Stations toggle — Wild Goose has ONE on-course aid (Squatch HQ at
+// start/finish). Toggling adds/removes the marker element from the map.
+function toggleAid() {
+  aidOn = !aidOn;
+  syncToggleButtons('aid', aidOn);
+  if (!hqMarker || !map) return;
+  if (aidOn) hqMarker.addTo(map);
+  else hqMarker.remove();
+}
+
+// Street View toggle — shows numbered turn markers along the course.
+// Clicking a marker opens a maplibre Popup with a Google Street View
+// thumbnail of that turn. Previously called toggleTurns(); renamed for
+// the more athlete-facing label. The old name stays as an alias for
+// any external embed code that called it.
+function toggleStreetview() {
+  streetviewOn = !streetviewOn;
+  syncToggleButtons('streetview', streetviewOn);
+  turnMarkers.forEach(function(t) {
+    t.element.style.display = streetviewOn ? 'block' : 'none';
+  });
+}
+// Back-compat alias for any embed snippet still calling the old name.
+function toggleTurns() { toggleStreetview(); }
+
+// The editorial template (race-shell.html) renders a top-of-map button
+// row with ids aidBtn / streetviewBtn / terrainBtn. We also render an
+// inline button row inside .map-wrap with ids aidBtnInline / streetview
+// BtnInline / trailBtn / terrainBtn. Both sets call the same toggle
+// functions; keep their .active classes in sync so neither set lies.
+function syncToggleButtons(key, on) {
+  var ids = {
+    aid:        ['aidBtn', 'aidBtnInline'],
+    streetview: ['streetviewBtn', 'streetviewBtnInline'],
+    trails:     ['trailBtn', 'trailBtnInline'],
+    terrain:    ['terrainBtn', 'terrainBtnInline'],
+  }[key] || [];
+  for (var i = 0; i < ids.length; i++) {
+    var el = document.getElementById(ids[i]);
+    if (el) el.classList.toggle('active', !!on);
+  }
 }
 
 function toggle3D() {
   terrain3D = !terrain3D;
-  document.getElementById('terrainBtn').classList.toggle('active', terrain3D);
+  syncToggleButtons('terrain', terrain3D);
   if (!map) return;
   if (terrain3D) {
     map.setTerrain({ source: 'terrain-dem', exaggeration: 1.3 });

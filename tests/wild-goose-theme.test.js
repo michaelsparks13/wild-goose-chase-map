@@ -21,16 +21,17 @@ describe('wild-goose theme — identity + scope', () => {
 });
 
 describe('wild-goose theme — palette (extracted from Sassquad Wix tokens)', () => {
-  it('paper is cream-white (barely tinted), not pure white or khaki', () => {
-    // v3: paper moved from #f4eee0 (khaki) to #faf7ed (cream-white) so
-    // the substrate reads as clean paper, not light brown.
+  it('paper is near-neutral off-white (barest warmth), not pure white or khaki', () => {
+    // v4: paper #faf7ed still read as cream. Going lighter again to
+    // #fbfaf5 — closer to neutral but still off-white per the brief.
     expect(theme.palette.paper.toLowerCase()).not.toBe('#ffffff');
-    expect(theme.palette.paper.toLowerCase()).toBe('#faf7ed');
+    expect(theme.palette.paper.toLowerCase()).toBe('#fbfaf5');
   });
-  it('race-brand is deeper Sassquad olive (between Wix color_24 and color_25)', () => {
-    // v3: bumped from #6A7E3D (light olive) to #4F5F2D so the brand
-    // accent reads against the dark top bar without going muddy.
-    expect(theme.palette.raceBrand).toBe('#4F5F2D');
+  it('race-brand is Sassquad dark forest (Wix --color_25)', () => {
+    // v4: user feedback said v3's #4F5F2D was still too light. Going
+    // to Sassquad's actual deepest forest green (color_25) for the
+    // brand color so it has real contrast on the cream substrate.
+    expect(theme.palette.raceBrand).toBe('#353F1E');
   });
   it('accent is Sassquad chartreuse (Wix --color_22)', () => {
     expect(theme.palette.accent).toBe('#D4FC79');

@@ -164,9 +164,10 @@ const mapViewHtml = `<div id="mapView" class="view active">
   <div id="map"></div>
   <div class="hq-badge"><div class="dot"></div><div class="text">SQUATCH HQ</div></div>
   <div class="map-btns">
-    <button class="trail-btn" id="turnsBtn" onclick="toggleTurns()">Turns</button>
-    <button class="trail-btn" id="trailBtn" onclick="toggleTrails()">Park Trails</button>
-    <button class="trail-btn" id="terrainBtn" onclick="toggle3D()">3D</button>
+    <button class="trail-btn" id="aidBtnInline" onclick="toggleAid()">Aid Stations</button>
+    <button class="trail-btn" id="streetviewBtnInline" onclick="toggleStreetview()">Street View</button>
+    <button class="trail-btn" id="trailBtnInline" onclick="toggleTrails()">Park Trails</button>
+    <button class="trail-btn" id="terrainBtnInline" onclick="toggle3D()">3D</button>
   </div>
 </div>
 

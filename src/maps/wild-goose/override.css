@@ -535,7 +535,13 @@ body.race-page.race-wild-goose {
 
 .race-wild-goose .sim-container {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr);
+  /* minmax(0, 1fr) is the standard escape hatch for grid items that
+   * won't shrink. The previous minmax(280px, 1fr) let the panel push
+   * its track up to min-content (~400px), overlapping the visual
+   * column. minmax(0, 1fr) clamps the track to 1fr regardless of
+   * item min-content size. Combined with min-width: 0 on the items,
+   * the panel now respects its column width. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 14px;
   background: var(--paper);
 }
@@ -888,6 +894,46 @@ body.race-page.race-wild-goose {
 .race-wild-goose .view-tabs { display: none !important; }
 .race-wild-goose .legacy-controls { display: none !important; }
 .race-wild-goose #essentialsAid[hidden] { display: none !important; }
+
+/* race-shell.html paints a .map-controls bar of buttons (aid / street
+ * view / 3D) above the map. We render our own set inside .map-wrap
+ * with one extra (Park Trails) — so the editorial-template's set is a
+ * confusing duplicate. Hide it on this race only. */
+.race-wild-goose .course__map > .map-controls { display: none !important; }
+
+/* MapLibre navigation buttons (zoom in / out / compass) removed in JS
+ * for v4 — they added clutter on this small map. If anything sneaks
+ * back, this CSS belt-and-suspenders kills them too. */
+.race-wild-goose .maplibregl-ctrl-top-right .maplibregl-ctrl-group:not(.maplibregl-ctrl-attrib-inner) {
+  display: none !important;
+}
+
+/* ─── Issue #6 fix — sim panel + visual columns overflow ────────── */
+/* Two layers needed:
+ *   1. min-width:0 lets the grid item shrink past min-content.
+ *   2. width:100% explicitly fills the grid track. Without this, a
+ *      display:flex grid item ignores the track and sizes to its
+ *      widest child (the .sim-races button row, ~400px min-content).
+ *      Combined with the minmax(0, 1fr) tracks on .sim-container,
+ *      this prevents the panel from overlapping the visual column. */
+.race-wild-goose .sim-panel,
+.race-wild-goose .sim-visual {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+/* Belt-and-suspenders for inner rows. The .sim-races wraps its 6
+ * distance buttons; the others have content that can compress. */
+.race-wild-goose .goal-time-bar,
+.race-wild-goose .sim-races,
+.race-wild-goose .scrubber,
+.race-wild-goose .sim-clock,
+.race-wild-goose .sim-stats,
+.race-wild-goose .loop-progress {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
 
 /* ─── Mobile breakpoint ───────────────────────────────────────────── */
 

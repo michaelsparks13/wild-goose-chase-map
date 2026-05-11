@@ -75,19 +75,89 @@ test.describe('Wild Goose Trail Festival — editorial chrome', () => {
     await expect(cueList).toContainText('Banker Trail');
   });
 
-  test('palette tokens come from Sassquad Wix extraction (deeper olive + chartreuse + cream-white)', async ({ page }) => {
+  test('palette tokens come from Sassquad Wix extraction (dark forest + chartreuse + near-neutral white)', async ({ page }) => {
     const brand = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--race-brand').trim()
     );
-    expect(brand.toLowerCase()).toBe('#4f5f2d');
+    expect(brand.toLowerCase()).toBe('#353f1e');
     const paper = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()
     );
-    expect(paper.toLowerCase()).toBe('#faf7ed');
+    expect(paper.toLowerCase()).toBe('#fbfaf5');
     const accent = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--accent-chartreuse').trim()
     );
     expect(accent.toLowerCase()).toBe('#d4fc79');
+  });
+
+  test('toggleAid hides/shows the Squatch HQ marker', async ({ page }) => {
+    await page.waitForSelector('.hq-marker', { timeout: 5000 });
+    // HQ is visible by default
+    const before = await page.locator('.hq-marker').count();
+    expect(before).toBe(1);
+    await page.evaluate(() => window.toggleAid());
+    // After toggle: marker removed from DOM
+    const after = await page.locator('.hq-marker').count();
+    expect(after).toBe(0);
+    // Toggle back on
+    await page.evaluate(() => window.toggleAid());
+    const restored = await page.locator('.hq-marker').count();
+    expect(restored).toBe(1);
+  });
+
+  test('toggleStreetview shows the numbered turn markers (7 of them)', async ({ page }) => {
+    await page.waitForLoadState('networkidle');
+    // Initially hidden (display:none) — toggle exposes them
+    const beforeVisible = await page.locator('.turn-marker:visible').count();
+    expect(beforeVisible).toBe(0);
+    await page.evaluate(() => window.toggleStreetview());
+    const afterVisible = await page.locator('.turn-marker:visible').count();
+    expect(afterVisible).toBe(7);
+  });
+
+  test('MapLibre navigation control (zoom + compass) is NOT rendered on the MAIN map', async ({ page }) => {
+    await page.waitForLoadState('networkidle');
+    // The weather radar mini-map keeps its own zoom buttons (it's a
+    // separate MapLibre instance inside the weather panel). Only the
+    // main #map should have no zoom control.
+    const mainZoom = await page.locator('#map .maplibregl-ctrl-zoom-in').count();
+    expect(mainZoom).toBe(0);
+  });
+
+  test('editorial template duplicate map controls are hidden', async ({ page }) => {
+    // race-shell.html renders a .map-controls bar above {{MAP_HTML}}; we
+    // hide it for wild-goose because our inline button set is the source
+    // of truth.
+    const ed = page.locator('.course__map > .map-controls');
+    await expect(ed).toBeHidden();
+  });
+
+  test('assembly chips no longer render CW/CCW direction pills', async ({ page }) => {
+    await expect(page.locator('.assembly-chip__dir')).toHaveCount(0);
+  });
+
+  test('sim panel + visual columns do NOT overlap', async ({ page }) => {
+    // Scroll the simulator into view so layout settles
+    await page.locator('#essentialsSimulator').scrollIntoViewIfNeeded();
+    await page.waitForTimeout(400);
+    const data = await page.evaluate(() => {
+      const panel = document.querySelector('.sim-panel');
+      const visual = document.querySelector('.sim-visual');
+      const container = document.querySelector('.sim-container');
+      const p = panel.getBoundingClientRect();
+      const v = visual.getBoundingClientRect();
+      const cs = getComputedStyle(panel);
+      return {
+        panelRight: p.x + p.width,
+        visualLeft: v.x,
+        panelMinWidth: cs.minWidth,
+        panelWidth: p.width,
+        panelScrollWidth: panel.scrollWidth,
+        track: getComputedStyle(container).gridTemplateColumns,
+      };
+    });
+    console.log('SIM LAYOUT DEBUG:', JSON.stringify(data));
+    expect(data.panelRight).toBeLessThanOrEqual(data.visualLeft + 1);
   });
 
   test('Squatch HQ marker renders at non-zero size AND visually within the map viewport', async ({ page }) => {
