@@ -334,6 +334,7 @@ module.exports = {
     '--aid-color':     theme.palette.aidStation,
     '--hazard-color':  theme.palette.hazard,
     '--accent-chartreuse': theme.palette.accent,
+    '--header-accent': theme.palette.headerAccent,
     '--dark-forest':   theme.palette.darkForest,
     '--font-display':  theme.type.displayStack,
     '--font-body':     theme.type.bodyStack,

@@ -25,6 +25,16 @@ body.race-page.race-wild-goose {
   color: var(--ink);
 }
 
+/* ─── Top-bar accent (Wild Goose Trail Festival wordmark + countdown) ─
+ * Per design review v5: the race wordmark and the live "Race in X
+ * days" countdown both render in a brand-distinct chartreuse-yellow
+ * (#b7e815) against the dark top bar, so they stand apart from the
+ * neutral race-day strip cells. */
+.race-wild-goose .race-mark__name,
+.race-wild-goose #raceCountdown {
+  color: var(--header-accent, #b7e815);
+}
+
 /* Below-map content is single-column reading width. The .course section
  * (sticky map + cues split) stays at full container width — the map is
  * the hero. Everything after it — elevation, simulator, weather, day,
@@ -99,9 +109,22 @@ body.race-page.race-wild-goose {
   background: var(--aid-color, #E07A1F);
   border: 1px solid var(--ink);
 }
-.race-wild-goose .map-btns {
-  position: absolute; top: 12px; right: 56px; z-index: 10;
-  display: flex; gap: 5px;
+/* Shared editorial.css line 224 hides .course__map .map-btns as a
+ * "legacy duplicate" of .map-toggles. For wild-goose we use .map-btns
+ * as the PRIMARY map-control row (positioned inside the map). Force
+ * it back to flex with higher specificity + !important to win over
+ * editorial.css's display: none. The editorial template's own
+ * .map-controls bar stays hidden so we have a single source of
+ * truth. */
+.race-wild-goose .course__map .map-btns {
+  display: flex !important;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  gap: 5px;
+  flex-wrap: wrap;
+  max-width: calc(100% - 24px);
 }
 .race-wild-goose .trail-btn {
   background: var(--paper);
@@ -542,7 +565,9 @@ body.race-page.race-wild-goose {
    * item min-content size. Combined with min-width: 0 on the items,
    * the panel now respects its column width. */
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 14px;
+  /* v5: bumped from 14px to 32px so there's clear visual separation
+   * between the race-info panel and the course-visual canvas. */
+  gap: 32px;
   background: var(--paper);
 }
 @media (max-width: 880px) {

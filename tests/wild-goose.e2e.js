@@ -75,7 +75,7 @@ test.describe('Wild Goose Trail Festival — editorial chrome', () => {
     await expect(cueList).toContainText('Banker Trail');
   });
 
-  test('palette tokens come from Sassquad Wix extraction (dark forest + chartreuse + near-neutral white)', async ({ page }) => {
+  test('palette tokens: ivory paper + dark forest brand + chartreuse-yellow header accent', async ({ page }) => {
     const brand = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--race-brand').trim()
     );
@@ -83,11 +83,61 @@ test.describe('Wild Goose Trail Festival — editorial chrome', () => {
     const paper = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()
     );
-    expect(paper.toLowerCase()).toBe('#fbfaf5');
+    expect(paper.toUpperCase()).toBe('#FFFFF0');
     const accent = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--accent-chartreuse').trim()
     );
     expect(accent.toLowerCase()).toBe('#d4fc79');
+    const headerAccent = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--header-accent').trim()
+    );
+    expect(headerAccent.toLowerCase()).toBe('#b7e815');
+  });
+
+  test('top-bar wordmark + countdown render in the chartreuse-yellow header accent', async ({ page }) => {
+    const wordmarkColor = await page.evaluate(() =>
+      getComputedStyle(document.querySelector('.race-mark__name')).color
+    );
+    const countdownColor = await page.evaluate(() =>
+      getComputedStyle(document.querySelector('#raceCountdown')).color
+    );
+    // #b7e815 == rgb(183, 232, 21)
+    expect(wordmarkColor).toBe('rgb(183, 232, 21)');
+    expect(countdownColor).toBe('rgb(183, 232, 21)');
+  });
+
+  test('map button row inside the map is visible (Aid Stations + Street View + Park Trails + 3D)', async ({ page }) => {
+    // Shared editorial.css hides .map-btns as a "legacy duplicate"; our
+    // override.css re-enables it for wild-goose. All 4 inline toggles
+    // must render non-zero.
+    const dims = await page.evaluate(() => {
+      const ids = ['aidBtnInline', 'streetviewBtnInline', 'trailBtnInline', 'terrainBtnInline'];
+      return ids.map(id => {
+        const el = document.getElementById(id);
+        if (!el) return { id, present: false };
+        const r = el.getBoundingClientRect();
+        return { id, present: true, w: Math.round(r.width), h: Math.round(r.height) };
+      });
+    });
+    for (const d of dims) {
+      expect(d.present).toBe(true);
+      // The compact "3D" button is ~38px; the rest are 80-110px. Use a
+      // tap-target floor that catches the "0x0 because parent hidden"
+      // failure mode without being precious about exact label widths.
+      expect(d.w).toBeGreaterThan(24);
+      expect(d.h).toBeGreaterThan(16);
+    }
+  });
+
+  test('sim panel + visual have a clear 32px+ visual gap (no near-touch)', async ({ page }) => {
+    await page.locator('#essentialsSimulator').scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+    const gapPx = await page.evaluate(() => {
+      const p = document.querySelector('.sim-panel').getBoundingClientRect();
+      const v = document.querySelector('.sim-visual').getBoundingClientRect();
+      return v.x - (p.x + p.width);
+    });
+    expect(gapPx).toBeGreaterThanOrEqual(28);
   });
 
   test('toggleAid hides/shows the Squatch HQ marker', async ({ page }) => {

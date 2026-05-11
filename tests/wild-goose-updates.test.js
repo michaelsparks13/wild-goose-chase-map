@@ -110,19 +110,23 @@ describe('wild-goose editorial chrome', () => {
     });
   });
 
-  describe('palette (Sassquad-extracted Wix tokens, v4 near-neutral white + dark forest)', () => {
-    it('uses near-neutral off-white paper, not pure white or khaki', () => {
-      expect(html).toContain('--paper: #fbfaf5');
+  describe('palette (v5 ivory + dark-forest + chartreuse-yellow header accent)', () => {
+    it('uses ivory paper #FFFFF0 (per user spec), not pure white or khaki', () => {
+      expect(html).toContain('--paper: #FFFFF0');
       expect(html).not.toMatch(/--paper:\s*#fff(?:fff)?(?:;|\s)/i);
-      expect(html).not.toContain('--paper: #f4eee0'); // khaki retired
-      expect(html).not.toContain('--paper: #faf7ed'); // cream retired
+      expect(html).not.toContain('--paper: #f4eee0'); // v1 khaki retired
+      expect(html).not.toContain('--paper: #faf7ed'); // v3 cream retired
+      expect(html).not.toContain('--paper: #fbfaf5'); // v4 near-neutral retired
     });
     it('uses Sassquad dark forest (Wix --color_25) as race-brand', () => {
       expect(html).toContain('--race-brand: #353F1E');
-      expect(html).not.toContain('--race-brand: #6A7E3D'); // washed olive retired
-      expect(html).not.toContain('--race-brand: #4F5F2D'); // mid olive retired
     });
-    it('exposes Sassquad chartreuse (Wix --color_22) as accent token', () => {
+    it('exposes chartreuse-yellow #b7e815 as header-accent for wordmark + countdown', () => {
+      expect(html).toContain('--header-accent: #b7e815');
+      // applied to .race-mark__name + #raceCountdown
+      expect(html).toMatch(/\.race-mark__name[,\s\S]{0,80}#raceCountdown\s*\{[^}]*color:\s*var\(--header-accent/);
+    });
+    it('exposes Sassquad chartreuse (Wix --color_22) as accent-chartreuse for chip/tab', () => {
       expect(html).toContain('--accent-chartreuse: #D4FC79');
     });
     it('uses trail-blaze pink + blue for loops', () => {
@@ -169,6 +173,12 @@ describe('wild-goose editorial chrome', () => {
     });
     it('sim panel + visual get min-width:0 to stop grid overflow', () => {
       expect(html).toMatch(/\.race-wild-goose\s+\.sim-panel[,\s\S]{0,60}\.race-wild-goose\s+\.sim-visual\s*\{[^}]*min-width:\s*0/);
+    });
+    it('sim-container gap is 32px (v5) for clear separation between panel + visual', () => {
+      expect(html).toMatch(/\.race-wild-goose\s+\.sim-container\s*\{[^}]*gap:\s*32px/);
+    });
+    it('un-hides .map-btns that shared editorial.css line 224 sets to display:none', () => {
+      expect(html).toMatch(/\.race-wild-goose\s+\.course__map\s+\.map-btns\s*\{[^}]*display:\s*flex\s*!important/);
     });
     it('assembly chips no longer render CW/CCW direction pills', () => {
       expect(html).not.toContain('class="assembly-chip__dir"');

@@ -21,11 +21,14 @@ describe('wild-goose theme — identity + scope', () => {
 });
 
 describe('wild-goose theme — palette (extracted from Sassquad Wix tokens)', () => {
-  it('paper is near-neutral off-white (barest warmth), not pure white or khaki', () => {
-    // v4: paper #faf7ed still read as cream. Going lighter again to
-    // #fbfaf5 — closer to neutral but still off-white per the brief.
+  it('paper is ivory (#FFFFF0) — user-specified v5 substrate', () => {
+    // v5: paper bumped to ivory #FFFFF0 (255,255,240) per user request.
+    // Just enough warmth to avoid clinical pure-white per the brief.
     expect(theme.palette.paper.toLowerCase()).not.toBe('#ffffff');
-    expect(theme.palette.paper.toLowerCase()).toBe('#fbfaf5');
+    expect(theme.palette.paper.toUpperCase()).toBe('#FFFFF0');
+  });
+  it('headerAccent is the user-specified chartreuse-yellow for wordmark + countdown', () => {
+    expect(theme.palette.headerAccent).toBe('#b7e815');
   });
   it('race-brand is Sassquad dark forest (Wix --color_25)', () => {
     // v4: user feedback said v3's #4F5F2D was still too light. Going

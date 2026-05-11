@@ -41,12 +41,13 @@ module.exports = {
     // pure-white without reading as kraft paper.
     raceBrand:    '#353F1E', // Sassquad dark forest (Wix --color_25)
     raceInk:      '#1a1a1a', // near-black, matches Sassquad body ink
-    paper:        '#fbfaf5', // near-neutral off-white, barest cream warmth
-    surfaceWarm:  '#f1ecd9', // recessed kraft, distinct from paper but not muddy
+    paper:        '#FFFFF0', // ivory — user-specified v5 substrate
+    surfaceWarm:  '#f4eed5', // recessed kraft, distinct from ivory paper
     routeColor:   '#1a1a1a', // course default ink when no loop highlighted
     aidStation:   '#FDD80D', // Sassquad golden yellow (Wix --color_28)
     hazard:       '#B53528', // warm rust — no-aid-on-course strip + bears
-    accent:       '#D4FC79', // Sassquad chartreuse (Wix --color_22) — active states
+    accent:       '#D4FC79', // Sassquad chartreuse (Wix --color_22) — active states (chip + tab)
+    headerAccent: '#b7e815', // user-specified v5 header color (wordmark + countdown)
     darkForest:   '#353F1E', // Sassquad dark forest (Wix --color_25) — same as raceBrand now
   },
 
