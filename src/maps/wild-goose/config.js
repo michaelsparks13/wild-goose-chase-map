@@ -5,53 +5,83 @@ function loadJSON(file) {
   return JSON.parse(fs.readFileSync(path.join(__dirname, file), 'utf8'));
 }
 
-// Load loop data
-const pinkGeo = loadJSON('data/pink.geojson');
-const pinkProfile = loadJSON('data/pink-profile.json');
-const blueGeo = loadJSON('data/blue.geojson');
-const blueProfile = loadJSON('data/blue-profile.json');
-const checkeredGeo = loadJSON('data/checkered.geojson');
+const theme = require('../../themes/wild-goose.js');
+
+// Loop geometry + per-loop elevation profile JSON. Loop metadata
+// (display name, miles, gain, color, pattern) is driven by the theme so
+// there is a single source of truth — the override.js LOOPS object is
+// constructed from the theme below.
+const pinkGeo       = loadJSON('data/pink.geojson');
+const pinkProfile   = loadJSON('data/pink-profile.json');
+const blueGeo       = loadJSON('data/blue.geojson');
+const blueProfile   = loadJSON('data/blue-profile.json');
+const checkeredGeo  = loadJSON('data/checkered.geojson');
 const checkeredProfile = loadJSON('data/checkered-profile.json');
-const trailsData = loadJSON('data/trails.geojson');
-const weatherData = fs.existsSync(path.join(__dirname, 'data/weather.json'))
+const trailsData    = loadJSON('data/trails.geojson');
+const weatherData   = fs.existsSync(path.join(__dirname, 'data/weather.json'))
   ? loadJSON('data/weather.json') : null;
 
-// Build the custom config data JS block (replaces standard CONFIG block)
-// Wild Goose uses LOOPS, RACES, HQ instead of CONFIG.courseCoords
+// Build the LOOPS object from the theme. The override.js renderer reads
+// .geojson + .profile off each entry; pattern is preserved for the
+// checkered render path.
+const loopGeometry = {
+  pink:      { geojson: pinkGeo,      profile: pinkProfile },
+  blue:      { geojson: blueGeo,      profile: blueProfile },
+  checkered: { geojson: checkeredGeo, profile: checkeredProfile },
+};
+
+const themeLoops = theme.raceFormat.loops;
+const loopsJsLines = themeLoops.map(l => {
+  const g = loopGeometry[l.id];
+  const patternField = l.pattern ? `pattern: '${l.pattern}', ` : '';
+  return `  ${l.id}: { color: '${l.color}', ${patternField}label: '${l.displayName}', abbr: '${l.displayName.charAt(0)}', miles: ${l.miles}, gain: ${l.elevationGain}, defaultDirection: '${l.defaultDirection}', geojson: null, profile: null, visible: true }`;
+}).join(',\n');
+
+// Build RACES from the theme distances — single source of truth. Each
+// race's loop sequence is the theme assembly's loopId order; direction
+// is captured per step so future override.js can flip CCW renders.
+const racesJsLines = theme.raceFormat.distances.map(d => {
+  const loops = (d.assembly || []).map(s => `'${s.loopId}'`).join(',');
+  const dirs  = (d.assembly || []).map(s => `'${s.direction}'`).join(',');
+  return `  '${d.id}': { name: '${d.label}', miles: ${d.runMiles}, gain: ${d.runGainFt}, hours: ${(d.runMiles / 6).toFixed(2)}, cutoff: '${d.cutoff || ''}', color: '${d.color}', loops: [${loops}], directions: [${dirs}] }`;
+}).join(',\n');
+
 const configDataJs = `
 var LOOPS = {
-  pink: { color: '#E834EC', label: 'Pink', abbr: 'P', miles: 7.75, gain: 840, geojson: null, profile: null, visible: true },
-  blue: { color: '#0479FF', label: 'Blue', abbr: 'B', miles: 6.0, gain: 600, geojson: null, profile: null, visible: true },
-  checkered: { color: '#333', pattern: 'checkered', label: 'Checkered', abbr: 'C', miles: 4.75, gain: 479, geojson: null, profile: null, visible: true }
+${loopsJsLines}
 };
 
 var RACES = {
-  all: { name: 'All Loops', miles: 18.5, hours: 3.5, loops: ['pink','blue','checkered'] },
-  '10k': { name: '10K', miles: 6, hours: 1, loops: ['blue'] },
-  half: { name: 'Half Marathon', miles: 13.75, hours: 2.5, loops: ['blue','pink'] },
-  '30k': { name: '30K', miles: 18.5, hours: 3.5, loops: ['pink','checkered','blue'] },
-  '50k': { name: '50K', miles: 31, hours: 6.5, loops: ['pink','checkered','blue','pink','checkered'] },
-  '50m': { name: '50 Miler', miles: 50.75, hours: 12, loops: ['checkered','blue','pink','checkered','blue','pink','blue','pink'] },
-  '100k': { name: '100K', miles: 62, hours: 16, loops: ['pink','checkered','blue','pink','checkered','pink','checkered','blue','pink','checkered'] },
-  '100m': { name: '100 Miler', miles: 100.25, hours: 30, loops: ['pink','checkered','blue','pink','checkered','blue','pink','checkered','blue','pink','checkered','blue','pink','checkered','blue','pink'] }
+${racesJsLines}
 };
+
+var DEFAULT_DISTANCE_ID = '${theme.raceFormat.defaultDistanceId}';
+
+var LOOP_CUES = ${JSON.stringify(
+  themeLoops.reduce((acc, l) => {
+    acc[l.id] = l.cues || [];
+    return acc;
+  }, {})
+)};
 
 var HQ = [-74.4292, 41.1905];
 
-var pinkData = ${JSON.stringify(Object.assign({}, pinkGeo, { profile: pinkProfile }))};
-var blueData = ${JSON.stringify(Object.assign({}, blueGeo, { profile: blueProfile }))};
+var pinkData      = ${JSON.stringify(Object.assign({}, pinkGeo,      { profile: pinkProfile }))};
+var blueData      = ${JSON.stringify(Object.assign({}, blueGeo,      { profile: blueProfile }))};
 var checkeredData = ${JSON.stringify(Object.assign({}, checkeredGeo, { profile: checkeredProfile }))};
 var courseTrailsData = ${JSON.stringify(trailsData)};
 var CONFIG = { mapCenter: [-74.432, 41.183], weather: ${JSON.stringify(weatherData)} };
 
-LOOPS.pink.geojson = pinkData.features[0];
-LOOPS.pink.profile = pinkData.profile;
-LOOPS.blue.geojson = blueData.features[0];
-LOOPS.blue.profile = blueData.profile;
+LOOPS.pink.geojson      = pinkData.features[0];
+LOOPS.pink.profile      = pinkData.profile;
+LOOPS.blue.geojson      = blueData.features[0];
+LOOPS.blue.profile      = blueData.profile;
 LOOPS.checkered.geojson = checkeredData.features[0];
 LOOPS.checkered.profile = checkeredData.profile;
 
-// Pre-compute cumulative distances for each loop's coordinates
+// Per-loop cumulative-distance lookup keyed by coordinate index. Lets
+// override.js map a mile value to a [lng,lat] on the rendered geometry
+// during simulator playback.
 var loopCoordDistances = {};
 (function() {
   var loopIds = ['pink', 'blue', 'checkered'];
@@ -72,127 +102,91 @@ var loopCoordDistances = {};
 })();
 `;
 
-module.exports = {
-  slug: 'wild-goose',
-  title: 'Wild Goose Trail Festival — Course Map',
-  raceName: 'WILD GOOSE TRAIL FESTIVAL',
-  themeColor: '#ffffff',
-  googleFontsUrl: '<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">',
-  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
-  subtitle: 'September 18\u201320, 2026 &middot; <a href="https://www.sassquadtrailrunning.com/wildgoose" target="_blank">sassquadtrailrunning.com</a>',
+// Build the directions-section HTML — this is what editorial-runtime.js
+// relocates from inside the map column into the .course__cues column
+// next to the sticky map.
+//
+// Structure:
+//   1. dir-race-tabs — distance picker (10K / Half / 50K / 50M / 100K / 100M)
+//   2. directions-header — "Loop assembly · 50K"
+//   3. assembly-strip   — chips per loop, with direction arrow
+//   4. directions-list  — current loop's within-loop cues (terrain awareness)
+function buildDirectionsHtml() {
+  const distances = theme.raceFormat.distances;
+  const defaultId = theme.raceFormat.defaultDistanceId;
 
-  cssVars: {
-    '--green': '#5CA921',
-    '--green-dark': '#4a8a1b',
-    '--orange': '#ff8044',
-    '--bg': '#ffffff',
-    '--bg-alt': '#f2f2f2',
-    '--bg-card': '#ffffff',
-    '--text': '#1a1a1a',
-    '--text-secondary': '#555',
-    '--text-muted': '#888',
-    '--border': '#e5e5e5',
-    '--pink': '#E834EC',
-    '--blue': '#0479FF',
-    '--checkered': 'repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50%/8px 8px',
-    '--shadow': '0 2px 8px rgba(0,0,0,0.08)',
-    '--radius': '10px',
-    '--primary': '#5CA921',
-    '--primary-dark': '#4a8a1b',
-    '--accent': '#4a8a1b',
-    '--course': '#111111',
-    '--font-family': "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
-    '--sim-bg': '#ffffff',
-    '--runner-text': '#fff',
-    '--runner-text-shadow': '0 2px 8px rgba(0,0,0,0.5)',
-    '--runner-meta': 'rgba(255,255,255,0.7)',
-    '--scrub-handle-shadow': '0 2px 6px rgba(92,169,33,0.4)',
-    '--popup-bg': 'var(--bg)',
-  },
+  const tabsHtml = distances.map(d => {
+    const active = d.id === defaultId;
+    return `<button type="button" class="dir-race-tab${active ? ' active' : ''}" data-race="${d.id}" role="tab" aria-selected="${active}" onclick="selectRace('${d.id}')">
+      <span class="dir-race-dot" style="background:${d.color}"></span>
+      <span class="dir-race-name">${d.label}</span>
+      <span class="dir-race-mi">${d.runMiles} mi</span>
+    </button>`;
+  }).join('\n      ');
 
-  // Use custom config data block (LOOPS/RACES instead of CONFIG.courseCoords)
-  configDataJs: configDataJs,
-  // Skip shared JS — override.js provides all functionality
-  skipSharedJs: true,
+  return `<section class="directions-section expanded" id="directionsSection">
+    <nav class="dir-race-tabs" role="tablist" aria-label="Choose race distance">
+      ${tabsHtml}
+    </nav>
 
-  // Override JS and CSS files
-  overrideJs: 'override.js',
-  overrideCss: 'override.css',
-
-  // Custom HTML sections (replace standard templates)
-  mapViewHtml: `<div id="mapView" class="view active">
-<div class="map-weather-layout">
-  <div class="map-main">
-  <div class="map-wrap">
-    <div id="map"></div>
-    <div class="hq-badge"><div class="dot"></div><div class="text">SQUATCH HQ</div></div>
-    <div class="map-btns">
-      <button class="trail-btn" id="turnsBtn" onclick="toggleTurns()">Turns</button>
-      <button class="trail-btn" id="trailBtn" onclick="toggleTrails()">Park Trails</button>
-      <button class="trail-btn" id="terrainBtn" onclick="toggle3D()">3D</button>
+    <div class="directions-header">
+      <div class="directions-titles">
+        <h3 class="directions-eyebrow">Loop assembly</h3>
+        <span class="directions-race" id="directionsRaceLabel">— mi · — ft</span>
+      </div>
+      <label class="dir-zoom-toggle">
+        <input type="checkbox" id="zoomToStepCheckbox" checked onchange="setZoomToStep(this.checked)">
+        <span>Zoom to step</span>
+      </label>
+      <span class="dir-cutoff-pill" id="dirCutoffPill"></span>
     </div>
-  </div>
 
-  <div class="controls">
-    <div>
-      <div class="section-label">Course Loops</div>
+    <div class="assembly-strip" id="assemblyStrip" role="list" aria-label="Loops in order"></div>
+
+    <p class="assembly-now" id="assemblyNow">
+      <span class="assembly-now__eyebrow">Currently viewing</span>
+      <span class="assembly-now__label" id="assemblyNowLabel">—</span>
+    </p>
+
+    <ol class="loop-cue-list" id="loopCueList" aria-label="Within-loop terrain notes"></ol>
+
+    <!-- Legacy hidden stubs kept so override.js's old query selectors
+         (which still exist in places) don't throw. Display:none keeps
+         them out of the layout. -->
+    <div class="legacy-controls" hidden aria-hidden="true">
       <div class="loop-toggles">
-        <div class="loop-toggle active" data-loop="pink" style="--loop-color:#E834EC" onclick="toggleLoop('pink')">
-          <div class="swatch" style="background:#E834EC"></div>
-          <div class="info"><div class="name">Pink</div><div class="stats">7.75 mi &middot; 840'</div></div>
-        </div>
-        <div class="loop-toggle active" data-loop="blue" style="--loop-color:#0479FF" onclick="toggleLoop('blue')">
-          <div class="swatch" style="background:#0479FF"></div>
-          <div class="info"><div class="name">Blue</div><div class="stats">6.0 mi &middot; 600'</div></div>
-        </div>
-        <div class="loop-toggle active" data-loop="checkered" style="--loop-color:#333" onclick="toggleLoop('checkered')">
-          <div class="swatch checkered"></div>
-          <div class="info"><div class="name">Checkered</div><div class="stats">4.75 mi &middot; 479'</div></div>
-        </div>
+        <div class="loop-toggle" data-loop="pink"></div>
+        <div class="loop-toggle" data-loop="blue"></div>
+        <div class="loop-toggle" data-loop="checkered"></div>
       </div>
     </div>
+  </section>`;
+}
+
+const mapViewHtml = `<div id="mapView" class="view active">
+<div class="map-wrap">
+  <div id="map"></div>
+  <div class="hq-badge"><div class="dot"></div><div class="text">SQUATCH HQ</div></div>
+  <div class="map-btns">
+    <button class="trail-btn" id="aidBtnInline" onclick="toggleAid()">Aid Stations</button>
+    <button class="trail-btn" id="streetviewBtnInline" onclick="toggleStreetview()">Street View</button>
+    <button class="trail-btn" id="trailBtnInline" onclick="toggleTrails()">Park Trails</button>
+    <button class="trail-btn" id="terrainBtnInline" onclick="toggle3D()">3D</button>
   </div>
-
-  <section class="profile-section">
-    <div class="profile-header">
-      <h3 id="profileTitle">Elevation Profile</h3>
-      <div class="profile-stats" id="profileStats"></div>
-    </div>
-    <canvas id="profileCanvas"></canvas>
-  </section>
-
-  <section class="cards-section">
-    <h3>Select Race Distance</h3>
-    <div class="race-cards" id="raceCards"></div>
-  </section>
-  </div>
-
-  ${weatherData ? `<aside class="weather-panel" id="weatherPanel">
-    <div class="weather-panel-header" id="weatherPanelHeader" onclick="toggleWeatherPanel()">
-      <h3>Weather Intelligence</h3>
-      <button class="weather-toggle-btn" id="weatherToggleBtn" aria-label="Toggle weather panel">
-        <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-    <div class="weather-panel-body" id="weatherPanelBody">
-      <div class="weather-risk-row" id="weatherRiskCards"></div>
-      <div id="weatherDaily"></div>
-      <div id="weatherCurrent">
-        <div class="weather-loading">Loading current conditions&hellip;</div>
-      </div>
-      <div id="weatherRadar">
-        <div class="weather-radar-section">
-          <div class="weather-radar-title">Radar</div>
-          <div class="weather-radar-loading">Loading radar&hellip;</div>
-        </div>
-      </div>
-      <div id="weatherExplainer"></div>
-    </div>
-  </aside>` : ''}
 </div>
-</div>`,
 
-  simViewHtml: `<div id="simView" class="view">
+${buildDirectionsHtml()}
+
+<section class="profile-section">
+  <div class="profile-header">
+    <h3 id="profileTitle">Elevation Profile</h3>
+    <div class="profile-stats" id="profileStats"></div>
+  </div>
+  <canvas id="profileCanvas"></canvas>
+</section>
+</div>`;
+
+const simViewHtml = `<div id="simView" class="view">
   <div class="sim-container">
     <div class="sim-panel">
       <div class="sim-races" id="simRaces"></div>
@@ -200,11 +194,11 @@ module.exports = {
       <div class="goal-time-bar">
         <span class="goal-label">Goal Time</span>
         <div class="goal-inputs">
-          <input type="number" class="goal-input" id="goalHrs" min="0" max="48" value="2" onchange="updateGoalTime()" onclick="this.select()">
+          <input type="number" class="goal-input" id="goalHrs" min="0" max="48" value="6" onchange="updateGoalTime()" onclick="this.select()">
           <span class="goal-colon">:</span>
           <input type="number" class="goal-input" id="goalMins" min="0" max="59" value="30" onchange="updateGoalTime()" onclick="this.select()">
         </div>
-        <div class="goal-pace" id="goalPace">Avg pace: <strong>10:54 /mi</strong></div>
+        <div class="goal-pace" id="goalPace">Avg pace: <strong>— /mi</strong></div>
       </div>
 
       <div class="scrubber">
@@ -227,9 +221,9 @@ module.exports = {
       </div>
 
       <div class="sim-clock">
-        <div class="clock-time" id="clockTime">5:00 AM</div>
-        <div class="clock-label">Current Time (Race starts 5:00 AM)</div>
-        <div class="clock-finish" id="clockFinish" style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary)">Finish: <strong id="finishTime" style="color:var(--green)">7:30 AM</strong></div>
+        <div class="clock-time" id="clockTime">7:00 AM</div>
+        <div class="clock-label">Current time · race starts <span id="clockStart">7:00 AM</span></div>
+        <div class="clock-finish" id="clockFinish">Finish: <strong id="finishTime">—</strong></div>
       </div>
 
       <div class="sim-stats">
@@ -252,8 +246,8 @@ module.exports = {
         <canvas id="courseMapCanvas"></canvas>
         <div class="runner-info">
           <div class="runner-ele" id="runnerDist">Mile 0.0</div>
-          <div class="runner-meta" id="runnerMeta">1,200 ft · Starting</div>
-          <div class="loop-pill" id="loopPill" style="color:#E834EC;border-color:#E834EC">Pink</div>
+          <div class="runner-meta" id="runnerMeta">— ft · Starting</div>
+          <div class="loop-pill" id="loopPill">—</div>
         </div>
       </div>
       <div class="terrain-wrap">
@@ -261,7 +255,148 @@ module.exports = {
       </div>
     </div>
   </div>
-</div>`,
+</div>`;
+
+// Build a single-aid-station card + a no-aid-on-course safety strip.
+// This block is rendered into `cueHtml` so the editorial template
+// renders it after the directions section relocates next to the map.
+const aidCardHtml = `<aside class="hq-aid-card" aria-labelledby="hqAidTitle">
+  <div class="hq-aid-card__head">
+    <h2 class="hq-aid-card__title" id="hqAidTitle">Squatch HQ</h2>
+    <p class="hq-aid-card__sub">The festival's only aid station · open 36 hours continuously</p>
+  </div>
+  <dl class="hq-aid-card__grid">
+    <div><dt>Hours</dt><dd>Sat 7:00 AM → Sun 7:00 PM</dd></div>
+    <div><dt>Stocked</dt><dd>Water · Skratch · hot food (vegan + GF) · snacks</dd></div>
+    <div><dt>Medical</dt><dd>EMT 7am–7pm · ambulance overnight · AED · first-aid kit (incl. menstrual products + wipes)</dd></div>
+    <div><dt>Crew</dt><dd>Yes · Squatch HQ only</dd></div>
+    <div><dt>Pacers</dt><dd>Allowed after sunset · pre-registration required</dd></div>
+    <div><dt>The Jackalope Tent</dt><dd>Quiet / sensory decompression · breastfeeding-friendly</dd></div>
+  </dl>
+</aside>
+<p class="no-aid-strip" role="alert">
+  <span class="no-aid-strip__icon" aria-hidden="true">▲</span>
+  <strong>No aid on course.</strong> Carry water and nutrition between loops. Plan your refills at Squatch HQ before starting each loop.
+</p>`;
+
+// Weather Intelligence panel. Per the redesigned build spec (feature_
+// new_map_prompt_redesign / f6048cf), the weather panel no longer lives
+// as a 340px sticky panel beside the map — that pattern competed with
+// the map for hero space. Instead it goes in two places:
+//   (a) the editorial top-bar live conditions widget (already wired by
+//       editorial-runtime.js → wireWeatherWidget against #rdsWeather),
+//   (b) a rich forecast block inside race-day essentials.
+//
+// We emit the panel HTML here as a flat string so override.js's
+// relocateWeatherPanel() can lift it into a new essentials section at
+// runtime — same approach we used for the simulator. weather-ui.js
+// (shared, IIFE-gated on CONFIG.weather) finds the IDs by selector and
+// populates them regardless of where they sit in the tree.
+const weatherPanelHtml = weatherData ? `<aside class="weather-panel" id="weatherPanel" aria-labelledby="weatherPanelTitle" data-relocate="essentials-weather">
+  <div class="weather-panel-header" id="weatherPanelHeader" onclick="toggleWeatherPanel()">
+    <h3 id="weatherPanelTitle">Weather Intelligence</h3>
+    <button class="weather-toggle-btn" id="weatherToggleBtn" aria-label="Toggle weather panel">
+      <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="weather-panel-body" id="weatherPanelBody">
+    <div class="weather-risk-row" id="weatherRiskCards"></div>
+    <div id="weatherDaily"></div>
+    <div id="weatherCurrent">
+      <div class="weather-loading">Loading current conditions&hellip;</div>
+    </div>
+    <div id="weatherRadar">
+      <div class="weather-radar-section">
+        <div class="weather-radar-title">Radar</div>
+        <div class="weather-radar-loading">Loading radar&hellip;</div>
+      </div>
+    </div>
+    <div id="weatherExplainer"></div>
+  </div>
+</aside>` : '';
+
+module.exports = {
+  slug: 'wild-goose',
+  theme,
+  title: 'Wild Goose Trail Festival — Course Map · False Summit Studio',
+  raceName: 'WILD GOOSE TRAIL FESTIVAL',
+  themeColor: theme.palette.paper,
+  fontFamily: theme.type.bodyStack,
+  subtitle: 'September 18–20, 2026 · <a href="' + theme.identity.hostUrl + '" target="_blank">sassquadtrailrunning.com</a>',
+
+  // Editorial chrome consumes --paper / --ink / --race-brand / --font-*
+  // from the theme directly (build.js merges them in). The variables
+  // below are scoped to the *interactive map view* and simulator, which
+  // still consume the legacy variable names — we shadow them with theme
+  // tokens so the map column reads as paper, not stock white.
+  cssVars: {
+    '--paper':         theme.palette.paper,
+    '--ink':           theme.palette.raceInk,
+    '--race-brand':    theme.palette.raceBrand,
+    '--surface-warm':  theme.palette.surfaceWarm,
+    '--route-color':   theme.palette.routeColor,
+    '--aid-color':     theme.palette.aidStation,
+    '--hazard-color':  theme.palette.hazard,
+    '--accent-chartreuse': theme.palette.accent,
+    '--header-accent': theme.palette.headerAccent,
+    '--dark-forest':   theme.palette.darkForest,
+    '--font-display':  theme.type.displayStack,
+    '--font-body':     theme.type.bodyStack,
+    '--font-micro':    theme.type.microStack,
+
+    // Legacy aliases. weather.css and other shared modules read these.
+    // Pure white is forbidden per the brief; we shadow --bg-card to a
+    // paper substrate so the weather forecast cards inherit cream.
+    '--bg':            theme.palette.paper,
+    '--bg-alt':        theme.palette.surfaceWarm,
+    '--bg-card':       theme.palette.paper,
+    '--text':          theme.palette.raceInk,
+    '--text-secondary': '#4a4a3e',
+    '--text-muted':    '#7a7a6b',
+    '--border':        '#e0d8bf',
+    '--shadow':        '0 2px 6px rgba(26,26,26,0.08)',
+    '--radius':        '4px',
+    '--primary':       theme.palette.raceBrand,
+    '--primary-dark':  theme.palette.darkForest,
+    '--accent':        theme.palette.aidStation,
+    '--course':        theme.palette.raceInk,
+    '--font-family':   theme.type.bodyStack,
+    '--heading-family': theme.type.displayStack,
+
+    // Loop colors as CSS vars for chip strip + assembly dots.
+    '--loop-pink':      '#E7338C',
+    '--loop-blue':      '#1E66D0',
+    '--loop-checkered': '#1a1a1a',
+
+    // Simulator (dark canvas reskin to dark-forest from the theme)
+    '--sim-bg':        '#1c1a14',
+    '--runner-text':   theme.palette.paper,
+    '--runner-text-shadow': '0 2px 8px rgba(0,0,0,0.5)',
+    '--runner-meta':   'rgba(244,238,224,0.7)',
+    '--scrub-handle-shadow': '0 2px 6px rgba(106,126,61,0.45)',
+    '--popup-bg':      theme.palette.paper,
+  },
+
+  configDataJs: configDataJs,
+  skipSharedJs: true,
+
+  overrideJs: 'override.js',
+  overrideCss: 'override.css',
+
+  mapViewHtml,
+  simViewHtml,
+
+  // The cueHtml slot in race-shell.html sits inside `.course__cues`. The
+  // editorial-runtime.js further relocates the `.directions-section`
+  // built inside mapViewHtml into the same column, AFTER this aid card
+  // block — so the cue column reads: Squatch HQ aid → no-aid strip →
+  // race tabs → assembly strip → within-loop cues.
+  //
+  // The weather panel is appended here as a hidden staging block that
+  // override.js (relocateWeatherPanel) lifts into a dedicated
+  // essentials section between the simulator and aid table. Trailing
+  // <div hidden> wrapper keeps it out of the flow until relocation.
+  cueHtml: aidCardHtml + (weatherPanelHtml ? '\n<div hidden id="weatherPanelStaging">' + weatherPanelHtml + '</div>' : ''),
 
   // Map settings
   mapCenter: [-74.432, 41.183],
@@ -281,34 +416,38 @@ module.exports = {
     glacier: '#edf3f8',
   },
 
-  // These are not used by Wild Goose (uses LOOPS instead) but needed by buildConfigData fallback
+  // Multi-loop maps build their own LOOPS object; these fallback fields
+  // exist because buildConfigData() reads them when configDataJs is absent.
+  // Wild Goose ships configDataJs so they are never inlined — but the
+  // build pipeline still spreads them, so we keep harmless placeholders.
   courseCoords: [],
   elevations: [],
-  totalMiles: 18.5,
-  totalGain: 1919,
-  trailsData: trailsData,
+  totalMiles: 100.25,
+  totalGain: 11239,
+  trailsData,
 
   startCoords: [-74.4292, 41.1905],
-  startLabel: 'SQUATCH HQ - Start/Finish',
+  startLabel: 'Squatch HQ — Start / Finish · Festival aid station',
   finishCoords: null,
   finishLabel: null,
 
   courseOutlineColor: '#000',
-  courseLineColor: '#333',
-  mileMarkerFillColor: '#222',
-  mileMarkerStrokeColor: '#5CA921',
-  mileMarkerTextColor: '#fff',
+  courseLineColor: theme.palette.raceInk,
+  mileMarkerFillColor: '#1f1d18',
+  mileMarkerStrokeColor: theme.palette.raceBrand,
+  mileMarkerTextColor: theme.palette.paper,
 
-  raceStartHour: 5,
-  defaultGoalHours: 2,
+  raceStartHour: 7,
+  defaultGoalHours: 6,
   defaultGoalMins: 30,
 
   colors: {
-    primary: '#5CA921',
+    primary: theme.palette.raceBrand,
   },
 
-  // Not used but must be present
   toggleButtons: [],
 
-  footerHtml: 'Wild Goose Trail Festival · <a href="https://www.sassquadtrailrunning.com/wildgoose" target="_blank">Register Now</a>\n  <br>Race map created by <a href="https://falsesummitstudio.com" target="_blank">False Summit Studio</a>',
+  weather: weatherData,
+
+  footerHtml: 'Wild Goose Trail Festival · <a href="' + theme.identity.hostUrl + '" target="_blank">Register on Sassquad</a>\n  <br>Race map created by <a href="https://falsesummitstudio.com" target="_blank">False Summit Studio</a>',
 };

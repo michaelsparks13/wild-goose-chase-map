@@ -296,16 +296,20 @@ test.describe('Pocket Map on other race maps', () => {
     await expect(page.locator('.pocket-btn')).toBeVisible();
   });
 
-  test('wild-goose has pocket map button (skipSharedJs map)', async ({ page }) => {
+  test('wild-goose has pocket map button (skipSharedJs map, editorial chrome)', async ({ page }) => {
     await page.goto('/maps/wild-goose/');
     await page.waitForSelector('#map');
-    await expect(page.locator('.pocket-btn')).toBeVisible();
+    // Editorial template renames the legacy .pocket-btn to the top-bar
+    // utility button (race-shell.html line 48).
+    const btn = page.locator('.top-bar__util-btn', { hasText: /Pocket map/i });
+    await expect(btn).toBeVisible();
   });
 
   test('wild-goose pocket modal opens correctly', async ({ page }) => {
     await page.goto('/maps/wild-goose/');
     await page.waitForSelector('#map');
-    await page.locator('.pocket-btn').click();
+    const btn = page.locator('.top-bar__util-btn', { hasText: /Pocket map/i });
+    await btn.click();
     await expect(page.locator('#pocketBackdrop')).toHaveClass(/open/);
     await expect(page.locator('.pocket-modal h3')).toContainText('Save Pocket Map');
   });

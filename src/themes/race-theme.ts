@@ -39,6 +39,18 @@ export interface Distance {
    * e.g. "9:15 – 9:45 AM (after T2)"
    */
   runStartWindow?: string;
+  /**
+   * Loop-based races only — the sequence of loops (with direction) that
+   * assemble this distance. Total miles/gain should match the sum across
+   * referenced loops. Tests verify the relationship.
+   */
+  assembly?: AssemblyStep[];
+  /**
+   * Optional cutoff window — for ultras with long cutoffs (36h, 48h).
+   * Surfaced beside the distance in the chip strip and in race-day
+   * essentials. e.g. "36h".
+   */
+  cutoff?: string;
 }
 
 export interface RaceIdentity {
@@ -108,6 +120,68 @@ export interface RaceFormat {
    * e.g. 'tinman'.
    */
   defaultDistanceId: string;
+  /**
+   * Loop-based races (trail festivals, lapped courses) declare their loops
+   * once and assemble distances from sequences of loops. Tinman-style point-
+   * to-point and out-and-back races omit this — the existing `distances[]`
+   * is sufficient. When present, distances may carry an `assembly` field
+   * referencing loop ids by sequence.
+   *
+   * Render contract: the page shows a chip strip per selected distance and
+   * a within-loop cue list rather than flat turn-by-turn directions.
+   */
+  loops?: RaceLoop[];
+}
+
+/**
+ * A single named loop in a loop-based race. Loops are referenced by id in
+ * Distance.assembly, and their `displayName`/`color` drive the chip strip
+ * and on-map traces.
+ */
+export interface RaceLoop {
+  /** Stable id. e.g. 'pink' | 'blue' | 'checkered'. */
+  id: string;
+  /** Display label. e.g. "Pink", "Checkered". */
+  displayName: string;
+  /** Loop distance in miles per single completion. */
+  miles: number;
+  /** Loop elevation gain in feet per single completion. */
+  elevationGain: number;
+  /** Hex color for the loop trace, chip, and assembly dot. */
+  color: string;
+  /**
+   * Optional rendering pattern when a solid line would be wrong (e.g. a
+   * loop that's *literally* checkered on course marking). Renderer reads
+   * this; theme tests do not.
+   */
+  pattern?: 'checkered';
+  /** Default direction this loop is run when not specified by an assembly. */
+  defaultDirection: 'CW' | 'CCW';
+  /**
+   * Short, terrain-aware cues for this loop. NOT street-name turn-by-turn.
+   * Empty array is fine for loops where the trail surface is uniform.
+   */
+  cues?: LoopCue[];
+}
+
+/**
+ * Within-loop terrain awareness, not navigation. Trail runners want to
+ * know when the surface changes, when to fold their poles, when a
+ * boardwalk is single-file. Mile is from loop start.
+ */
+export interface LoopCue {
+  mile: number;
+  kind: 'surface' | 'hazard' | 'landmark' | 'water';
+  text: string;
+}
+
+/**
+ * Distance.assembly extension — present only for loop-based races. Each
+ * entry references a loop by id with a direction.
+ */
+export interface AssemblyStep {
+  loopId: string;
+  direction: 'CW' | 'CCW';
 }
 
 export interface RaceGeography {
