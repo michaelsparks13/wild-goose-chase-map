@@ -1,233 +1,814 @@
-/* Wild Goose Trail Festival - Override CSS */
-/* Multi-loop course with loop toggles, race cards, turn markers, and scrubber segments */
+/* Wild Goose Trail Festival · editorial register
+ *
+ * Trail-party voice: friendly slab display (Bricolage Grotesque),
+ * sturdy sans body (Manrope), JetBrains Mono for the technical strip.
+ * No Inter, no pure-white surfaces. Cream paper substrate inherited
+ * from the theme's --paper token; trail-blaze pink and blue carry the
+ * loop identity on chips, cue rows, and elevation profile.
+ *
+ * Loaded after editorial.css so it can specialize the page chrome the
+ * editorial system stages. */
 
-/* ═══ HEADER OVERRIDES ═══ */
-.header { background: var(--bg); padding: 10px 16px; }
-.header-left h1 { font-size: 0.9rem; }
-.header-left .subtitle a { color: var(--green); }
+/* ─── Body baseline ────────────────────────────────────────────────── */
 
-/* ═══ HQ BADGE ═══ */
-.hq-badge {
-  position: absolute; top: 10px; left: 10px; z-index: 10;
-  background: var(--bg); border-radius: var(--radius);
-  padding: 6px 10px; box-shadow: var(--shadow);
-  display: flex; align-items: center; gap: 6px;
+body.race-page.race-wild-goose {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
 }
-.hq-badge .dot { width: 10px; height: 10px; border-radius: 50%; background: #FFD700; }
-.hq-badge .text { font-size: 0.65rem; font-weight: 600; }
-
-/* ═══ MAP BUTTONS (trail-btn instead of toggle-btn) ═══ */
-.map-btns {
-  position: absolute; top: 10px; right: 48px; z-index: 10;
-  display: flex; gap: 6px;
-}
-.trail-btn {
-  background: var(--bg); border: none; border-radius: var(--radius);
-  padding: 8px 10px; font-size: 0.7rem; font-weight: 500;
-  font-family: inherit; color: var(--text-secondary);
-  cursor: pointer; box-shadow: var(--shadow);
-  display: flex; align-items: center; gap: 4px; transition: all 0.15s;
-}
-.trail-btn:active { transform: scale(0.96); }
-.trail-btn.active { background: var(--green); color: #fff; }
-
-/* ═══ CONTROLS (loop toggles) ═══ */
-.controls {
-  background: var(--bg-card);
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--border);
-}
-.section-label {
-  font-size: 0.6rem; font-weight: 600; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
-}
-.loop-toggles {
-  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px;
-  margin-bottom: 14px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
-}
-.loop-toggles::-webkit-scrollbar { display: none; }
-.loop-toggle {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 12px; border-radius: var(--radius);
-  background: var(--bg-alt); border: 2px solid transparent;
-  cursor: pointer; user-select: none; transition: all 0.15s; flex-shrink: 0;
-}
-.loop-toggle:active { transform: scale(0.98); }
-.loop-toggle.active {
-  border-color: var(--loop-color); background: var(--bg);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-.loop-toggle .swatch { width: 12px; height: 12px; border-radius: 3px; }
-.loop-toggle .swatch.checkered { background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50%/6px 6px; border: 1px solid #ccc; }
-.loop-toggle .info { text-align: left; }
-.loop-toggle .name { font-size: 0.75rem; font-weight: 600; color: var(--text); }
-.loop-toggle .stats { font-size: 0.65rem; color: var(--text-secondary); }
-
-/* ═══ RACE CARDS ═══ */
-.cards-section { padding: 16px; background: var(--bg-card); }
-.cards-section h3 {
-  font-size: 0.65rem; font-weight: 600; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
-}
-.race-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.race-card {
-  background: var(--bg); border-radius: var(--radius); padding: 12px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
-  cursor: pointer; transition: all 0.15s; border: 2px solid transparent;
-}
-.race-card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.04);
-}
-.race-card:active { transform: scale(0.98); }
-.race-card.active { border-color: var(--green); box-shadow: 0 2px 8px rgba(92,169,33,0.15), 0 0 0 1px rgba(92,169,33,0.1); }
-.race-card .name { font-weight: 600; font-size: 0.85rem; color: var(--text); }
-.race-card .details { font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px; }
-.race-card .dots { display: flex; gap: 3px; margin-top: 6px; }
-.race-card .dot { width: 6px; height: 6px; border-radius: 2px; }
-.race-card .dot.checkered-dot { background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50%/4px 4px; border: 0.5px solid #999; }
-
-/* ═══ TURN MARKERS & STREET VIEW ═══ */
-.hq-marker { width: 28px; height: 28px; cursor: pointer; }
-.hq-marker svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); }
-.turn-marker { width: 24px; height: 24px; cursor: pointer; }
-.turn-marker svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
-.streetview-popup { max-width: 320px !important; }
-.streetview-popup .maplibregl-popup-content { padding: 0 !important; overflow: hidden; border-radius: var(--radius) !important; }
-.streetview-popup .maplibregl-popup-close-button { right: 4px !important; top: 4px !important; width: 24px !important; height: 24px !important; background: rgba(0,0,0,0.5) !important; color: #fff !important; border-radius: 50% !important; display: flex; align-items: center; justify-content: center; line-height: 1 !important; }
-.streetview-img { width: 100%; height: 180px; object-fit: cover; display: block; }
-.streetview-caption { padding: 10px 12px; }
-.streetview-caption strong { display: block; margin-bottom: 4px; }
-.streetview-caption a { color: var(--green); text-decoration: none; font-size: 0.75rem; }
-.streetview-caption a:hover { text-decoration: underline; }
-
-/* ═══ FOOTER OVERRIDE ═══ */
-.footer a { color: var(--green); }
-
-/* ═══ SIM PANEL ORDERING ═══ */
-.sim-container { background: var(--bg); }
-.sim-panel { display: contents; }
-.sim-panel .sim-races { order: 1; }
-.sim-panel .goal-time-bar { order: 2; }
-.sim-visual { order: 3; }
-.sim-panel .scrubber { order: 4; }
-.sim-panel .sim-clock { order: 5; }
-.sim-panel .sim-stats { order: 6; }
-.sim-panel .loop-progress { order: 7; flex: 1; }
-
-/* ═══ COURSE MAP (dark theme) ═══ */
-.course-map-wrap { background: #1a2030; border-bottom: 1px solid rgba(255,255,255,0.05); }
-
-/* ═══ TERRAIN (dark theme) ═══ */
-.terrain-wrap { position: relative; background: #1a2030; }
-#simTerrain { width: 100%; height: 40px; display: block; }
-
-/* ═══ RUNNER INFO (replaces runner-info-overlay) ═══ */
-.runner-info {
-  position: absolute; top: 12px; left: 12px; pointer-events: none;
-}
-.runner-ele {
-  font-size: 1.8rem; font-weight: 700; color: #fff; line-height: 1;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-}
-.runner-meta { font-size: 0.7rem; color: rgba(255,255,255,0.7); margin-top: 2px; }
-
-/* ═══ LOOP PILL ═══ */
-.loop-pill {
-  display: inline-block; margin-top: 4px;
-  padding: 2px 8px; border-radius: 10px;
-  font-size: 0.6rem; font-weight: 600;
-  border: 1px solid; background: rgba(0,0,0,0.3);
+.race-wild-goose h1,
+.race-wild-goose h2,
+.race-wild-goose h3,
+.race-wild-goose h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.005em;
+  color: var(--ink);
 }
 
-/* ═══ SCRUBBER SEGMENTS ═══ */
-.scrub-segs { position: absolute; top: 0; left: 0; height: 100%; display: flex; width: 100%; }
-.scrub-seg { height: 100%; }
-.scrub-hq { position: absolute; top: 0; left: 0; right: 0; height: 36px; pointer-events: none; }
-.hq-tick {
-  position: absolute; top: 6px; width: 2px; height: 24px;
-  background: rgba(212,160,23,0.4); border-radius: 1px;
+/* ─── Map column ───────────────────────────────────────────────────── */
+
+.race-wild-goose .map-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+}
+.race-wild-goose #map {
+  position: absolute; inset: 0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.race-wild-goose .hq-badge {
+  position: absolute; top: 12px; left: 12px; z-index: 10;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 11px;
+  background: var(--paper);
+  border: 1px solid #d8cfb8;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(31,29,24,0.08);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.race-wild-goose .hq-badge .dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--aid-color, #E07A1F);
+  border: 1px solid var(--ink);
+}
+.race-wild-goose .map-btns {
+  position: absolute; top: 12px; right: 56px; z-index: 10;
+  display: flex; gap: 5px;
+}
+.race-wild-goose .trail-btn {
+  background: var(--paper);
+  border: 1px solid #d8cfb8;
+  border-radius: 4px;
+  padding: 7px 11px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(31,29,24,0.08);
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+.race-wild-goose .trail-btn:hover { background: var(--surface-warm); }
+.race-wild-goose .trail-btn:active { transform: scale(0.97); }
+.race-wild-goose .trail-btn.active {
+  background: var(--race-brand);
+  color: var(--paper);
+  border-color: var(--race-brand);
 }
 
-/* ═══ SCRUBBER (green accents) ═══ */
-.play-btn { background: var(--green); }
-.play-btn:active { background: var(--green-dark); }
-.scrub-handle { background: var(--green); box-shadow: 0 2px 6px rgba(92,169,33,0.4); }
-.speed-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+/* ─── Squatch HQ aid card + no-aid strip ──────────────────────────── */
 
-/* ═══ GOAL INPUT (green focus) ═══ */
-.goal-input:focus { border-color: var(--green); }
-.goal-pace strong { color: var(--text); }
-
-/* ═══ FINISH TIME ═══ */
-.clock-finish { margin-top: 8px; font-size: 0.8rem; color: var(--text-secondary); }
-#finishTime { color: var(--green); }
-
-/* ═══ LOOP PROGRESS ═══ */
-.loop-progress { padding: 16px; background: var(--bg); }
-.loop-progress h4 {
-  font-size: 0.6rem; font-weight: 600; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+.race-wild-goose .hq-aid-card {
+  background: var(--surface-warm);
+  border: 1px solid #d8cfb8;
+  border-left: 4px solid var(--aid-color, #E07A1F);
+  border-radius: 4px;
+  padding: 18px 20px 16px;
+  margin-bottom: 14px;
 }
-.loop-row {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; border-radius: 8px; margin-bottom: 4px;
+.race-wild-goose .hq-aid-card__head { margin-bottom: 12px; }
+.race-wild-goose .hq-aid-card__title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 2px;
+  letter-spacing: -0.01em;
 }
-.loop-row.current { background: var(--bg-alt); }
-.loop-row .ldot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: middle; margin-left: 6px; }
-.loop-row .ldot.checkered-ldot { background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50%/6px 6px; border: 1px solid #999; }
-.loop-row .lname { flex: 1; font-size: 0.8rem; font-weight: 500; }
-.loop-row .lstatus { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
-.loop-row .lstatus.done { color: var(--green); }
-.loop-row .lstatus.active { color: var(--text); }
+.race-wild-goose .hq-aid-card__sub {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-style: italic;
+  color: #52503f;
+  margin: 0;
+}
+.race-wild-goose .hq-aid-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px 18px;
+  margin: 0;
+}
+.race-wild-goose .hq-aid-card__grid > div {
+  border-top: 1px solid #d8cfb8;
+  padding-top: 8px;
+}
+.race-wild-goose .hq-aid-card__grid dt {
+  font-family: var(--font-micro);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #807d6b;
+  margin-bottom: 2px;
+}
+.race-wild-goose .hq-aid-card__grid dd {
+  margin: 0;
+  font-size: 0.83rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
 
-/* ═══ SIM RACE PICKER ═══ */
-.sim-races {
-  display: flex; gap: 6px; padding: 12px 16px;
-  overflow-x: auto; background: var(--bg);
-  border-bottom: 1px solid var(--border);
+.race-wild-goose .no-aid-strip {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(181,53,40,0.08);
+  border: 1px solid rgba(181,53,40,0.35);
+  border-radius: 4px;
+  padding: 11px 14px;
+  margin: 0 0 18px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.race-wild-goose .no-aid-strip__icon {
+  flex-shrink: 0;
+  color: var(--hazard-color, #B53528);
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.race-wild-goose .no-aid-strip strong { color: var(--hazard-color, #B53528); }
+
+/* ─── Directions section (relocated next to map by editorial-runtime) ─ */
+
+.race-wild-goose .directions-section {
+  background: var(--paper);
+  border: 1px solid #d8cfb8;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.race-wild-goose .dir-race-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 6px 0;
+  background: var(--surface-warm);
+  border-bottom: 1px solid #d8cfb8;
+  overflow-x: auto;
   scrollbar-width: none;
 }
-.sim-races::-webkit-scrollbar { display: none; }
-.sim-race-btn {
-  padding: 8px 14px; border-radius: 8px; background: var(--bg-alt);
-  border: 2px solid transparent; font-family: inherit;
-  font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);
-  cursor: pointer; white-space: nowrap; transition: all 0.15s;
+.race-wild-goose .dir-race-tabs::-webkit-scrollbar { display: none; }
+.race-wild-goose .dir-race-tab {
+  flex: 1 1 auto;
+  min-width: max-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 11px;
+  border: 0;
+  background: transparent;
+  border-radius: 3px 3px 0 0;
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #807d6b;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
-.sim-race-btn:active { transform: scale(0.97); }
-.sim-race-btn.active {
-  border-color: var(--green); background: var(--bg); color: var(--text);
+.race-wild-goose .dir-race-tab:hover { color: var(--ink); background: rgba(255,255,255,0.4); }
+.race-wild-goose .dir-race-tab:focus-visible {
+  outline: 2px solid var(--race-brand);
+  outline-offset: -2px;
+}
+.race-wild-goose .dir-race-tab.active {
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: inset 0 -3px 0 var(--race-brand);
+}
+.race-wild-goose .dir-race-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.race-wild-goose .dir-race-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.race-wild-goose .dir-race-mi {
+  color: #807d6b;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  font-size: 0.7rem;
+  font-family: var(--font-micro);
+}
+.race-wild-goose .dir-race-tab.active .dir-race-mi { color: #52503f; }
+
+@media (max-width: 560px) {
+  .race-wild-goose .dir-race-mi { display: none; }
+  .race-wild-goose .dir-race-tab { padding: 9px 8px; font-size: 0.74rem; }
 }
 
-/* ═══ RESPONSIVE OVERRIDES ═══ */
-@media (min-width: 768px) {
-  .controls { display: flex; align-items: flex-start; gap: 24px; }
-  .controls > div:first-child { flex: 1; }
-  .loop-toggles { margin-bottom: 0; }
-  .cards-section { padding: 24px; }
-  .race-cards { grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  #simTerrain { height: 50px; }
+.race-wild-goose .directions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 6px;
+}
+.race-wild-goose .directions-titles { min-width: 0; }
+.race-wild-goose .directions-eyebrow {
+  margin: 0;
+  font-family: var(--font-micro);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #807d6b;
+}
+.race-wild-goose .directions-race {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  margin-top: 1px;
+}
+.race-wild-goose .dir-cutoff-pill {
+  flex-shrink: 0;
+  font-family: var(--font-micro);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 9px;
+  border-radius: 3px;
+  background: rgba(181,53,40,0.1);
+  color: var(--hazard-color, #B53528);
+  border: 1px solid rgba(181,53,40,0.32);
 }
 
-@media (min-width: 1024px) {
-  /* Simulator sidebar layout */
-  .sim-panel {
-    display: flex; flex-direction: column;
-    width: 360px; flex-shrink: 0;
-    overflow-y: auto;
-    border-right: 1px solid var(--border);
-  }
-  .sim-panel .sim-races { flex-wrap: wrap; overflow-x: visible; }
-  .sim-panel .scrubber { border-bottom: 1px solid var(--border); }
-  .sim-panel .sim-clock { padding: 12px 16px; }
-  .sim-panel .sim-clock .clock-time { font-size: 1.4rem; }
-  .sim-panel .sim-clock .clock-label { font-size: 0.55rem; }
-  .sim-panel .sim-stats { grid-template-columns: repeat(3, 1fr); }
-  .sim-visual .course-map-wrap { flex: 1; min-height: 0; }
-  #courseMapCanvas { height: 100%; }
-  #simTerrain { height: 60px; }
+/* Assembly chip strip */
+.race-wild-goose .assembly-strip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 16px 8px;
+  flex-wrap: wrap;
+}
+.race-wild-goose .assembly-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 8px;
+  background: var(--surface-warm);
+  border: 1px solid #d8cfb8;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.race-wild-goose .assembly-chip:hover { background: #f6efde; border-color: #b8aa85; }
+.race-wild-goose .assembly-chip:active { transform: scale(0.97); }
+.race-wild-goose .assembly-chip:focus-visible {
+  outline: 2px solid var(--race-brand);
+  outline-offset: 2px;
+}
+.race-wild-goose .assembly-chip.active {
+  background: var(--paper);
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink) inset;
+}
+.race-wild-goose .assembly-chip__dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(31,29,24,0.25);
+}
+.race-wild-goose .assembly-chip__dot--checkered {
+  background: repeating-conic-gradient(#1f1d18 0% 25%, #f4eee0 0% 50%) 50%/6px 6px;
+}
+.race-wild-goose .assembly-chip__label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.race-wild-goose .assembly-chip__dir {
+  font-family: var(--font-micro);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 1px 5px;
+  border-radius: 2px;
+  background: rgba(31,29,24,0.08);
+  color: #52503f;
+}
+.race-wild-goose .assembly-chip__arrow {
+  color: #b8aa85;
+  font-size: 0.85rem;
+  margin: 0 1px;
 }
 
-@media (min-width: 1440px) {
-  .sim-panel { width: 400px; }
+.race-wild-goose .assembly-now {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 16px 10px;
+  margin: 0;
+  border-bottom: 1px solid #e5dcc5;
+  background: linear-gradient(180deg, rgba(255,255,255,0.4), transparent);
+}
+.race-wild-goose .assembly-now__eyebrow {
+  font-family: var(--font-micro);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #807d6b;
+}
+.race-wild-goose .assembly-now__label {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.race-wild-goose .assembly-now__loop { font-weight: 700; }
+
+.race-wild-goose .loop-cue-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0 14px;
+}
+.race-wild-goose .loop-cue {
+  display: grid;
+  grid-template-columns: 56px 22px 1fr;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 9px 16px;
+  border-bottom: 1px dotted #e5dcc5;
+  transition: background 0.12s;
+}
+.race-wild-goose .loop-cue:last-child { border-bottom: 0; }
+.race-wild-goose .loop-cue:hover { background: var(--surface-warm); }
+.race-wild-goose .loop-cue__mile {
+  font-family: var(--font-micro);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.race-wild-goose .loop-cue__kind {
+  font-size: 0.85rem;
+  color: var(--race-brand);
+  text-align: center;
+  line-height: 1;
+}
+.race-wild-goose .loop-cue--hazard .loop-cue__kind  { color: var(--hazard-color, #B53528); }
+.race-wild-goose .loop-cue--water  .loop-cue__kind  { color: #2A77B0; }
+.race-wild-goose .loop-cue--landmark .loop-cue__kind { color: var(--race-brand); }
+.race-wild-goose .loop-cue--surface  .loop-cue__kind { color: #807d6b; }
+.race-wild-goose .loop-cue__text {
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.race-wild-goose .loop-cue--empty {
+  grid-template-columns: 1fr;
+  font-style: italic;
+  color: #52503f;
+  padding: 14px 16px;
+}
+
+/* ─── Elevation profile section ─────────────────────────────────── */
+
+.race-wild-goose .profile-section { width: 100%; }
+.race-wild-goose .profile-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.race-wild-goose .profile-header h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.race-wild-goose .profile-stats {
+  display: flex;
+  gap: 14px;
+  font-family: var(--font-micro);
+  font-size: 0.74rem;
+  color: #52503f;
+}
+.race-wild-goose .profile-stats .val { font-weight: 700; color: var(--ink); }
+.race-wild-goose #profileCanvas {
+  width: 100%; height: 180px; display: block;
+}
+
+/* ─── Map popups ─────────────────────────────────────────────────── */
+
+.race-wild-goose .maplibregl-popup-content {
+  background: var(--paper);
+  border: 1px solid #d8cfb8;
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  color: var(--ink);
+  box-shadow: 0 4px 16px rgba(31,29,24,0.12);
+}
+.race-wild-goose .maplibregl-popup-tip {
+  border-top-color: var(--paper) !important;
+  border-bottom-color: var(--paper) !important;
+}
+
+.race-wild-goose .streetview-popup .maplibregl-popup-content {
+  padding: 0;
+  overflow: hidden;
+  max-width: 320px;
+}
+.race-wild-goose .streetview-img { display: block; width: 100%; height: auto; }
+.race-wild-goose .streetview-caption {
+  padding: 10px 12px;
+  font-size: 0.82rem;
+}
+.race-wild-goose .streetview-caption strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  margin-bottom: 3px;
+}
+.race-wild-goose .streetview-caption a {
+  color: var(--race-brand);
+  text-decoration: none;
+  font-weight: 600;
+}
+.race-wild-goose .streetview-caption a:hover { text-decoration: underline; }
+
+/* ─── Simulator (relocated into essentialsSimulator) ──────────────── */
+
+.race-wild-goose .essentials--sim {
+  background: var(--surface-warm);
+  border: 1px solid #d8cfb8;
+  border-radius: 4px;
+}
+.race-wild-goose .essentials__sim-host {
+  background: var(--paper);
+  border-top: 1px solid #d8cfb8;
+  padding: 14px;
+}
+.race-wild-goose .view--always-on { display: block !important; }
+
+.race-wild-goose .sim-container {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr);
+  gap: 14px;
+  background: var(--paper);
+}
+@media (max-width: 880px) {
+  .race-wild-goose .sim-container { grid-template-columns: 1fr; }
+}
+
+.race-wild-goose .sim-panel { display: flex; flex-direction: column; gap: 12px; }
+
+.race-wild-goose .sim-races {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.race-wild-goose .sim-race-btn {
+  padding: 7px 11px;
+  background: var(--surface-warm);
+  border: 1px solid #d8cfb8;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+}
+.race-wild-goose .sim-race-btn.active {
+  background: var(--race-brand);
+  color: var(--paper);
+  border-color: var(--race-brand);
+}
+
+.race-wild-goose .goal-time-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  background: var(--surface-warm);
+  border: 1px solid #d8cfb8;
+  border-radius: 3px;
+}
+.race-wild-goose .goal-label {
+  font-family: var(--font-micro);
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #807d6b;
+}
+.race-wild-goose .goal-inputs { display: inline-flex; align-items: center; gap: 2px; }
+.race-wild-goose .goal-input {
+  width: 38px;
+  padding: 4px 6px;
+  border: 1px solid #b8aa85;
+  background: var(--paper);
+  border-radius: 3px;
+  font-family: var(--font-micro);
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--ink);
+}
+.race-wild-goose .goal-input:focus { outline: 2px solid var(--race-brand); outline-offset: 1px; }
+.race-wild-goose .goal-colon { font-family: var(--font-micro); color: #807d6b; }
+.race-wild-goose .goal-pace {
+  margin-left: auto;
+  font-family: var(--font-micro);
+  font-size: 0.78rem;
+  color: #52503f;
+}
+.race-wild-goose .goal-pace strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.race-wild-goose .scrubber { padding: 0; }
+.race-wild-goose .scrub-row { display: flex; align-items: center; gap: 10px; }
+.race-wild-goose .play-btn {
+  width: 36px; height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--race-brand);
+  color: var(--paper);
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.race-wild-goose .play-btn:hover { background: #23501f; }
+.race-wild-goose .scrub-track {
+  position: relative;
+  flex: 1;
+  height: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.race-wild-goose .scrub-bg {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: var(--surface-warm);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #d8cfb8;
+}
+.race-wild-goose .scrub-segs { display: flex; width: 100%; height: 100%; }
+.race-wild-goose .scrub-seg { height: 100%; }
+.race-wild-goose .scrub-fill {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  width: 0;
+  background: rgba(47,107,42,0.35);
+  pointer-events: none;
+  border-right: 2px solid var(--race-brand);
+}
+.race-wild-goose .scrub-hq { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.race-wild-goose .hq-tick {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px; height: 6px;
+  background: var(--aid-color, #E07A1F);
+  border: 1px solid var(--paper);
+  border-radius: 50%;
+}
+.race-wild-goose .scrub-handle {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px; height: 14px;
+  background: var(--race-brand);
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  box-shadow: var(--scrub-handle-shadow);
+  pointer-events: none;
+}
+.race-wild-goose .speed-btns { display: inline-flex; gap: 2px; }
+.race-wild-goose .speed-btn {
+  padding: 5px 9px;
+  background: var(--surface-warm);
+  border: 1px solid #d8cfb8;
+  border-radius: 3px;
+  font-family: var(--font-micro);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+.race-wild-goose .speed-btn.active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.race-wild-goose .sim-clock {
+  text-align: center;
+  padding: 14px 12px;
+  background: var(--surface-warm);
+  border: 1px solid #d8cfb8;
+  border-radius: 3px;
+}
+.race-wild-goose .clock-time {
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.race-wild-goose .clock-label {
+  font-family: var(--font-micro);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #807d6b;
+  margin-top: 3px;
+}
+.race-wild-goose .clock-finish {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: #52503f;
+  margin-top: 6px;
+}
+.race-wild-goose .clock-finish strong {
+  color: var(--race-brand);
+  font-variant-numeric: tabular-nums;
+}
+
+.race-wild-goose .sim-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.race-wild-goose .sim-stat {
+  padding: 9px 10px;
+  background: var(--surface-warm);
+  border: 1px solid #d8cfb8;
+  border-radius: 3px;
+  text-align: center;
+}
+.race-wild-goose .sim-stat .val {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.race-wild-goose .sim-stat .label {
+  font-family: var(--font-micro);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #807d6b;
+  margin-top: 1px;
+}
+
+.race-wild-goose .loop-progress {
+  padding: 12px;
+  background: var(--surface-warm);
+  border: 1px solid #d8cfb8;
+  border-radius: 3px;
+}
+.race-wild-goose .loop-progress h4 {
+  margin: 0 0 8px;
+  font-family: var(--font-micro);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #807d6b;
+}
+.race-wild-goose .loop-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-top: 1px dotted #c8bd9b;
+  font-size: 0.78rem;
+}
+.race-wild-goose .loop-row:first-child { border-top: 0; }
+.race-wild-goose .loop-row.current { color: var(--race-brand); font-weight: 600; }
+.race-wild-goose .lname { display: inline-flex; align-items: center; gap: 7px; }
+.race-wild-goose .ldot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  border: 1px solid rgba(31,29,24,0.25);
+}
+.race-wild-goose .checkered-ldot {
+  background: repeating-conic-gradient(#1f1d18 0% 25%, #f4eee0 0% 50%) 50%/4px 4px;
+}
+.race-wild-goose .lstatus {
+  font-family: var(--font-micro);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.race-wild-goose .lstatus.done { color: var(--race-brand); }
+.race-wild-goose .lstatus.active { color: var(--race-brand); font-weight: 600; }
+
+.race-wild-goose .sim-visual {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.race-wild-goose .course-map-wrap {
+  position: relative;
+  height: 280px;
+  border: 1px solid #1a1610;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.race-wild-goose #courseMapCanvas { width: 100%; height: 100%; display: block; }
+.race-wild-goose .runner-info {
+  position: absolute; top: 10px; left: 12px;
+  color: var(--paper);
+  text-shadow: var(--runner-text-shadow);
+}
+.race-wild-goose .runner-ele {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.race-wild-goose .runner-meta {
+  font-family: var(--font-micro);
+  font-size: 0.74rem;
+  color: var(--runner-meta);
+  margin-top: 1px;
+}
+.race-wild-goose .loop-pill {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 7px;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  font-family: var(--font-micro);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.race-wild-goose .terrain-wrap {
+  position: relative;
+  height: 120px;
+  border: 1px solid #1a1610;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.race-wild-goose #simTerrain { width: 100%; height: 100%; display: block; }
+
+/* ─── Legacy view tabs hidden (editorial layout has none) ────────── */
+
+.race-wild-goose .view-tabs { display: none !important; }
+.race-wild-goose .legacy-controls { display: none !important; }
+
+/* ─── Mobile breakpoint ───────────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .race-wild-goose .hq-aid-card { padding: 14px 14px 12px; }
+  .race-wild-goose .hq-aid-card__title { font-size: 1.18rem; }
+  .race-wild-goose .assembly-strip { gap: 3px; padding: 8px 12px; }
+  .race-wild-goose .assembly-chip { padding: 4px 8px 4px 6px; font-size: 0.74rem; }
+  .race-wild-goose .loop-cue { grid-template-columns: 48px 18px 1fr; padding: 8px 12px; }
+  .race-wild-goose .clock-time { font-size: 1.5rem; }
+  .race-wild-goose .course-map-wrap { height: 220px; }
 }
