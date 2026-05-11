@@ -26,16 +26,17 @@ module.exports = {
   },
 
   // Palette extracted from sassquadtrailrunning.com/wildgoose at build
-  // time (computed Wix theme tokens). The standout is the chartreuse
-  // #D4FC79 used as real page-background accent on Sassquad; we promote
-  // it to `accent` and use the olive #6A7E3D as `raceBrand` so the page
-  // reads "Sassquad-on-paper" rather than "lime poster" at scale. The
-  // golden yellow #FDD80D is Sassquad's marker color → aid station.
+  // time. Iteration v2 (post-screenshot review): the lighter olive
+  // (#6A7E3D) read washed out against the dark top bar, and the warm
+  // khaki paper (#f4eee0) read as light brown rather than neutral cream.
+  // Both are now deepened: raceBrand uses the darker olive between Wix
+  // color_24 and color_25, and paper is a near-white cream that still
+  // avoids pure #ffffff per the brief.
   palette: {
-    raceBrand:    '#6A7E3D', // Sassquad olive (Wix --color_24)
+    raceBrand:    '#4F5F2D', // deep Sassquad olive (between Wix color_24 + color_25)
     raceInk:      '#1a1a1a', // near-black, matches Sassquad body ink
-    paper:        '#f4eee0', // warm cream substrate (no pure white)
-    surfaceWarm:  '#ebe2cf', // kraft surface, recessed from paper
+    paper:        '#faf7ed', // cream-white substrate — barely tinted, no pure white
+    surfaceWarm:  '#efe9d5', // recessed kraft surface, distinct from paper
     routeColor:   '#1a1a1a', // course default ink when no loop highlighted
     aidStation:   '#FDD80D', // Sassquad golden yellow (Wix --color_28)
     hazard:       '#B53528', // warm rust — no-aid-on-course strip + bears

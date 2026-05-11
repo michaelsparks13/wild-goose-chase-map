@@ -1135,6 +1135,14 @@ document.addEventListener('DOMContentLoaded', function() {
   relocateSimulator();
   relocateWeatherPanel();
   hideDefaultAidTable();
+  // editorial-runtime.js registers a DOMContentLoaded handler AFTER ours
+  // (the shared module is concatenated after override.js in build.js).
+  // It relocates the .directions-section from inside the map column into
+  // .course__cues via appendChild — landing AFTER the aid card. We want
+  // the directions to be the FIRST thing in the cue column, immediately
+  // right of the map. Defer the reorder so it runs after editorial-
+  // runtime has appended the section.
+  setTimeout(reorderCueColumn, 0);
 });
 
 function relocateSimulator() {
@@ -1230,6 +1238,27 @@ function relocateWeatherPanel() {
 function hideDefaultAidTable() {
   var sect = document.getElementById('essentialsAid');
   if (sect) sect.setAttribute('hidden', '');
+}
+
+// editorial-runtime.js appends .directions-section to .course__cues,
+// landing AFTER the Squatch HQ aid card. The page reads best with the
+// loop-assembly chip strip + within-loop cues IMMEDIATELY right of the
+// map, so move the directions to be the first content child (right
+// after the scope note + visually-hidden h1).
+function reorderCueColumn() {
+  var cues = document.querySelector('.course__cues');
+  var dir = document.getElementById('directionsSection');
+  if (!cues || !dir || dir.parentElement !== cues) return;
+  // Anchor: insert directions immediately after the visually-hidden h1
+  // (or, if no h1, after the scope note). Falling back to prepend is
+  // safe — those headers were already first.
+  var anchor = cues.querySelector('h1.visually-hidden')
+            || cues.querySelector('.scope-note');
+  if (anchor && anchor.nextSibling) {
+    cues.insertBefore(dir, anchor.nextSibling);
+  } else {
+    cues.insertBefore(dir, cues.firstChild);
+  }
 }
 
 initMap();

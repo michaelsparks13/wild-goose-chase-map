@@ -21,12 +21,16 @@ describe('wild-goose theme — identity + scope', () => {
 });
 
 describe('wild-goose theme — palette (extracted from Sassquad Wix tokens)', () => {
-  it('paper is cream, not pure white', () => {
+  it('paper is cream-white (barely tinted), not pure white or khaki', () => {
+    // v3: paper moved from #f4eee0 (khaki) to #faf7ed (cream-white) so
+    // the substrate reads as clean paper, not light brown.
     expect(theme.palette.paper.toLowerCase()).not.toBe('#ffffff');
-    expect(theme.palette.paper.toLowerCase()).toMatch(/^#f[3-6]e/);
+    expect(theme.palette.paper.toLowerCase()).toBe('#faf7ed');
   });
-  it('race-brand is Sassquad olive (Wix --color_24)', () => {
-    expect(theme.palette.raceBrand).toBe('#6A7E3D');
+  it('race-brand is deeper Sassquad olive (between Wix color_24 and color_25)', () => {
+    // v3: bumped from #6A7E3D (light olive) to #4F5F2D so the brand
+    // accent reads against the dark top bar without going muddy.
+    expect(theme.palette.raceBrand).toBe('#4F5F2D');
   });
   it('accent is Sassquad chartreuse (Wix --color_22)', () => {
     expect(theme.palette.accent).toBe('#D4FC79');

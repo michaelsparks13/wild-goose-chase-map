@@ -110,13 +110,15 @@ describe('wild-goose editorial chrome', () => {
     });
   });
 
-  describe('palette (Sassquad-extracted Wix tokens)', () => {
-    it('uses cream paper, not pure white', () => {
-      expect(html).toContain('--paper: #f4eee0');
+  describe('palette (Sassquad-extracted Wix tokens, v3 cream-white + deeper olive)', () => {
+    it('uses cream-white paper (barely tinted off-white), not pure white or khaki', () => {
+      expect(html).toContain('--paper: #faf7ed');
       expect(html).not.toMatch(/--paper:\s*#fff(?:fff)?(?:;|\s)/i);
+      expect(html).not.toContain('--paper: #f4eee0'); // khaki paper retired
     });
-    it('uses Sassquad olive (Wix --color_24) as race-brand', () => {
-      expect(html).toContain('--race-brand: #6A7E3D');
+    it('uses deeper Sassquad olive (between Wix color_24 and color_25) as race-brand', () => {
+      expect(html).toContain('--race-brand: #4F5F2D');
+      expect(html).not.toContain('--race-brand: #6A7E3D'); // washed-out olive retired
     });
     it('exposes Sassquad chartreuse (Wix --color_22) as accent token', () => {
       expect(html).toContain('--accent-chartreuse: #D4FC79');
@@ -127,6 +129,23 @@ describe('wild-goose editorial chrome', () => {
     it('uses trail-blaze pink + blue for loops', () => {
       expect(html).toContain('#E7338C'); // pink
       expect(html).toContain('#1E66D0'); // blue
+    });
+  });
+
+  describe('marker + cue-column + width contracts (v3 design review)', () => {
+    it('CSS sizes .hq-marker and .turn-marker to non-zero dimensions', () => {
+      expect(html).toMatch(/\.hq-marker\s*\{[^}]*width:\s*32px/);
+      expect(html).toMatch(/\.hq-marker\s*\{[^}]*height:\s*32px/);
+      expect(html).toMatch(/\.turn-marker\s*\{[^}]*width:\s*24px/);
+      expect(html).toMatch(/\.turn-marker\s*\{[^}]*height:\s*24px/);
+    });
+    it('override.js reorders directions-section to be first in cue column', () => {
+      expect(html).toContain('function reorderCueColumn(');
+      // Anchor selectors used to find the insertion point
+      expect(html).toContain('h1.visually-hidden');
+    });
+    it('essentials sections cap at 720px max-width', () => {
+      expect(html).toMatch(/main\s*>\s*section\.essentials[\s\S]{0,80}max-width:\s*720px/);
     });
   });
 

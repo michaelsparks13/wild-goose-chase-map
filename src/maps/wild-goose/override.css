@@ -25,6 +25,18 @@ body.race-page.race-wild-goose {
   color: var(--ink);
 }
 
+/* Below-map content is single-column reading width. The .course section
+ * (sticky map + cues split) stays at full container width — the map is
+ * the hero. Everything after it — elevation, simulator, weather, day,
+ * logistics, downloads, footer — is reading material and constrains to
+ * ~720px so line lengths stay legible on wide desktops. On mobile the
+ * cap is a no-op (the viewport is already narrower than 720px). */
+.race-wild-goose main > section.essentials,
+.race-wild-goose .page-footer {
+  max-width: 720px;
+  margin-inline: auto;
+}
+
 /* ─── Map column ───────────────────────────────────────────────────── */
 
 .race-wild-goose .map-wrap {
@@ -38,12 +50,41 @@ body.race-page.race-wild-goose {
   border-radius: 6px;
   overflow: hidden;
 }
+
+/* MapLibre Marker elements get the className we pass when constructed.
+ * The SVGs inside use viewBox-only sizing, so the wrapper div MUST set
+ * explicit dimensions or the marker collapses to 0x0. Tinman uses 21px,
+ * Javelina uses 28px — we go a touch larger (32px) so the HQ marker is
+ * legible on the green basemap, and turn markers stay at 24px to read as
+ * secondary. */
+.race-wild-goose .hq-marker {
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+.race-wild-goose .hq-marker svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));
+}
+.race-wild-goose .turn-marker {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+.race-wild-goose .turn-marker svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
+}
 .race-wild-goose .hq-badge {
   position: absolute; top: 12px; left: 12px; z-index: 10;
   display: inline-flex; align-items: center; gap: 8px;
   padding: 7px 11px;
   background: var(--paper);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(31,29,24,0.08);
   font-family: var(--font-display);
@@ -64,7 +105,7 @@ body.race-page.race-wild-goose {
 }
 .race-wild-goose .trail-btn {
   background: var(--paper);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
   border-radius: 4px;
   padding: 7px 11px;
   font-family: var(--font-body);
@@ -88,7 +129,7 @@ body.race-page.race-wild-goose {
 
 .race-wild-goose .hq-aid-card {
   background: var(--surface-warm);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
   border-left: 4px solid var(--aid-color, #E07A1F);
   border-radius: 4px;
   padding: 18px 20px 16px;
@@ -106,7 +147,7 @@ body.race-page.race-wild-goose {
   font-family: var(--font-body);
   font-size: 0.78rem;
   font-style: italic;
-  color: #52503f;
+  color: #4a4a3e;
   margin: 0;
 }
 .race-wild-goose .hq-aid-card__grid {
@@ -116,7 +157,7 @@ body.race-page.race-wild-goose {
   margin: 0;
 }
 .race-wild-goose .hq-aid-card__grid > div {
-  border-top: 1px solid #d8cfb8;
+  border-top: 1px solid #e0d8bf;
   padding-top: 8px;
 }
 .race-wild-goose .hq-aid-card__grid dt {
@@ -125,7 +166,7 @@ body.race-page.race-wild-goose {
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #807d6b;
+  color: #7a7a6b;
   margin-bottom: 2px;
 }
 .race-wild-goose .hq-aid-card__grid dd {
@@ -161,7 +202,7 @@ body.race-page.race-wild-goose {
 
 .race-wild-goose .directions-section {
   background: var(--paper);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 14px;
@@ -172,7 +213,7 @@ body.race-page.race-wild-goose {
   gap: 2px;
   padding: 6px 6px 0;
   background: var(--surface-warm);
-  border-bottom: 1px solid #d8cfb8;
+  border-bottom: 1px solid #e0d8bf;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -191,7 +232,7 @@ body.race-page.race-wild-goose {
   font-family: var(--font-body);
   font-size: 0.76rem;
   font-weight: 600;
-  color: #807d6b;
+  color: #7a7a6b;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s, color 0.15s, box-shadow 0.15s;
@@ -218,13 +259,13 @@ body.race-page.race-wild-goose {
   letter-spacing: 0.04em;
 }
 .race-wild-goose .dir-race-mi {
-  color: #807d6b;
+  color: #7a7a6b;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
   font-size: 0.7rem;
   font-family: var(--font-micro);
 }
-.race-wild-goose .dir-race-tab.active .dir-race-mi { color: #52503f; }
+.race-wild-goose .dir-race-tab.active .dir-race-mi { color: #4a4a3e; }
 
 @media (max-width: 560px) {
   .race-wild-goose .dir-race-mi { display: none; }
@@ -246,7 +287,7 @@ body.race-page.race-wild-goose {
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #807d6b;
+  color: #7a7a6b;
 }
 .race-wild-goose .directions-race {
   display: block;
@@ -285,7 +326,7 @@ body.race-page.race-wild-goose {
   gap: 6px;
   padding: 5px 10px 5px 8px;
   background: var(--surface-warm);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
   border-radius: 999px;
   font-family: var(--font-body);
   font-size: 0.76rem;
@@ -294,7 +335,7 @@ body.race-page.race-wild-goose {
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
 }
-.race-wild-goose .assembly-chip:hover { background: #f6efde; border-color: #b8aa85; }
+.race-wild-goose .assembly-chip:hover { background: #f0eadb; border-color: #c5bd99; }
 .race-wild-goose .assembly-chip:active { transform: scale(0.97); }
 .race-wild-goose .assembly-chip:focus-visible {
   outline: 2px solid var(--race-brand);
@@ -331,10 +372,10 @@ body.race-page.race-wild-goose {
   padding: 1px 5px;
   border-radius: 2px;
   background: rgba(31,29,24,0.08);
-  color: #52503f;
+  color: #4a4a3e;
 }
 .race-wild-goose .assembly-chip__arrow {
-  color: #b8aa85;
+  color: #c5bd99;
   font-size: 0.85rem;
   margin: 0 1px;
 }
@@ -345,7 +386,7 @@ body.race-page.race-wild-goose {
   gap: 1px;
   padding: 8px 16px 10px;
   margin: 0;
-  border-bottom: 1px solid #e5dcc5;
+  border-bottom: 1px solid #ede6cc;
   background: linear-gradient(180deg, rgba(255,255,255,0.4), transparent);
 }
 .race-wild-goose .assembly-now__eyebrow {
@@ -354,7 +395,7 @@ body.race-page.race-wild-goose {
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #807d6b;
+  color: #7a7a6b;
 }
 .race-wild-goose .assembly-now__label {
   font-family: var(--font-body);
@@ -375,7 +416,7 @@ body.race-page.race-wild-goose {
   align-items: baseline;
   gap: 4px 10px;
   padding: 9px 16px;
-  border-bottom: 1px dotted #e5dcc5;
+  border-bottom: 1px dotted #ede6cc;
   transition: background 0.12s;
 }
 .race-wild-goose .loop-cue:last-child { border-bottom: 0; }
@@ -396,7 +437,7 @@ body.race-page.race-wild-goose {
 .race-wild-goose .loop-cue--hazard .loop-cue__kind  { color: var(--hazard-color, #B53528); }
 .race-wild-goose .loop-cue--water  .loop-cue__kind  { color: #2A77B0; }
 .race-wild-goose .loop-cue--landmark .loop-cue__kind { color: var(--race-brand); }
-.race-wild-goose .loop-cue--surface  .loop-cue__kind { color: #807d6b; }
+.race-wild-goose .loop-cue--surface  .loop-cue__kind { color: #7a7a6b; }
 .race-wild-goose .loop-cue__text {
   font-family: var(--font-body);
   font-size: 0.86rem;
@@ -406,7 +447,7 @@ body.race-page.race-wild-goose {
 .race-wild-goose .loop-cue--empty {
   grid-template-columns: 1fr;
   font-style: italic;
-  color: #52503f;
+  color: #4a4a3e;
   padding: 14px 16px;
 }
 
@@ -432,7 +473,7 @@ body.race-page.race-wild-goose {
   gap: 14px;
   font-family: var(--font-micro);
   font-size: 0.74rem;
-  color: #52503f;
+  color: #4a4a3e;
 }
 .race-wild-goose .profile-stats .val { font-weight: 700; color: var(--ink); }
 .race-wild-goose #profileCanvas {
@@ -443,7 +484,7 @@ body.race-page.race-wild-goose {
 
 .race-wild-goose .maplibregl-popup-content {
   background: var(--paper);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
   border-radius: 4px;
   padding: 10px 12px;
   font-family: var(--font-body);
@@ -482,12 +523,12 @@ body.race-page.race-wild-goose {
 
 .race-wild-goose .essentials--sim {
   background: var(--surface-warm);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
   border-radius: 4px;
 }
 .race-wild-goose .essentials__sim-host {
   background: var(--paper);
-  border-top: 1px solid #d8cfb8;
+  border-top: 1px solid #e0d8bf;
   padding: 14px;
 }
 .race-wild-goose .view--always-on { display: block !important; }
@@ -512,7 +553,7 @@ body.race-page.race-wild-goose {
 .race-wild-goose .sim-race-btn {
   padding: 7px 11px;
   background: var(--surface-warm);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
   border-radius: 999px;
   font-family: var(--font-display);
   font-size: 0.72rem;
@@ -534,7 +575,7 @@ body.race-page.race-wild-goose {
   gap: 12px;
   padding: 9px 12px;
   background: var(--surface-warm);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
   border-radius: 3px;
 }
 .race-wild-goose .goal-label {
@@ -543,13 +584,13 @@ body.race-page.race-wild-goose {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #807d6b;
+  color: #7a7a6b;
 }
 .race-wild-goose .goal-inputs { display: inline-flex; align-items: center; gap: 2px; }
 .race-wild-goose .goal-input {
   width: 38px;
   padding: 4px 6px;
-  border: 1px solid #b8aa85;
+  border: 1px solid #c5bd99;
   background: var(--paper);
   border-radius: 3px;
   font-family: var(--font-micro);
@@ -559,12 +600,12 @@ body.race-page.race-wild-goose {
   color: var(--ink);
 }
 .race-wild-goose .goal-input:focus { outline: 2px solid var(--race-brand); outline-offset: 1px; }
-.race-wild-goose .goal-colon { font-family: var(--font-micro); color: #807d6b; }
+.race-wild-goose .goal-colon { font-family: var(--font-micro); color: #7a7a6b; }
 .race-wild-goose .goal-pace {
   margin-left: auto;
   font-family: var(--font-micro);
   font-size: 0.78rem;
-  color: #52503f;
+  color: #4a4a3e;
 }
 .race-wild-goose .goal-pace strong { color: var(--ink); font-variant-numeric: tabular-nums; }
 
@@ -596,7 +637,7 @@ body.race-page.race-wild-goose {
   background: var(--surface-warm);
   border-radius: 4px;
   overflow: hidden;
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
 }
 .race-wild-goose .scrub-segs { display: flex; width: 100%; height: 100%; }
 .race-wild-goose .scrub-seg { height: 100%; }
@@ -634,7 +675,7 @@ body.race-page.race-wild-goose {
 .race-wild-goose .speed-btn {
   padding: 5px 9px;
   background: var(--surface-warm);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
   border-radius: 3px;
   font-family: var(--font-micro);
   font-size: 0.72rem;
@@ -652,7 +693,7 @@ body.race-page.race-wild-goose {
   text-align: center;
   padding: 14px 12px;
   background: var(--surface-warm);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
   border-radius: 3px;
 }
 .race-wild-goose .clock-time {
@@ -668,13 +709,13 @@ body.race-page.race-wild-goose {
   font-size: 0.66rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #807d6b;
+  color: #7a7a6b;
   margin-top: 3px;
 }
 .race-wild-goose .clock-finish {
   font-family: var(--font-body);
   font-size: 0.78rem;
-  color: #52503f;
+  color: #4a4a3e;
   margin-top: 6px;
 }
 .race-wild-goose .clock-finish strong {
@@ -690,7 +731,7 @@ body.race-page.race-wild-goose {
 .race-wild-goose .sim-stat {
   padding: 9px 10px;
   background: var(--surface-warm);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
   border-radius: 3px;
   text-align: center;
 }
@@ -706,14 +747,14 @@ body.race-page.race-wild-goose {
   font-size: 0.6rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #807d6b;
+  color: #7a7a6b;
   margin-top: 1px;
 }
 
 .race-wild-goose .loop-progress {
   padding: 12px;
   background: var(--surface-warm);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
   border-radius: 3px;
 }
 .race-wild-goose .loop-progress h4 {
@@ -723,14 +764,14 @@ body.race-page.race-wild-goose {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #807d6b;
+  color: #7a7a6b;
 }
 .race-wild-goose .loop-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 5px 0;
-  border-top: 1px dotted #c8bd9b;
+  border-top: 1px dotted #d4cdab;
   font-size: 0.78rem;
 }
 .race-wild-goose .loop-row:first-child { border-top: 0; }
@@ -812,7 +853,7 @@ body.race-page.race-wild-goose {
 
 .race-wild-goose .essentials--weather {
   background: var(--paper);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
   border-radius: 4px;
   padding: 18px 20px;
 }
@@ -839,7 +880,7 @@ body.race-page.race-wild-goose {
 .race-wild-goose .essentials--weather .weather-current,
 .race-wild-goose .essentials--weather .weather-radar-section {
   background: var(--surface-warm);
-  border: 1px solid #d8cfb8;
+  border: 1px solid #e0d8bf;
 }
 
 /* ─── Legacy view tabs hidden (editorial layout has none) ────────── */

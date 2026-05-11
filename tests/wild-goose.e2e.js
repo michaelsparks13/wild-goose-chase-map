@@ -75,19 +75,114 @@ test.describe('Wild Goose Trail Festival — editorial chrome', () => {
     await expect(cueList).toContainText('Banker Trail');
   });
 
-  test('palette tokens come from Sassquad Wix extraction (olive + chartreuse + cream)', async ({ page }) => {
+  test('palette tokens come from Sassquad Wix extraction (deeper olive + chartreuse + cream-white)', async ({ page }) => {
     const brand = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--race-brand').trim()
     );
-    expect(brand.toLowerCase()).toBe('#6a7e3d');
+    expect(brand.toLowerCase()).toBe('#4f5f2d');
     const paper = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()
     );
-    expect(paper.toLowerCase()).toBe('#f4eee0');
+    expect(paper.toLowerCase()).toBe('#faf7ed');
     const accent = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--accent-chartreuse').trim()
     );
     expect(accent.toLowerCase()).toBe('#d4fc79');
+  });
+
+  test('Squatch HQ marker renders at non-zero size AND visually within the map viewport', async ({ page }) => {
+    // The .hq-marker MapLibre wrapper had width 0 in the first iteration
+    // because no CSS rule sized it — the SVG inside uses viewBox-only
+    // sizing and collapses to 0x0 without explicit dimensions. Verify
+    // the marker now reads as a 32x32 element AND its screen position
+    // falls inside the map element (so it's actually visible to the
+    // user, not just sized but positioned off-screen).
+    await page.waitForSelector('.hq-marker', { timeout: 5000 });
+    const data = await page.evaluate(() => {
+      const m = document.querySelector('.hq-marker');
+      const map = document.querySelector('#map');
+      if (!m || !map) return null;
+      const mr = m.getBoundingClientRect();
+      const mapR = map.getBoundingClientRect();
+      return {
+        marker: { x: mr.x, y: mr.y, w: mr.width, h: mr.height },
+        map:    { x: mapR.x, y: mapR.y, w: mapR.width, h: mapR.height },
+      };
+    });
+    expect(data).toBeTruthy();
+    expect(data.marker.w).toBeGreaterThanOrEqual(24);
+    expect(data.marker.h).toBeGreaterThanOrEqual(24);
+    // Marker center must lie inside the map's screen rect
+    const mx = data.marker.x + data.marker.w / 2;
+    const my = data.marker.y + data.marker.h / 2;
+    expect(mx).toBeGreaterThan(data.map.x);
+    expect(mx).toBeLessThan(data.map.x + data.map.w);
+    expect(my).toBeGreaterThan(data.map.y);
+    expect(my).toBeLessThan(data.map.y + data.map.h);
+  });
+
+  test('captures a map-area screenshot for HQ marker visual verification', async ({ page }, testInfo) => {
+    await page.waitForSelector('.hq-marker', { timeout: 5000 });
+    // Wait for the map tiles to paint (a small extra delay helps the
+    // marker layer settle after the load event).
+    await page.waitForTimeout(800);
+    const mapWrap = page.locator('.map-wrap').first();
+    await mapWrap.screenshot({ path: testInfo.outputPath('wild-goose-map-area.png') });
+  });
+
+  test('directions section is the FIRST content child of the cue column (right of map, above aid card)', async ({ page }) => {
+    // The aid card / no-aid strip used to be above the directions; the
+    // page reads better with the loop assembly chip strip + cues
+    // immediately right of the map. override.js reorderCueColumn()
+    // moves the directions section to be the first non-header child.
+    const order = await page.evaluate(() => {
+      const cues = document.querySelector('.course__cues');
+      if (!cues) return null;
+      return Array.from(cues.children).map(c => ({
+        tag: c.tagName.toLowerCase(),
+        id: c.id,
+        cls: c.className,
+      }));
+    });
+    expect(order).toBeTruthy();
+    // First non-scope/non-h1 child should be the directions section
+    const firstContentChild = order.find(c => !c.cls.includes('scope-note') && !c.cls.includes('visually-hidden'));
+    expect(firstContentChild.id).toBe('directionsSection');
+    // And the aid card should come AFTER the directions
+    const aidIdx = order.findIndex(c => c.cls.includes('hq-aid-card'));
+    const dirIdx = order.findIndex(c => c.id === 'directionsSection');
+    expect(dirIdx).toBeLessThan(aidIdx);
+  });
+
+  test('essentials sections cap at ~720px width and center below the map', async ({ page }) => {
+    // Below-the-map content used to span the full container (1185px on
+    // a 1200px viewport). Reading dense text at that width is hard;
+    // cap the essentials sections + footer to a comfortable ~720px.
+    const widths = await page.evaluate(() => {
+      const out = [];
+      const main = document.querySelector('.race-page__main');
+      const mainW = main ? main.getBoundingClientRect().width : 0;
+      document.querySelectorAll('main > section.essentials').forEach(el => {
+        if (el.hasAttribute('hidden')) return;
+        const rect = el.getBoundingClientRect();
+        out.push({ id: el.id, w: rect.width, mainW });
+      });
+      return out;
+    });
+    expect(widths.length).toBeGreaterThan(0);
+    for (const e of widths) {
+      // Width should be ≤ 720px (the CSS cap) on a 1200px+ viewport
+      expect(e.w).toBeLessThanOrEqual(720);
+      // And the cap should actually apply (i.e. less than main column width)
+      expect(e.w).toBeLessThan(e.mainW);
+    }
+  });
+
+  test('captures a desktop fullpage screenshot for manual review', async ({ page }, testInfo) => {
+    await page.screenshot({
+      path: testInfo.outputPath('wild-goose-desktop.png'),
+      fullPage: true,
+    });
   });
 
   test('weather lives in race-day essentials, not as a side panel beside the map', async ({ page }) => {
@@ -127,5 +222,127 @@ test.describe('Wild Goose Trail Festival — editorial chrome', () => {
 
   test('legacy view-tab switcher is gone (editorial layout has no tabs)', async ({ page }) => {
     await expect(page.locator('.view-tabs')).toHaveCount(0);
+  });
+});
+
+// ─── Mobile UI/UX + functional contract (iPhone 11 / common Android) ───
+//
+// At 375×812 the editorial layout collapses: sticky map + cues column
+// stacks into map-on-top + cues-below. Top bar must still render legible,
+// the chip strip must scroll horizontally without overflowing, and every
+// interactive surface (loop chips, distance tabs, simulator) must remain
+// reachable. The aid card grid drops to single column.
+
+test.describe('Wild Goose — mobile (iPhone 11 / 375×812)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/maps/wild-goose/');
+  });
+
+  test('top bar fits inside viewport — no horizontal overflow', async ({ page }) => {
+    const dims = await page.evaluate(() => {
+      const bar = document.querySelector('.top-bar');
+      const rect = bar.getBoundingClientRect();
+      return {
+        w: rect.width,
+        scrollW: document.documentElement.scrollWidth,
+        innerW: window.innerWidth,
+      };
+    });
+    expect(dims.scrollW).toBeLessThanOrEqual(dims.innerW + 1);
+  });
+
+  test('map is still visible above the fold and dominant', async ({ page }) => {
+    const mapBox = await page.locator('#map').boundingBox();
+    expect(mapBox).toBeTruthy();
+    // Map should be visible in the first viewport
+    expect(mapBox.y).toBeLessThan(812);
+    // And take meaningful height
+    expect(mapBox.height).toBeGreaterThanOrEqual(280);
+  });
+
+  test('Squatch HQ marker renders at non-zero size on mobile too', async ({ page }) => {
+    await page.waitForSelector('.hq-marker', { timeout: 5000 });
+    const dims = await page.evaluate(() => {
+      const el = document.querySelector('.hq-marker');
+      const rect = el.getBoundingClientRect();
+      return { w: rect.width, h: rect.height };
+    });
+    expect(dims.w).toBeGreaterThanOrEqual(24);
+    expect(dims.h).toBeGreaterThanOrEqual(24);
+  });
+
+  test('distance picker tabs horizontal-scroll instead of overflowing', async ({ page }) => {
+    const tabsContainer = page.locator('.dir-race-tabs');
+    await expect(tabsContainer).toBeVisible();
+    const overflowOk = await tabsContainer.evaluate(el => {
+      const cs = getComputedStyle(el);
+      // Either content fits, OR the container is set up to scroll
+      return el.scrollWidth <= el.clientWidth + 1 || cs.overflowX !== 'visible';
+    });
+    expect(overflowOk).toBe(true);
+  });
+
+  test('all 6 distance tabs remain reachable (tap-scrollable)', async ({ page }) => {
+    const tabs = page.locator('.dir-race-tab');
+    await expect(tabs).toHaveCount(6);
+  });
+
+  test('assembly chip strip wraps or scrolls without breaking layout', async ({ page }) => {
+    // Switch to 100M which has 16 chips — stress test the chip strip
+    await page.locator('.dir-race-tab[data-race="100m"]').click();
+    const strip = page.locator('#assemblyStrip');
+    await expect(strip).toBeVisible();
+    const overflowOk = await strip.evaluate(el => {
+      // Either it wraps (flex-wrap), or it scrolls
+      const cs = getComputedStyle(el);
+      return cs.flexWrap === 'wrap' || el.scrollWidth <= el.clientWidth + 1;
+    });
+    expect(overflowOk).toBe(true);
+  });
+
+  test('Squatch HQ aid card grid collapses to a single column', async ({ page }) => {
+    const grid = page.locator('.hq-aid-card__grid');
+    await expect(grid).toBeVisible();
+    const cellsPerRow = await grid.evaluate(el => {
+      const cells = Array.from(el.children);
+      if (cells.length < 2) return 1;
+      const firstTop = cells[0].getBoundingClientRect().top;
+      const secondTop = cells[1].getBoundingClientRect().top;
+      return Math.abs(firstTop - secondTop) < 4 ? 2 : 1;
+    });
+    expect(cellsPerRow).toBe(1);
+  });
+
+  test('simulator collapses to single column on mobile', async ({ page }) => {
+    // The sim-container has a 2-col grid that collapses below 880px via
+    // a media query. Verify the visual column lands below the panel.
+    const sim = page.locator('#essentialsSimulator');
+    await expect(sim).toBeVisible();
+    const stacked = await sim.evaluate(el => {
+      const panel = el.querySelector('.sim-panel');
+      const visual = el.querySelector('.sim-visual');
+      if (!panel || !visual) return false;
+      return visual.getBoundingClientRect().top > panel.getBoundingClientRect().bottom - 10;
+    });
+    expect(stacked).toBe(true);
+  });
+
+  test('essentials sections occupy ~full viewport width on mobile (no max-width waste)', async ({ page }) => {
+    // The desktop 720px cap is wider than mobile viewports — so on a
+    // 375px screen the essentials should fill the available width (with
+    // standard editorial padding, ~340px).
+    const w = await page.evaluate(() => {
+      const e = document.querySelector('#essentialsSimulator');
+      return e ? e.getBoundingClientRect().width : 0;
+    });
+    expect(w).toBeGreaterThan(320);
+  });
+
+  test('captures a mobile fullpage screenshot for manual review', async ({ page }, testInfo) => {
+    await page.screenshot({
+      path: testInfo.outputPath('wild-goose-mobile.png'),
+      fullPage: true,
+    });
   });
 });
