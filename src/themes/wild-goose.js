@@ -25,37 +25,42 @@ module.exports = {
     establishedYear: 2019,
   },
 
-  // Sassquad's brand reads deep forest green on warm cream paper. The
-  // loop blaze colors (pink and blue) are the real on-course flag colors
-  // riders mark with on race weekend; checkered is rendered as a black-
-  // on-cream pattern on the map line and chip dots.
+  // Palette extracted from sassquadtrailrunning.com/wildgoose at build
+  // time (computed Wix theme tokens). The standout is the chartreuse
+  // #D4FC79 used as real page-background accent on Sassquad; we promote
+  // it to `accent` and use the olive #6A7E3D as `raceBrand` so the page
+  // reads "Sassquad-on-paper" rather than "lime poster" at scale. The
+  // golden yellow #FDD80D is Sassquad's marker color → aid station.
   palette: {
-    raceBrand:    '#2F6B2A', // deep forest green — Sassquad header / logo
-    raceInk:      '#1f1d18', // warm near-black
-    paper:        '#f4eee0', // warm cream paper substrate
+    raceBrand:    '#6A7E3D', // Sassquad olive (Wix --color_24)
+    raceInk:      '#1a1a1a', // near-black, matches Sassquad body ink
+    paper:        '#f4eee0', // warm cream substrate (no pure white)
     surfaceWarm:  '#ebe2cf', // kraft surface, recessed from paper
-    routeColor:   '#1f1d18', // course default ink when no loop highlighted
-    aidStation:   '#E07A1F', // amber — Squatch HQ marker stands out on cream
+    routeColor:   '#1a1a1a', // course default ink when no loop highlighted
+    aidStation:   '#FDD80D', // Sassquad golden yellow (Wix --color_28)
     hazard:       '#B53528', // warm rust — no-aid-on-course strip + bears
+    accent:       '#D4FC79', // Sassquad chartreuse (Wix --color_22) — active states
+    darkForest:   '#353F1E', // Sassquad dark forest (Wix --color_25) — deep tone
   },
 
   type: {
-    // Display: Bricolage Grotesque is a friendly variable display face
-    // with slab character in its heavier weights. Reads "trail party
-    // signboard" without trying too hard to look hand-lettered.
-    display: 'Bricolage Grotesque',
-    // Body: Manrope is a sturdy workhorse sans — present without being
-    // generic, comfortable at body sizes for the within-loop cue list.
-    body:    'Manrope',
+    // Display: Bangers is Sassquad's actual heading font on every h1/h2/
+    // h3 (Wix loads it as `orig_bangers_regular`). Friendly slab, hand-
+    // lettered comic-book feel — the literal "trail-party" register.
+    display: 'Bangers',
+    // Body: Barlow is the closest open analog to Sassquad's DIN Next W01
+    // — workhorse sans with subtle condensed proportions, sturdy at body
+    // sizes for the within-loop cue list.
+    body:    'Barlow',
     // Mono: JetBrains Mono for the distance / mileage / time strip.
     micro:   'JetBrains Mono',
     googleFontsHref:
       'https://fonts.googleapis.com/css2?' +
-      'family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&' +
-      'family=Manrope:wght@400;500;600;700&' +
+      'family=Bangers&' +
+      'family=Barlow:wght@400;500;600;700&' +
       'family=JetBrains+Mono:wght@400;500;600&display=swap',
-    displayStack: "'Bricolage Grotesque', Georgia, 'Times New Roman', serif",
-    bodyStack:    "'Manrope', -apple-system, 'Helvetica Neue', sans-serif",
+    displayStack: "'Bangers', 'Impact', 'Oswald', sans-serif",
+    bodyStack:    "'Barlow', -apple-system, 'Helvetica Neue', sans-serif",
     microStack:   "'JetBrains Mono', 'IBM Plex Mono', 'SF Mono', Menlo, Consolas, monospace",
   },
 

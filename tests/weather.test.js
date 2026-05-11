@@ -136,12 +136,15 @@ describe('Weather Intelligence', () => {
       expect(wildGooseHtml).toContain('id="weatherCurrent"');
     });
 
-    it('contains map-weather-layout wrapper', () => {
-      expect(wildGooseHtml).toContain('class="map-weather-layout"');
-    });
-
-    it('contains map-main wrapper', () => {
-      expect(wildGooseHtml).toContain('class="map-main"');
+    it('weather panel is staged off-map (not in a side-panel layout)', () => {
+      // Per the new-map-prompt redesign (f6048cf), weather no longer lives
+      // in a sticky .map-weather-layout side panel beside the map. The
+      // wild-goose page emits the panel into a hidden staging block in the
+      // cue column and override.js lifts it into a dedicated essentials
+      // section. Neither the legacy side-panel wrappers nor an inline-with-
+      // map placement is expected anymore.
+      expect(wildGooseHtml).toContain('id="weatherPanelStaging"');
+      expect(wildGooseHtml).toContain('relocateWeatherPanel');
     });
   });
 

@@ -204,7 +204,8 @@ body.race-page.race-wild-goose {
 .race-wild-goose .dir-race-tab.active {
   color: var(--ink);
   background: var(--paper);
-  box-shadow: inset 0 -3px 0 var(--race-brand);
+  box-shadow: inset 0 -3px 0 var(--accent-chartreuse, #D4FC79),
+              inset 0 -4px 0 var(--race-brand);
 }
 .race-wild-goose .dir-race-dot {
   width: 8px; height: 8px; border-radius: 50%;
@@ -300,9 +301,14 @@ body.race-page.race-wild-goose {
   outline-offset: 2px;
 }
 .race-wild-goose .assembly-chip.active {
-  background: var(--paper);
+  background: var(--accent-chartreuse, #D4FC79);
   border-color: var(--ink);
   box-shadow: 0 0 0 1px var(--ink) inset;
+  color: var(--ink);
+}
+.race-wild-goose .assembly-chip.active .assembly-chip__dir {
+  background: rgba(26,26,26,0.18);
+  color: var(--ink);
 }
 .race-wild-goose .assembly-chip__dot {
   width: 10px; height: 10px; border-radius: 50%;
@@ -796,10 +802,51 @@ body.race-page.race-wild-goose {
 }
 .race-wild-goose #simTerrain { width: 100%; height: 100%; display: block; }
 
+/* ─── Weather essentials section ─────────────────────────────────── */
+/* Per the new build spec (f6048cf), weather lives inside race-day
+ * essentials, NOT as a sticky side panel beside the map. override.js
+ * relocates the weather panel out of its hidden staging block in the
+ * cue column into this dedicated section between the simulator and the
+ * aid summary. The shared weather.css positions internal components;
+ * we only style the outer host + override the default sticky behavior. */
+
+.race-wild-goose .essentials--weather {
+  background: var(--paper);
+  border: 1px solid #d8cfb8;
+  border-radius: 4px;
+  padding: 18px 20px;
+}
+.race-wild-goose .essentials__weather-host { width: 100%; }
+.race-wild-goose .essentials--weather .weather-panel {
+  position: static;
+  width: 100%;
+  max-width: none;
+  background: var(--paper);
+  box-shadow: none;
+  border: 0;
+  padding: 0;
+}
+.race-wild-goose .essentials--weather .weather-panel-header {
+  background: transparent;
+  padding: 0 0 12px;
+  cursor: default;
+}
+.race-wild-goose .essentials--weather .weather-panel-header h3 { display: none; }
+.race-wild-goose .essentials--weather .weather-panel-header .weather-toggle-btn { display: none; }
+.race-wild-goose .essentials--weather .weather-panel-body { display: block !important; }
+.race-wild-goose .essentials--weather .weather-risk-card,
+.race-wild-goose .essentials--weather .weather-daily-card,
+.race-wild-goose .essentials--weather .weather-current,
+.race-wild-goose .essentials--weather .weather-radar-section {
+  background: var(--surface-warm);
+  border: 1px solid #d8cfb8;
+}
+
 /* ─── Legacy view tabs hidden (editorial layout has none) ────────── */
 
 .race-wild-goose .view-tabs { display: none !important; }
 .race-wild-goose .legacy-controls { display: none !important; }
+.race-wild-goose #essentialsAid[hidden] { display: none !important; }
 
 /* ─── Mobile breakpoint ───────────────────────────────────────────── */
 

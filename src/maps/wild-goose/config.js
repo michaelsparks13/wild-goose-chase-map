@@ -274,37 +274,41 @@ const aidCardHtml = `<aside class="hq-aid-card" aria-labelledby="hqAidTitle">
   <strong>No aid on course.</strong> Carry water and nutrition between loops. Plan your refills at Squatch HQ before starting each loop.
 </p>`;
 
-// Weather Intelligence panel. weather-ui.js (shared) populates these
-// IDs from CONFIG.weather at runtime; the editorial layout doesn't
-// reserve a built-in weather slot, so we render the panel into the
-// course__cues column below the aid card. Wrapped in .map-weather-layout
-// + .map-main only to satisfy the shared weather.css selectors that
-// expect those parent classes for sizing/breakpoint logic.
-const weatherPanelHtml = weatherData ? `<div class="map-weather-layout">
-  <div class="map-main"></div>
-  <aside class="weather-panel" id="weatherPanel" aria-labelledby="weatherPanelTitle">
-    <div class="weather-panel-header" id="weatherPanelHeader" onclick="toggleWeatherPanel()">
-      <h3 id="weatherPanelTitle">Weather Intelligence</h3>
-      <button class="weather-toggle-btn" id="weatherToggleBtn" aria-label="Toggle weather panel">
-        <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
+// Weather Intelligence panel. Per the redesigned build spec (feature_
+// new_map_prompt_redesign / f6048cf), the weather panel no longer lives
+// as a 340px sticky panel beside the map — that pattern competed with
+// the map for hero space. Instead it goes in two places:
+//   (a) the editorial top-bar live conditions widget (already wired by
+//       editorial-runtime.js → wireWeatherWidget against #rdsWeather),
+//   (b) a rich forecast block inside race-day essentials.
+//
+// We emit the panel HTML here as a flat string so override.js's
+// relocateWeatherPanel() can lift it into a new essentials section at
+// runtime — same approach we used for the simulator. weather-ui.js
+// (shared, IIFE-gated on CONFIG.weather) finds the IDs by selector and
+// populates them regardless of where they sit in the tree.
+const weatherPanelHtml = weatherData ? `<aside class="weather-panel" id="weatherPanel" aria-labelledby="weatherPanelTitle" data-relocate="essentials-weather">
+  <div class="weather-panel-header" id="weatherPanelHeader" onclick="toggleWeatherPanel()">
+    <h3 id="weatherPanelTitle">Weather Intelligence</h3>
+    <button class="weather-toggle-btn" id="weatherToggleBtn" aria-label="Toggle weather panel">
+      <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="weather-panel-body" id="weatherPanelBody">
+    <div class="weather-risk-row" id="weatherRiskCards"></div>
+    <div id="weatherDaily"></div>
+    <div id="weatherCurrent">
+      <div class="weather-loading">Loading current conditions&hellip;</div>
     </div>
-    <div class="weather-panel-body" id="weatherPanelBody">
-      <div class="weather-risk-row" id="weatherRiskCards"></div>
-      <div id="weatherDaily"></div>
-      <div id="weatherCurrent">
-        <div class="weather-loading">Loading current conditions&hellip;</div>
+    <div id="weatherRadar">
+      <div class="weather-radar-section">
+        <div class="weather-radar-title">Radar</div>
+        <div class="weather-radar-loading">Loading radar&hellip;</div>
       </div>
-      <div id="weatherRadar">
-        <div class="weather-radar-section">
-          <div class="weather-radar-title">Radar</div>
-          <div class="weather-radar-loading">Loading radar&hellip;</div>
-        </div>
-      </div>
-      <div id="weatherExplainer"></div>
     </div>
-  </aside>
-</div>` : '';
+    <div id="weatherExplainer"></div>
+  </div>
+</aside>` : '';
 
 module.exports = {
   slug: 'wild-goose',
@@ -328,11 +332,15 @@ module.exports = {
     '--route-color':   theme.palette.routeColor,
     '--aid-color':     theme.palette.aidStation,
     '--hazard-color':  theme.palette.hazard,
+    '--accent-chartreuse': theme.palette.accent,
+    '--dark-forest':   theme.palette.darkForest,
     '--font-display':  theme.type.displayStack,
     '--font-body':     theme.type.bodyStack,
     '--font-micro':    theme.type.microStack,
 
-    // Legacy aliases used by shared CSS modules. Mapped onto theme.
+    // Legacy aliases. weather.css and other shared modules read these.
+    // Pure white is forbidden per the brief; we shadow --bg-card to a
+    // paper substrate so the weather forecast cards inherit cream.
     '--bg':            theme.palette.paper,
     '--bg-alt':        theme.palette.surfaceWarm,
     '--bg-card':       theme.palette.paper,
@@ -340,10 +348,10 @@ module.exports = {
     '--text-secondary': '#52503f',
     '--text-muted':    '#807d6b',
     '--border':        '#d8cfb8',
-    '--shadow':        '0 2px 6px rgba(31,29,24,0.08)',
+    '--shadow':        '0 2px 6px rgba(26,26,26,0.08)',
     '--radius':        '4px',
     '--primary':       theme.palette.raceBrand,
-    '--primary-dark':  '#23501f',
+    '--primary-dark':  theme.palette.darkForest,
     '--accent':        theme.palette.aidStation,
     '--course':        theme.palette.raceInk,
     '--font-family':   theme.type.bodyStack,
@@ -352,14 +360,14 @@ module.exports = {
     // Loop colors as CSS vars for chip strip + assembly dots.
     '--loop-pink':      '#E7338C',
     '--loop-blue':      '#1E66D0',
-    '--loop-checkered': '#1f1d18',
+    '--loop-checkered': '#1a1a1a',
 
-    // Simulator (dark canvas reskin from generic Inter dark → editorial register)
+    // Simulator (dark canvas reskin to dark-forest from the theme)
     '--sim-bg':        '#1c1a14',
     '--runner-text':   theme.palette.paper,
     '--runner-text-shadow': '0 2px 8px rgba(0,0,0,0.5)',
     '--runner-meta':   'rgba(244,238,224,0.7)',
-    '--scrub-handle-shadow': '0 2px 6px rgba(47,107,42,0.45)',
+    '--scrub-handle-shadow': '0 2px 6px rgba(106,126,61,0.45)',
     '--popup-bg':      theme.palette.paper,
   },
 
@@ -375,9 +383,14 @@ module.exports = {
   // The cueHtml slot in race-shell.html sits inside `.course__cues`. The
   // editorial-runtime.js further relocates the `.directions-section`
   // built inside mapViewHtml into the same column, AFTER this aid card
-  // block — so the column reads: Squatch HQ aid → no-aid strip → race
-  // tabs → assembly strip → within-loop cues → weather panel.
-  cueHtml: aidCardHtml + '\n' + weatherPanelHtml,
+  // block — so the cue column reads: Squatch HQ aid → no-aid strip →
+  // race tabs → assembly strip → within-loop cues.
+  //
+  // The weather panel is appended here as a hidden staging block that
+  // override.js (relocateWeatherPanel) lifts into a dedicated
+  // essentials section between the simulator and aid table. Trailing
+  // <div hidden> wrapper keeps it out of the flow until relocation.
+  cueHtml: aidCardHtml + (weatherPanelHtml ? '\n<div hidden id="weatherPanelStaging">' + weatherPanelHtml + '</div>' : ''),
 
   // Map settings
   mapCenter: [-74.432, 41.183],

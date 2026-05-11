@@ -75,15 +75,40 @@ test.describe('Wild Goose Trail Festival — editorial chrome', () => {
     await expect(cueList).toContainText('Banker Trail');
   });
 
-  test('palette tokens come from the theme (Sassquad green, cream paper)', async ({ page }) => {
+  test('palette tokens come from Sassquad Wix extraction (olive + chartreuse + cream)', async ({ page }) => {
     const brand = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--race-brand').trim()
     );
-    expect(brand.toLowerCase()).toBe('#2f6b2a');
+    expect(brand.toLowerCase()).toBe('#6a7e3d');
     const paper = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()
     );
     expect(paper.toLowerCase()).toBe('#f4eee0');
+    const accent = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--accent-chartreuse').trim()
+    );
+    expect(accent.toLowerCase()).toBe('#d4fc79');
+  });
+
+  test('weather lives in race-day essentials, not as a side panel beside the map', async ({ page }) => {
+    // The new build spec moves weather out of the sticky side panel into
+    // a dedicated essentials section between the simulator and aid summary.
+    const weatherEssentials = page.locator('#essentialsWeather');
+    await expect(weatherEssentials).toBeVisible();
+    await expect(weatherEssentials).toContainText('Weather Intelligence');
+    // The weather panel itself should now live inside that section, not
+    // inside the .course__cues column.
+    const panelInsideEssentials = page.locator('#essentialsWeather #weatherPanel');
+    await expect(panelInsideEssentials).toHaveCount(1);
+    const panelInsideCues = page.locator('.course__cues #weatherPanel');
+    await expect(panelInsideCues).toHaveCount(0);
+  });
+
+  test('default editorial aid table is hidden (Squatch HQ aid card is the source of truth)', async ({ page }) => {
+    const defaultAid = page.locator('#essentialsAid');
+    await expect(defaultAid).toBeHidden();
+    // But the HQ aid card in the cue column is visible.
+    await expect(page.locator('.hq-aid-card')).toBeVisible();
   });
 
   test('simulator is surfaced as its own essentials section with 1x/2x/4x speeds', async ({ page }) => {

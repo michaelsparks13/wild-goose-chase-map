@@ -20,13 +20,22 @@ describe('wild-goose theme — identity + scope', () => {
   });
 });
 
-describe('wild-goose theme — palette (race-branded, not invented)', () => {
+describe('wild-goose theme — palette (extracted from Sassquad Wix tokens)', () => {
   it('paper is cream, not pure white', () => {
     expect(theme.palette.paper.toLowerCase()).not.toBe('#ffffff');
     expect(theme.palette.paper.toLowerCase()).toMatch(/^#f[3-6]e/);
   });
-  it('race-brand is Sassquad forest green', () => {
-    expect(theme.palette.raceBrand).toBe('#2F6B2A');
+  it('race-brand is Sassquad olive (Wix --color_24)', () => {
+    expect(theme.palette.raceBrand).toBe('#6A7E3D');
+  });
+  it('accent is Sassquad chartreuse (Wix --color_22)', () => {
+    expect(theme.palette.accent).toBe('#D4FC79');
+  });
+  it('darkForest is Sassquad dark forest (Wix --color_25)', () => {
+    expect(theme.palette.darkForest).toBe('#353F1E');
+  });
+  it('aidStation is Sassquad golden yellow (Wix --color_28)', () => {
+    expect(theme.palette.aidStation).toBe('#FDD80D');
   });
   it('ink is warm near-black', () => {
     expect(theme.palette.raceInk.toLowerCase()).toMatch(/^#1[0-9a-f]/);
@@ -37,10 +46,12 @@ describe('wild-goose theme — palette (race-branded, not invented)', () => {
   });
 });
 
-describe('wild-goose theme — type stack (trail-party register)', () => {
-  it('uses Bricolage Grotesque + Manrope + JetBrains Mono', () => {
-    expect(theme.type.display).toBe('Bricolage Grotesque');
-    expect(theme.type.body).toBe('Manrope');
+describe('wild-goose theme — type stack (Sassquad-extracted: Bangers + Barlow)', () => {
+  it('uses Bangers + Barlow + JetBrains Mono', () => {
+    // Bangers is Sassquad's actual h1/h2/h3 font (Wix orig_bangers_regular).
+    // Barlow is the closest open analog to Sassquad's DIN Next W01 body.
+    expect(theme.type.display).toBe('Bangers');
+    expect(theme.type.body).toBe('Barlow');
     expect(theme.type.micro).toBe('JetBrains Mono');
   });
   it('avoids the brief\'s forbidden families across all stacks', () => {
@@ -54,8 +65,8 @@ describe('wild-goose theme — type stack (trail-party register)', () => {
     }
   });
   it('exposes a Google Fonts href that loads all three families', () => {
-    expect(theme.type.googleFontsHref).toMatch(/family=Bricolage\+Grotesque/);
-    expect(theme.type.googleFontsHref).toMatch(/family=Manrope/);
+    expect(theme.type.googleFontsHref).toMatch(/family=Bangers/);
+    expect(theme.type.googleFontsHref).toMatch(/family=Barlow/);
     expect(theme.type.googleFontsHref).toMatch(/family=JetBrains\+Mono/);
   });
 });

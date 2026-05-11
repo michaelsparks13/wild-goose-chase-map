@@ -1133,6 +1133,8 @@ window.addEventListener('resize', function() {
 
 document.addEventListener('DOMContentLoaded', function() {
   relocateSimulator();
+  relocateWeatherPanel();
+  hideDefaultAidTable();
 });
 
 function relocateSimulator() {
@@ -1172,6 +1174,62 @@ function relocateSimulator() {
 
   initSim();
   renderSim();
+}
+
+// Pull the weather panel out of its hidden staging slot in the cue
+// column and surface it as a full-width essentials section between the
+// simulator and the (hidden) aid table. Matches the new-map-prompt
+// f6048cf rule: weather lives in the top bar (live conditions) AND
+// inside race-day essentials — never as a 340px sticky side panel.
+function relocateWeatherPanel() {
+  var panel = document.getElementById('weatherPanel');
+  if (!panel) return;
+  var staging = document.getElementById('weatherPanelStaging');
+  if (staging) staging.removeAttribute('hidden');
+
+  var anchor = document.getElementById('essentialsSimulator') || document.getElementById('essentialsAid');
+  if (!anchor || !anchor.parentNode) return;
+
+  var section = document.createElement('section');
+  section.className = 'essentials essentials--weather';
+  section.id = 'essentialsWeather';
+
+  var head = document.createElement('div');
+  head.className = 'essentials__head';
+  var h2 = document.createElement('h2');
+  h2.className = 'essentials__title';
+  h2.textContent = 'Weather Intelligence';
+  var sub = document.createElement('p');
+  sub.className = 'essentials__sub';
+  sub.textContent = 'Expected conditions for race weekend — 15-year averages from NASA POWER + Open-Meteo. Current conditions card is live.';
+  head.appendChild(h2);
+  head.appendChild(sub);
+
+  var host = document.createElement('div');
+  host.className = 'essentials__weather-host';
+
+  section.appendChild(head);
+  section.appendChild(host);
+
+  // Insert AFTER the simulator section (between sim and aid)
+  if (anchor.nextSibling) {
+    anchor.parentNode.insertBefore(section, anchor.nextSibling);
+  } else {
+    anchor.parentNode.appendChild(section);
+  }
+  host.appendChild(panel);
+  // Drop the now-empty staging wrapper.
+  if (staging && staging.parentNode) staging.parentNode.removeChild(staging);
+}
+
+// The editorial template's default `essentialsAid` section is a multi-
+// row aid table designed for races with several stations. Wild Goose
+// has ONE aid station, surfaced loudly via the .hq-aid-card above the
+// directions section — duplicating that as a one-row table would imply
+// other stations exist on course. Hide the default section entirely.
+function hideDefaultAidTable() {
+  var sect = document.getElementById('essentialsAid');
+  if (sect) sect.setAttribute('hidden', '');
 }
 
 initMap();

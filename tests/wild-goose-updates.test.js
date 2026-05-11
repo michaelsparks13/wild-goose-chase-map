@@ -90,10 +90,10 @@ describe('wild-goose editorial chrome', () => {
     });
   });
 
-  describe('type stack (trail-party register)', () => {
-    it('imports Bricolage Grotesque + Manrope + JetBrains Mono', () => {
-      expect(html).toContain('family=Bricolage+Grotesque');
-      expect(html).toContain('family=Manrope');
+  describe('type stack (Sassquad: Bangers + Barlow)', () => {
+    it('imports Bangers + Barlow + JetBrains Mono', () => {
+      expect(html).toContain('family=Bangers');
+      expect(html).toContain('family=Barlow');
       expect(html).toContain('family=JetBrains+Mono');
     });
     it('does not import any forbidden fonts', () => {
@@ -103,20 +103,26 @@ describe('wild-goose editorial chrome', () => {
       expect(html).not.toMatch(/family=Poppins[:&]/);
       expect(html).not.toMatch(/family=Arial[:&]/);
     });
-    it('font-family CSS variable references the new display stack', () => {
+    it('font-family CSS variables reference the Sassquad-matched display + body stacks', () => {
       expect(html).toContain('--font-display');
-      expect(html).toContain("'Bricolage Grotesque'");
-      expect(html).toContain("'Manrope'");
+      expect(html).toContain("'Bangers'");
+      expect(html).toContain("'Barlow'");
     });
   });
 
-  describe('palette (paper substrate, race-brand green, blaze loops)', () => {
+  describe('palette (Sassquad-extracted Wix tokens)', () => {
     it('uses cream paper, not pure white', () => {
       expect(html).toContain('--paper: #f4eee0');
       expect(html).not.toMatch(/--paper:\s*#fff(?:fff)?(?:;|\s)/i);
     });
-    it('uses Sassquad forest green as race-brand', () => {
-      expect(html).toContain('--race-brand: #2F6B2A');
+    it('uses Sassquad olive (Wix --color_24) as race-brand', () => {
+      expect(html).toContain('--race-brand: #6A7E3D');
+    });
+    it('exposes Sassquad chartreuse (Wix --color_22) as accent token', () => {
+      expect(html).toContain('--accent-chartreuse: #D4FC79');
+    });
+    it('exposes Sassquad dark forest (Wix --color_25) as deep tone', () => {
+      expect(html).toContain('--dark-forest: #353F1E');
     });
     it('uses trail-blaze pink + blue for loops', () => {
       expect(html).toContain('#E7338C'); // pink
@@ -197,6 +203,24 @@ describe('wild-goose editorial chrome', () => {
     });
     it('drops the legacy "Select Race Distance" cards-section header', () => {
       expect(html).not.toMatch(/<h3[^>]*>Select Race Distance<\/h3>/);
+    });
+  });
+
+  describe('weather placement (per new-map-prompt f6048cf)', () => {
+    it('weather panel is staged but hidden in the cue column (relocated at runtime to essentials)', () => {
+      // The cueHtml emits the panel inside a <div hidden id="weatherPanelStaging">
+      // so override.js can lift it into an essentialsWeather section. The
+      // panel must not render as a visible sticky side panel in the cue
+      // column the way it did pre-redesign.
+      expect(html).toContain('id="weatherPanelStaging"');
+      expect(html).toMatch(/<div hidden id="weatherPanelStaging"/);
+    });
+    it('override.js relocates the weather panel into an essentials section', () => {
+      expect(html).toContain('function relocateWeatherPanel(');
+      expect(html).toContain('essentialsWeather');
+    });
+    it('override.js hides the duplicated default aid table', () => {
+      expect(html).toContain('function hideDefaultAidTable(');
     });
   });
 
