@@ -125,7 +125,4 @@ module.exports = {
     { slug: 'wild-goose',        name: 'Wild Goose Trail Festival', region: 'Wawayanda State Park · NJ' },
     { slug: 'golden-leaf',       name: 'Golden Leaf Half Marathon', region: 'Aspen · CO' },
   ],
-
-  scopeNote:
-    'Run course only. For swim and bike routes, see the official race site.',
 };

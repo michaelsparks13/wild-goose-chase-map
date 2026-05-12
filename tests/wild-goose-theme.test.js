@@ -14,9 +14,10 @@ describe('wild-goose theme — identity + scope', () => {
     expect(theme.identity.hostOrg).toBe('Sassquad Trail Running');
     expect(theme.identity.hostUrl).toMatch(/^https:\/\/.*sassquadtrailrunning/);
   });
-  it('scope note routes to host for festival logistics + kids course', () => {
-    expect(theme.scopeNote.toLowerCase()).toMatch(/course only/);
-    expect(theme.scopeNote.toLowerCase()).toMatch(/sassquad|host|festival|kids/);
+  it('does NOT declare a scopeNote field (removed sitewide · May 2026)', () => {
+    // The scope-note band was retired — host link in top bar +
+    // cartographer's notes carry scope context now.
+    expect('scopeNote' in theme).toBe(false);
   });
 });
 

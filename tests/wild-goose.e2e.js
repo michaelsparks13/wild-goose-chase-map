@@ -106,27 +106,21 @@ test.describe('Wild Goose Trail Festival — editorial chrome', () => {
     expect(countdownColor).toBe('rgb(183, 232, 21)');
   });
 
-  test('map button row inside the map is visible (Aid Stations + Street View + Park Trails + 3D)', async ({ page }) => {
-    // Shared editorial.css hides .map-btns as a "legacy duplicate"; our
-    // override.css re-enables it for wild-goose. All 4 inline toggles
-    // must render non-zero.
-    const dims = await page.evaluate(() => {
-      const ids = ['aidBtnInline', 'streetviewBtnInline', 'trailBtnInline', 'terrainBtnInline'];
-      return ids.map(id => {
-        const el = document.getElementById(id);
-        if (!el) return { id, present: false };
-        const r = el.getBoundingClientRect();
-        return { id, present: true, w: Math.round(r.width), h: Math.round(r.height) };
-      });
+  test('Layers popover trigger renders inside the map (replaces legacy 4-button row)', async ({ page }) => {
+    // The four-button overlay row was replaced with one compact Layers
+    // trigger + checkbox panel. The legacy inline buttons (#aidBtnInline
+    // etc) remain in the DOM as visually-hidden stubs so the toggle pair-
+    // sync stays bidirectional, but they no longer paint pixels.
+    const trigger = await page.evaluate(() => {
+      const el = document.getElementById('mapLayersBtn');
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { w: Math.round(r.width), h: Math.round(r.height), text: el.textContent.trim() };
     });
-    for (const d of dims) {
-      expect(d.present).toBe(true);
-      // The compact "3D" button is ~38px; the rest are 80-110px. Use a
-      // tap-target floor that catches the "0x0 because parent hidden"
-      // failure mode without being precious about exact label widths.
-      expect(d.w).toBeGreaterThan(24);
-      expect(d.h).toBeGreaterThan(16);
-    }
+    expect(trigger).not.toBeNull();
+    expect(trigger.text).toContain('Layers');
+    expect(trigger.w).toBeGreaterThan(80);
+    expect(trigger.h).toBeGreaterThanOrEqual(28);
   });
 
   test('sim panel + visual have a clear 32px+ visual gap (no near-touch)', async ({ page }) => {
@@ -288,8 +282,9 @@ test.describe('Wild Goose Trail Festival — editorial chrome', () => {
       }));
     });
     expect(order).toBeTruthy();
-    // First non-scope/non-h1 child should be the directions section
-    const firstContentChild = order.find(c => !c.cls.includes('scope-note') && !c.cls.includes('visually-hidden'));
+    // First non-h1 child should be the directions section (the scope-note
+    // band that used to sit here was removed sitewide · May 2026).
+    const firstContentChild = order.find(c => !c.cls.includes('visually-hidden'));
     expect(firstContentChild.id).toBe('directionsSection');
     // And the aid card should come AFTER the directions
     const aidIdx = order.findIndex(c => c.cls.includes('hq-aid-card'));

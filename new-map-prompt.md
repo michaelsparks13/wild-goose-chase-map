@@ -53,7 +53,10 @@ race:
   scope:                            # CRITICAL — what's mapped, what isn't
     mapped: []                      # ['run'] | ['gravel-route'] | ['swim','bike','run']
     excluded: []                    # things the race has that this page doesn't cover
-    scopeNote: ''                   # the user-facing alert, e.g. "Run course only. For swim and bike, see official race site."
+    # scopeNote was removed sitewide (Wild Goose mobile review · May 2026).
+    # The top-bar host link + cartographer's notes already cover scope.
+    # Don't reintroduce a "Course only. Festival schedule lives on host
+    # site" band — see [[feedback_no_scope_note_band]] memory.
 
   format:
     type: ''                        # 'point-to-point' | 'out-and-back' | 'single-loop' | 'multi-loop-assembly'
@@ -183,11 +186,7 @@ Inherit the Tinman reference implementation. Required elements, top to bottom:
 - Aid stations as named pins
 - Start/finish clearly distinguished
 - No frame, no drop shadow, no "matted gallery" treatment
-- Floating overlay controls top-right: distance toggles · aid station visibility · Street View · 3D toggle
-
-**Scope alert (if `scope.scopeNote` is non-empty)**
-A small, dignified strip near the top of the cue sheet:
-> ▴ {scope.scopeNote} [Host race site →]
+- Floating overlay controls top-right: a single **Layers** popover trigger that opens a checkbox panel (Aid Stations · Street View · Park Trails · 3D). One compact button, never a permanent 3-4 button row eating map y-pixels. The trigger shows a count badge for active overlays; outside-click + Escape close the panel. See [[race-map-mobile-chrome-shrink]].
 
 **Cue sheet — split-view sticky map**
 
@@ -228,12 +227,18 @@ Mobile:
 
 ### Step 3 — Cue sheet structure (branches on `format.type`)
 
+The cue sheet is one ordered `<ol>` per loop (or per course, for non-loop formats) merging two sources by mile:
+- **Auto-generated turn-by-turn** from the FSS TBT pipeline (Step 14) — `LOOP_TURNS[loopId]` or equivalent course-level array
+- **Author-written hazard / water / landmark / surface cues** from the theme (`theme.loops[].cues` for multi-loop, or a course-level cues array for point-to-point)
+
+Each row is clickable. Turn rows highlight a segment on the map (snapped to the rendered geometry, see [[race-map-step-route-alignment]] memory) and optionally fitBounds to it; hazard/water/landmark rows fly to the precise [lng,lat] at that mile. A persistent "Zoom to step" checkbox in the directions header (stored in `localStorage.<slug>.zoomToStep`) gates the camera move without affecting the highlight.
+
 **For `point-to-point` / `out-and-back` / `single-loop`:**
 
-Flat turn-by-turn list. Rows show:
-- Cumulative distance · turn arrow icon · instruction · segment distance · elevation delta if notable · surface if it changes
+One flat interleaved cue sheet for the whole course. Turn rows show:
+- Cumulative distance · direction arrow (→ ← ↰ ↱ ↑) · `RIGHT onto Cedar Swamp Trail` style instruction
 
-Aid stations, water sources, hazards, and surface changes are inline rows in the cue sheet, visually distinguished from turn instructions. Each row is clickable/hoverable to sync the map.
+Cue rows (hazard / water / landmark / surface) carry their own kind icon and are visually distinguished from turn rows but live in the same chronological list.
 
 **For `multi-loop-assembly`:**
 
@@ -250,25 +255,23 @@ Total: ~62 mi · 6,476 ft · cutoff 36h
 
 Each chip is clickable. Clicking:
 - Highlights that loop trace on the map
-- Scrolls Level 2 to that loop
+- Re-renders Level 2 from that loop's `LOOP_TURNS[lid] + LOOP_CUES[lid]` merged by mile
 - Updates "Currently viewing: Loop N of M" indicator
 
-*Level 2 — Within-loop cue sheet (below the chip strip)*
+*Level 2 — Within-loop interleaved list (below the chip strip)*
 
-For the selected loop, **trail-appropriate cues** — not street-name turn-by-turn:
-- Trailhead direction (CW/CCW)
-- Notable terrain transitions (singletrack → boardwalk → doublewide)
-- Hazard markers (technical descent, bridge transition, exposed roots)
-- Water sources on course
-- Loop landmarks (lake views, ridge points)
+The interleaved cue sheet for the currently-selected loop. Turn rows from the TBT pipeline carry `direction` (left/right/straight) + `intensity` (sharp/normal/slight/fork) + `label` (resolved trail/road name from OSM). Hazard cues continue to use the existing `loop-cue--hazard|water|landmark|surface` classes.
 
-Sample row:
+Sample sequence within a loop:
 ```
-[icon] 1.2 mi  Boardwalk crossing — wood plank, narrow,
-                 single-file. Trekking poles fold here.
+0.0 mi  ◆  Climb west out of HQ along the Lookout Trail.
+0.14 mi →  RIGHT onto Bike Path
+0.85 mi →  RIGHT onto Bike Path
+1.44 mi ↰  SHARP LEFT onto Campsite Road/Double Pond Trail
+2.40 mi ▲  Technical descent — loose rock, exposed roots.
 ```
 
-**Cardinal rule:** never produce a flat 1,200-row turn-by-turn for an ultra distance. Loop-level + within-loop terrain awareness only.
+**Cardinal rule:** never produce a flat 1,200-row turn-by-turn for an entire ultra *race distance*. The TBT pipeline produces per-loop turn lists (5-25 turns each); a 100-miler reuses the same loop's turn list every time that loop comes up in the assembly, surfaced via the Level 2 list when the assembly chip is active. Don't pre-flatten across the assembly.
 
 ### Step 4 — Distance toggles on the map
 
@@ -347,10 +350,15 @@ Framing rule: every numeric value in this block is a **15-year historical averag
 
 **Palette extraction (always from the race's actual brand; never invent):**
 
-1. Visit `race.identity.hostUrl` and inspect their logo, hero imagery, and signage
-2. Sample colors from the brand assets — do not eyeball
-3. Populate `race.brand.primary`, `ink`, `paper`, `routeColor`
-4. For loop-based races, sample loop colors from the race's actual trail-blaze conventions
+The map page must read like a natural extension of the race's website. Visitors who land on the map shouldn't feel a brand seam — same palette, same typography, same emotional register. Concrete workflow (also documented in the [[race-map-brand-matching]] memory):
+
+1. **Open `race.identity.hostUrl` in the Playwright MCP browser** — not WebFetch. WebFetch can't see Wix/Squarespace/Webflow-served styles. Inspect computed styles on `<h1>`, `<h2>`, body, and the primary CTA button.
+2. **Capture actual rendered hex codes**, not brand-guideline ones. Sites apply opacity / color-mix / gradients on top of brand palettes. Use `getComputedStyle(el).color` / `.backgroundColor`. For Wix sites, also dump `getPropertyValue('--color_N')` and `--font_N` from `:root` — the numbered token table is the canonical source.
+3. **Identify role per color:** `raceBrand` (the recognizable accent), `raceInk` (body ink, rarely pure `#000`), `paper` (substrate — ivory/warm-white, never pure `#ffffff`), `aidStation` + `hazard` (secondary brand callouts), `accent` (pop color for active states — often a chartreuse or tint of `raceBrand`).
+4. **Match fonts via Google Fonts open analogs** when the host uses a proprietary face (e.g., Wix's `orig_bangers_regular` → Bangers; DIN Next W01 → Barlow). The theme's `type` block carries `display` / `body` / `micro` family names + `googleFontsHref` (the literal `<link>` URL with weight axes the page uses) + full `displayStack` / `bodyStack` / `microStack` with system fallbacks.
+5. **Iterate on contrast via screenshots, not specs.** First pass usually has the brand color too washed-out against the dark top bar or too saturated for a card surface. Take a desktop screenshot of the host site and the race map page side-by-side; iterate until they read as cousins. Log version + rationale as inline comments in the theme palette block (see [src/themes/wild-goose.js](src/themes/wild-goose.js) v2→v4 trail for the canonical pattern).
+6. **Wire the theme into the build** via `cssVars` in `src/maps/<slug>/config.js` (maps theme tokens to CSS custom properties — `--paper`, `--ink`, `--race-brand`, `--font-display`, etc.) and via `build.js` injecting the Google Fonts `<link>` at `<head>` time. Don't `@import` in CSS — the FOUC is worse.
+7. **For loop-based races,** sample loop colors from the race's actual trail-blaze conventions.
 
 Do not invent "regional" palettes (no "Adirondack lake blue + conifer green" just because the race is in the Adirondacks). The race's identity is the race's brand, not the landscape.
 
@@ -441,7 +449,20 @@ Two short paragraphs, ~80–100 words total. The voice is informational, trail-p
 - Single-aid race rendered as a one-row table (use a card + safety strip instead)
 - "No aid on course" buried as a footnote
 - Multi-loop race with one undifferentiated polyline (use loop colors + names)
-- 1,200-row flat turn-by-turn for an ultra distance (use loop-level + within-loop cues)
+- 1,200-row flat turn-by-turn for an ultra distance (use loop-level chips + per-loop interleaved TBT/cue list per Step 3)
+- Two-column "turns on the left, hazards on the right" within-loop layout (interleave both into one chronological list — see [[race-map-tbt-interleaved-list]] memory)
+- Bare zoom-to-step checkbox with no label on mobile (label is 12 chars and there's room; checkbox alone has no affordance)
+- Permanent 4-button toggle row on the map (Aid Stations / Street View / Park Trails / 3D) — collapse to one **Layers** popover trigger with a count badge + checkbox panel. The toggles are scarce-tap operations and don't earn 30px of permanent map real estate.
+- A full-height multi-row header on mobile — collapse to one row (race name + countdown + chevron) by default; tap chevron to reveal edition line, gun time, weather, embed/pocket-map buttons. Persist preference in `localStorage.fss.topBarExpanded`. Desktop ≥ 1024px is unchanged.
+- A "Course only. Festival schedule lives on host site" scope-note band above the cue sheet — this was removed sitewide (May 2026); the top-bar host link + cartographer's notes already cover scope. Don't reintroduce `scopeNote` to the theme schema or the shell template. See [[feedback_no_scope_note_band]].
+
+**Mobile real-estate budget (≤ 1023px):**
+The map starts within ~56px of the top of the viewport. That means:
+- Top bar: ~49px tall when collapsed (the default).
+- No permanent overlay rows on the map. Toggle controls live behind a single trigger (Layers popover, MapLibre native controls, etc.).
+- HQ/Start badge and any map control button must not share a y-line — push the badge to top-left, controls to top-right, and verify on a 390×844 viewport.
+
+See [[race-map-mobile-chrome-shrink]] and [[feedback_mobile_map_btn_hq_overlap]] memories.
 - T1/T2 transitions rendered when scope is run-only (label "Run Start" instead)
 
 **Voice:**
@@ -537,6 +558,75 @@ The weather feature is opt-in per race via `race.weather.enabled`. When enabled,
 **weather.json schema** — see "Weather Intelligence Panel" in CLAUDE.md for the full schema. Do not edit `weather.json` by hand; re-run the fetch script if values drift.
 
 **When to re-fetch:** before each commission delivery, and whenever the race date moves. Otherwise the data is stable.
+
+### Step 14 — Turn-by-turn data pipeline
+
+The TBT feature is the second-half of Step 3's cue sheet structure. It depends on a build-time data fetch and a runtime renderer. The pipeline already exists at `turn-by-turn/fss_tbt_pipeline.py` — do not rebuild it; wire the new race in via a thin driver.
+
+**Build-time fetch (per race, run once and re-run if the source GPX changes):**
+
+1. Locate the course GPX(es). For `multi-loop-assembly` races there is **one GPX per loop** (Wild Goose pink + blue + checkered), not one per assembled distance. For `point-to-point` / `single-loop` / `out-and-back` there is one GPX for the whole course.
+
+2. Write a small driver `scripts/fetch-<slug>-turns.py` that imports `turn-by-turn/fss_tbt_pipeline.py` as a module via `importlib.util.spec_from_file_location`, mutates its `CONFIG` dict per run, and calls `pipeline.main()`. Use `/usr/bin/python3` (3.9.6 ships with `gpxpy` + `numpy`; `/Library/Frameworks/Python.framework/Versions/3.5/...` is too old).
+
+   Per-run `CONFIG` essentials:
+   ```python
+   pipeline.CONFIG.update({
+       "race_name":  "<Race> · <Loop> Loop",
+       "race_slug":  "<slug>_<loop>",
+       "gpx_path":   "/abs/path/to/<loop>.gpx",
+       "output_dir": "/tmp/<slug>-tbt-staging",   # one staging dir per race, shared across loops
+       "section_descriptions_path": None,         # set to a .txt with `SECTION: ...` headers if prose TBT exists
+       "extra_trail_names":   [...],              # park-specific names the generic regex misses
+       "extra_road_names":    [...],
+       "extra_feature_names": [...],
+       "enable_live_enrichment": True,
+   })
+   pipeline.main()
+   ```
+
+   After each run copy `turns.geojson` + `tbt.md` out of the staging dir into `src/maps/<slug>/data/<loop>-turns.geojson` and `<loop>-tbt.md`. Pointing all runs at the same staging dir lets `_enrichment_cache.json` serve overlapping OSM lookups between loops.
+
+3. Run `python3 scripts/fetch-<slug>-turns.py`. Expected runtime: ~1–2 min per loop on first run (live enrichment dominates), seconds on reruns from cache. Sanity check the per-loop counts in summary output: trail loops should yield 5–25 actionable turns at the 60° default threshold; ≥ 70% of turns should have a named target via OSM enrichment for trails inside named state parks/forests.
+
+4. Inline the data in `src/maps/<slug>/config.js`:
+   ```javascript
+   function loadLoopTurns(loopId) {
+     const file = path.join(__dirname, `data/${loopId}-turns.geojson`);
+     if (!fs.existsSync(file)) return [];
+     const fc = JSON.parse(fs.readFileSync(file, 'utf8'));
+     return fc.features.map((f, i) => ({
+       n: i + 1,
+       mile: f.properties.course_mi,
+       direction: f.properties.direction,
+       intensity: f.properties.intensity,
+       label: f.properties.label || '',
+       labelType: f.properties.label_type || '',
+       location: f.geometry.coordinates,
+     }));
+   }
+   ```
+   Inline as `var LOOP_TURNS = { pink: [...], blue: [...], checkered: [...] };` in `configDataJs`. For single-course races inline as `var COURSE_TURNS = [...]`.
+
+5. **Snap pre-computation in `override.js`:** OSRM-derived or geometry-derived turn locations drift slightly from the rendered geojson (the route is downsampled or smoothed). Project each turn's location forward through the rendered coordinate stream into `SNAPPED_TURN_MILES[loopId]` + `SNAPPED_TURN_COORDS[loopId]`. Use ~250 ft (`GOOD_MATCH_DEG = 250 / 364000`) for the first-good-match tolerance on trail courses (vs Tinman's 150 ft for roads). Reference [Tinman `precomputeSnappedSteps`](src/maps/tupper-lake-tinman/override.js#L313-L386).
+
+6. **Active-segment layer.** Add two layers on top of all course/trail layers in `map.on('load')`:
+   - `dir-active-segment-halo` — `line-color: <accent>, line-width: 10, line-opacity: 0.7, line-blur: 1.5`
+   - `dir-active-segment-line` — `line-color: <dark>, line-width: 3.5`
+
+   `setActiveTurnByRow(idx)` sets the source data to the polyline between this turn's snapped mile and the next turn's snapped mile, dims all non-focus loops to opacity 0.18, and (gated on the persisted zoom-to-step flag) fitBounds the segment with `maxZoom: 16, padding: { top: 80, right: 60, bottom: 80, left: 60 }`.
+
+**Outputs you commit:**
+- `src/maps/<slug>/data/<loop>-turns.geojson` (one per loop, or one `course-turns.geojson` for point-to-point)
+- `scripts/fetch-<slug>-turns.py` (driver)
+
+**Outputs you gitignore** (already covered in `.gitignore`):
+- `src/maps/*/data/*-tbt.md` (per-loop human-readable QC artifact; rotates whenever the pipeline reruns)
+- `/tmp/<slug>-tbt-staging/` is outside the repo; the `_enrichment_cache.json` lives there
+
+**When to re-fetch:** when the official race GPX changes, or when adding a new loop. Otherwise the data is stable.
+
+For the full architecture rationale, see the memory entries on TBT pipeline & list UI patterns ([[race-map-tbt-pipeline-per-loop]], [[race-map-tbt-interleaved-list]]).
 
 ---
 

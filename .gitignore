@@ -3,3 +3,15 @@ node_modules/
 test-results/
 *.pmtiles
 dist/
+
+# TBT QC artifacts — turn-by-turn pipeline writes a human-readable markdown
+# QC report alongside each turns.geojson. The .geojson is committed; the
+# .md is for one-off review and rotates whenever the pipeline reruns.
+src/maps/*/data/*-tbt.md
+
+# Local dev artifacts
+.playwright-mcp/
+.wrangler/
+wg-*.png
+tinman-*.png
+*-tbt-active.png

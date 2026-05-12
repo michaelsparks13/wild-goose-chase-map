@@ -26,7 +26,39 @@
     detectEmbedMode();
     wireCueHoverSync();
     wireWeatherWidget();
+    hydrateTopBarCollapse();
   }
+
+  // ─── 6. Mobile top-bar collapse ─────────────────────────────────────
+  // The header carries identity (race name) + urgency (countdown) at all
+  // times, but the supporting context (edition line, gun time, weather,
+  // embed buttons) eats meaningful real estate on phones. Default is
+  // collapsed on mobile; the user's preference is persisted across
+  // sessions via localStorage. Desktop ignores the attribute entirely.
+  function hydrateTopBarCollapse() {
+    var bar = document.querySelector('.top-bar');
+    if (!bar) return;
+    var stored;
+    try { stored = localStorage.getItem('fss.topBarExpanded'); } catch (e) {}
+    if (stored === 'true' || stored === 'false') {
+      bar.setAttribute('data-expanded', stored);
+      var btn = document.getElementById('topBarExpand');
+      if (btn) btn.setAttribute('aria-expanded', stored);
+    }
+  }
+
+  // Global toggle helper referenced by the inline onclick. Exposed on
+  // window so the build's HTML-string templates can wire to it without
+  // jQuery-style event binding.
+  window.toggleTopBar = function() {
+    var bar = document.querySelector('.top-bar');
+    var btn = document.getElementById('topBarExpand');
+    if (!bar) return;
+    var next = bar.getAttribute('data-expanded') === 'true' ? 'false' : 'true';
+    bar.setAttribute('data-expanded', next);
+    if (btn) btn.setAttribute('aria-expanded', next);
+    try { localStorage.setItem('fss.topBarExpanded', next); } catch (e) {}
+  };
 
   // ─── 1. Relocate ────────────────────────────────────────────────────
   function relocateLegacySections() {

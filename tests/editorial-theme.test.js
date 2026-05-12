@@ -88,9 +88,11 @@ describe('RaceTheme schema (v2 — athlete-first, race-branded)', () => {
     expect(tinmanTheme.cartographerNotes).not.toMatch(/swim leg|bike leg|cycling|cyclists/i);
   });
 
-  it('scope note routes athletes to the host race for swim/bike', () => {
-    expect(tinmanTheme.scopeNote.toLowerCase()).toContain('run course only');
-    expect(tinmanTheme.scopeNote.toLowerCase()).toMatch(/swim|bike/);
+  it('does NOT declare a scopeNote field (removed sitewide · May 2026)', () => {
+    // Scope is now carried by the top-bar host-race link + cartographer's
+    // notes. The standalone scope-note band was eating high-value real
+    // estate directly above the cue sheet.
+    expect('scopeNote' in tinmanTheme).toBe(false);
   });
 
   it('cross-links point at known map slugs (3–5 entries)', () => {
@@ -131,10 +133,9 @@ describe('Athlete-first chrome in dist/maps/tupper-lake-tinman/index.html', () =
     expect(builtHtml).toMatch(/\.course__map\s*\{[^}]*position:\s*sticky/);
   });
 
-  it('shows the run-only scope note with a host-race link', () => {
-    expect(builtHtml).toContain('class="scope-note"');
-    expect(builtHtml).toContain('Run course only');
-    expect(builtHtml).toContain('class="scope-note__link"');
+  it('does NOT render a .scope-note band (removed sitewide · May 2026)', () => {
+    expect(builtHtml).not.toContain('class="scope-note"');
+    expect(builtHtml).not.toContain('class="scope-note__link"');
   });
 
   it('relabels the start marker as RUN START, not BIKE FINISH / RUN START', () => {

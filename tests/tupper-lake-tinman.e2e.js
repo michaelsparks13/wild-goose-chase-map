@@ -70,12 +70,11 @@ test.describe('Tupper Lake Tinman — athlete-first race page (v2)', () => {
     await expect(badge).toHaveText('RUN START');
   });
 
-  test('scope note plainly states run-only and routes to host race', async ({ page }) => {
-    const note = page.locator('.scope-note');
-    await expect(note).toBeVisible();
-    await expect(note).toContainText('Run course only');
-    const link = note.locator('a.scope-note__link');
-    await expect(link).toHaveAttribute('href', /tupperlaketinman/);
+  test('scope-note band is gone (removed sitewide · May 2026)', async ({ page }) => {
+    await expect(page.locator('.scope-note')).toHaveCount(0);
+    // Scope is now carried by the top-bar host-race link + cartographer's notes.
+    const raceMark = page.locator('a.race-mark');
+    await expect(raceMark).toHaveAttribute('href', /tupperlaketinman/);
   });
 
   test('no swim/bike chrome — disciplines triptych is gone, scope is run-only', async ({ page }) => {
