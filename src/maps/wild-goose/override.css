@@ -116,15 +116,111 @@ body.race-page.race-wild-goose {
  * editorial.css's display: none. The editorial template's own
  * .map-controls bar stays hidden so we have a single source of
  * truth. */
-.race-wild-goose .course__map .map-btns {
-  display: flex !important;
+/* The legacy 4-button row (.map-btns) is now visually hidden — the
+   buttons live in the DOM for back-compat with e2e selectors, but the
+   primary UI is the .map-layers popover below. */
+.race-wild-goose .course__map .map-btns[hidden] { display: none !important; }
+
+/* ─── Layers popover ────────────────────────────────────────────────
+   One compact trigger + drop-down panel of checkboxes. Replaces the
+   permanent 4-button row that ate ~30px of map real estate on mobile.
+   Default state is closed; tapping the trigger flips data-state.       */
+.race-wild-goose .map-layers {
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 10;
-  gap: 5px;
-  flex-wrap: wrap;
-  max-width: calc(100% - 24px);
+  z-index: 12;
+  font-family: var(--font-body);
+}
+.race-wild-goose .map-layers__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--paper);
+  border: 1px solid #e0d8bf;
+  border-radius: 4px;
+  padding: 7px 11px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(31,29,24,0.12);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.race-wild-goose .map-layers__trigger:hover { background: var(--surface-warm); }
+.race-wild-goose .map-layers__icon { width: 14px; height: 14px; color: var(--race-brand); }
+.race-wild-goose .map-layers__chev {
+  width: 10px; height: 10px;
+  transition: transform 0.18s ease-out;
+}
+.race-wild-goose .map-layers[data-state="open"] .map-layers__chev { transform: rotate(180deg); }
+
+/* Active-layer counter badge — shows how many overlays are on without
+   opening the panel. Painted on the trigger via attr() + ::after so we
+   don't need a separate node. Hidden when count is 0. */
+.race-wild-goose .map-layers__trigger::after {
+  content: attr(data-active-count);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  margin-left: 2px;
+  background: var(--race-brand);
+  color: var(--paper);
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.race-wild-goose .map-layers__trigger[data-active-count="0"]::after { display: none; }
+
+.race-wild-goose .map-layers__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background: var(--paper);
+  border: 1px solid #e0d8bf;
+  border-radius: 4px;
+  box-shadow: 0 4px 14px rgba(31,29,24,0.18);
+  padding: 6px;
+  display: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+}
+.race-wild-goose .map-layers[data-state="open"] .map-layers__panel {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+.race-wild-goose .map-layers__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.78rem;
+  color: var(--ink);
+  transition: background 0.12s;
+}
+.race-wild-goose .map-layers__row:hover { background: var(--surface-warm); }
+.race-wild-goose .map-layers__row input[type="checkbox"] {
+  width: 15px; height: 15px;
+  accent-color: var(--race-brand);
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+}
+.race-wild-goose .map-layers__row-text { line-height: 1.2; }
+@media (prefers-reduced-motion: reduce) {
+  .race-wild-goose .map-layers__panel,
+  .race-wild-goose .map-layers__chev { transition: none; }
 }
 .race-wild-goose .trail-btn {
   background: var(--paper);
@@ -359,10 +455,10 @@ body.race-page.race-wild-goose {
   margin: 0;
 }
 .race-wild-goose .dir-zoom-toggle:hover { color: var(--ink); }
-@media (max-width: 480px) {
-  .race-wild-goose .dir-zoom-toggle span { display: none; }
-  /* Keeps the checkbox visible on narrow phones; drops the label */
-}
+/* "Zoom to step" label stays visible at every width — the previous
+   rule hid the span below 480px, but a bare checkbox doesn't tell a
+   first-time visitor what it does. The label is only 12 chars; the
+   directions header has room. */
 
 /* Assembly chip strip */
 .race-wild-goose .assembly-strip {
@@ -501,6 +597,49 @@ body.race-page.race-wild-goose {
   font-style: italic;
   color: #4a4a3e;
   padding: 14px 16px;
+}
+
+/* ─── Interleaved turn-by-turn rows ────────────────────────────────
+   Turn rows live inside the same <ol> as hazard/landmark cues so the
+   reader sees one chronological list per loop. Each turn row carries
+   a direction-colored arrow + an uppercase action label ("RIGHT onto
+   Cedar Swamp Trail"). The active row gets a thicker left border and
+   paper-warm background so the highlighted-on-map step is obvious in
+   the list too.                                                       */
+.race-wild-goose .loop-cue--turn {
+  cursor: pointer;
+}
+.race-wild-goose .loop-cue--turn .loop-cue__kind {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--race-brand);
+}
+.race-wild-goose .loop-cue--turn-left  .loop-cue__kind { color: #1E66D0; }
+.race-wild-goose .loop-cue--turn-right .loop-cue__kind { color: #B53528; }
+.race-wild-goose .loop-cue--turn-sharp .loop-cue__kind {
+  font-size: 1.25rem;
+  text-shadow: 0 0 0 currentColor;
+}
+.race-wild-goose .loop-cue--turn .loop-cue__text strong {
+  font-family: var(--font-display, var(--font-body));
+  letter-spacing: 0.04em;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--ink);
+  margin-right: 4px;
+}
+.race-wild-goose .loop-cue--turn-sharp .loop-cue__text strong {
+  color: #B53528;
+}
+.race-wild-goose .loop-cue.active {
+  background: var(--surface-warm);
+  box-shadow: inset 3px 0 0 var(--race-brand);
+  padding-left: 13px;     /* keep total padding consistent with non-active rows */
+}
+.race-wild-goose .loop-cue.active .loop-cue__mile { color: var(--race-brand); }
+.race-wild-goose .loop-cue.active .loop-cue__text strong { color: var(--race-brand); }
+@media (prefers-reduced-motion: reduce) {
+  .race-wild-goose .loop-cue { transition: none; }
 }
 
 /* ─── Elevation profile section ─────────────────────────────────── */

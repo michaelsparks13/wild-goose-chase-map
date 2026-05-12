@@ -25,9 +25,12 @@ describe('wild-goose editorial chrome', () => {
     it('points at Sassquad as the host site', () => {
       expect(html).toMatch(/href="https:\/\/www\.sassquadtrailrunning\.com\/wildgoose"/);
     });
-    it('shows the run-only scope note', () => {
-      expect(html).toContain('class="scope-note"');
-      expect(html).toContain('Course only');
+    it('does NOT render a .scope-note band (removed sitewide · May 2026)', () => {
+      // The "Course only. Festival schedule lives on host site" strip
+      // above the cue sheet was retired — the top-bar host link +
+      // cartographer's notes already cover scope. Don't reintroduce.
+      expect(html).not.toContain('class="scope-note"');
+      expect(html).not.toContain('Multi-day festival schedule');
     });
   });
 
@@ -177,8 +180,17 @@ describe('wild-goose editorial chrome', () => {
     it('sim-container gap is 32px (v5) for clear separation between panel + visual', () => {
       expect(html).toMatch(/\.race-wild-goose\s+\.sim-container\s*\{[^}]*gap:\s*32px/);
     });
-    it('un-hides .map-btns that shared editorial.css line 224 sets to display:none', () => {
-      expect(html).toMatch(/\.race-wild-goose\s+\.course__map\s+\.map-btns\s*\{[^}]*display:\s*flex\s*!important/);
+    it('replaces the legacy 4-button row with a Layers popover trigger + checkbox panel', () => {
+      // The .map-btns row is now permanently hidden (kept for legacy
+      // pair-sync); the primary map control is the .map-layers popover.
+      expect(html).toMatch(/\.race-wild-goose\s+\.course__map\s+\.map-btns\[hidden\]/);
+      expect(html).toContain('class="map-layers"');
+      expect(html).toContain('id="mapLayersBtn"');
+      expect(html).toContain('id="layerAid"');
+      expect(html).toContain('id="layerStreetview"');
+      expect(html).toContain('id="layerTrails"');
+      expect(html).toContain('id="layer3D"');
+      expect(html).toContain('function toggleLayersPopover');
     });
   });
 
@@ -193,7 +205,11 @@ describe('wild-goose editorial chrome', () => {
       expect(html).toContain('function setZoomToStep(');
     });
     it('selectAssemblyStep respects the zoomToStep flag', () => {
-      expect(html).toContain('var zoomToStep = true');
+      // The flag is now hydrated from localStorage with a `true` default;
+      // the runtime gate still reads `if (zoomToStep && map ...)` to skip
+      // fitBounds when the athlete has opted out.
+      expect(html).toMatch(/var zoomToStep\s*=\s*\(function/);
+      expect(html).toContain("'wildGoose.zoomToStep'");
       expect(html).toMatch(/if\s*\(\s*zoomToStep\s*&&\s*map/);
     });
     it('sim panel has internal right padding for visual symmetry inside its column', () => {

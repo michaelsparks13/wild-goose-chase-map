@@ -276,10 +276,8 @@ export interface RaceTheme {
   cartographerNotes: CartographerNote;
   /** Other maps from the studio. 3–5 entries. */
   crossLinks: CrossLink[];
-  /**
-   * Single-line scope note shown above the cue sheet. Tells the athlete
-   * what is and isn't on this page. e.g.
-   * "Run course only. For swim and bike routes, see the official race site."
-   */
-  scopeNote: string;
+  // scopeNote removed (Wild Goose mobile review · May 2026): a "Course
+  // only. Festival schedule lives on the host site" band above the cue
+  // sheet didn't earn its real-estate. The top-bar studio-credit + the
+  // host-race link in the header already carry that pointer.
 }

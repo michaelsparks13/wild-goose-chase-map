@@ -305,7 +305,4 @@ module.exports = {
     { slug: 'sleeping-giant',      name: 'Sleeping Giant 25K',          region: 'Mt. Carmel · CT' },
     { slug: 'javelina-jundred',    name: 'Javelina Jundred 100M',       region: 'McDowell Mountain · AZ' },
   ],
-
-  scopeNote:
-    'Course only. Multi-day festival schedule, registration, kids course, and rules live on Sassquad’s site.',
 };

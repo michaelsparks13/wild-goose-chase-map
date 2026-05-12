@@ -448,7 +448,6 @@ function buildMap(slug, templates) {
       .replace(/{{HEADLINE_MILES}}/g, headlineDistance.runMiles + ' mi · ' + headlineDistance.runGainFt + ' ft')
       .replace(/{{DEFAULT_DISTANCE_ID}}/g, headlineDistance.id)
       .replace(/{{DEFAULT_DISTANCE_LABEL}}/g, escapeHtml(headlineDistance.label))
-      .replace(/{{SCOPE_NOTE}}/g, escapeHtml(t.scopeNote))
       .replace(/{{MAP_HTML}}/g, config.mapHtml || mapView)
       .replace(/{{CUES_HTML}}/g, config.cueHtml || '')
       .replace(/{{MAP_VIEW}}/g, mapView)

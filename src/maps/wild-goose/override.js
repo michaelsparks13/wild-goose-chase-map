@@ -80,14 +80,178 @@ var turnMarkers = [];
 var hqMarker = null;             // expose for toggleAid()
 var currentRaceId = (typeof DEFAULT_DISTANCE_ID === 'string') ? DEFAULT_DISTANCE_ID : '50k';
 var currentAssemblyStepIdx = 0;
-var zoomToStep = true;          // honored by selectAssemblyStep; toggled via checkbox
+// activeTurnIdx is the index into the *interleaved* list for the current loop
+// (turns + hazard cues, sorted by mile). -1 = nothing highlighted.
+var activeTurnIdx = -1;
+var zoomToStep = (function() {
+  try {
+    var saved = localStorage.getItem('wildGoose.zoomToStep');
+    if (saved === '1') return true;
+    if (saved === '0') return false;
+  } catch (e) { /* private mode */ }
+  return true;
+})();
 
 // Wires the "Zoom to step" checkbox in the directions header. When
-// checked (default), clicking an assembly chip fits the map bounds to
-// that loop. When unchecked, the chip click still updates the cue list
-// + active state but the map stays put — useful for athletes scanning
-// the cue sheet without losing the overall course context.
-function setZoomToStep(on) { zoomToStep = !!on; }
+// checked (default), clicking a list item (turn or hazard) fits the map
+// to that item's segment. When unchecked, clicks still highlight on the
+// map and update the active row but the camera stays put — useful for
+// athletes scanning the cue sheet without losing course context.
+// Persisted across reloads via localStorage so the preference sticks.
+function setZoomToStep(on) {
+  zoomToStep = !!on;
+  try { localStorage.setItem('wildGoose.zoomToStep', zoomToStep ? '1' : '0'); } catch (e) { /* private mode */ }
+  var box = document.getElementById('zoomToStepCheckbox');
+  if (box) box.checked = zoomToStep;
+}
+
+// ─── Snap turn locations to the rendered route ───────────────────────
+// The TBT pipeline emits turn locations from the GPX coordinate stream,
+// but the geojson rendered on the map is downsampled / smoothed, so each
+// turn's lat/lng can sit a few feet off the rendered line. Projecting
+// the raw location forward through the route returns the cumulative
+// mile and the snapped [lng,lat] on the actual rendered geometry —
+// without this, the segment highlight lights up a different trail than
+// the turn description names. See feedback_race-map-step-route-alignment
+// for the prior incident this guards against.
+function distSqPointToSegment(p, a, b) {
+  var midLat = (p[1] + a[1] + b[1]) / 3;
+  var cosLat = Math.cos(midLat * Math.PI / 180);
+  var ax = a[0] * cosLat, ay = a[1];
+  var bx = b[0] * cosLat, by = b[1];
+  var px = p[0] * cosLat, py = p[1];
+  var dx = bx - ax, dy = by - ay;
+  var len2 = dx * dx + dy * dy;
+  if (len2 === 0) return { d2: (px - ax) * (px - ax) + (py - ay) * (py - ay), t: 0 };
+  var t = ((px - ax) * dx + (py - ay) * dy) / len2;
+  if (t < 0) t = 0; else if (t > 1) t = 1;
+  var cx = ax + t * dx, cy = ay + t * dy;
+  return { d2: (px - cx) * (px - cx) + (py - cy) * (py - cy), t: t };
+}
+
+// SNAPPED_TURN_MILES[loopId][i] = projected cumulative mile for turn i
+// SNAPPED_TURN_COORDS[loopId][i] = projected [lng,lat] on the route
+var SNAPPED_TURN_MILES = {};
+var SNAPPED_TURN_COORDS = {};
+(function precomputeSnappedTurns() {
+  if (typeof LOOP_TURNS === 'undefined') return;
+  Object.keys(LOOP_TURNS).forEach(function(loopId) {
+    var turns = LOOP_TURNS[loopId] || [];
+    var loop = LOOPS[loopId];
+    if (!loop || !loop.geojson || !turns.length) {
+      SNAPPED_TURN_MILES[loopId] = [];
+      SNAPPED_TURN_COORDS[loopId] = [];
+      return;
+    }
+    var coords = loop.geojson.geometry.coordinates;
+    var dists = loopCoordDistances[loopId];
+    var miles = new Array(turns.length);
+    var pts = new Array(turns.length);
+    var cursorMile = 0;
+    var EPS_BACKTRACK = 1 / 5280;   // 1 ft tolerance at intersections
+    // Trail GPS bends are noisier than road OSRM steps, so use a wider
+    // good-match window (~250 ft) than Tinman. Acceptable because the
+    // candidate-turn detector already de-duped co-located turns at 80 m.
+    var GOOD_MATCH_DEG = 250 / 364000;
+    var GOOD_MATCH_DEG2 = GOOD_MATCH_DEG * GOOD_MATCH_DEG;
+
+    for (var i = 0; i < turns.length; i++) {
+      var t = turns[i];
+      if (!t.location) { miles[i] = cursorMile; pts[i] = coords[0]; continue; }
+      var firstGood = null;
+      var bestOverall = { d2: Infinity, mile: cursorMile, point: t.location };
+      var minMile = cursorMile - EPS_BACKTRACK;
+      for (var j = 1; j < coords.length; j++) {
+        if (dists[j] < minMile) continue;
+        var r = distSqPointToSegment(t.location, coords[j - 1], coords[j]);
+        var ax = coords[j - 1][0], ay = coords[j - 1][1];
+        var bx = coords[j][0],     by = coords[j][1];
+        var snapMile = dists[j - 1] + r.t * (dists[j] - dists[j - 1]);
+        if (snapMile < minMile) snapMile = minMile;
+        var snapPt = [ax + r.t * (bx - ax), ay + r.t * (by - ay)];
+        if (r.d2 < bestOverall.d2) bestOverall = { d2: r.d2, mile: snapMile, point: snapPt };
+        if (firstGood == null && r.d2 <= GOOD_MATCH_DEG2) firstGood = { d2: r.d2, mile: snapMile, point: snapPt };
+      }
+      var winner = firstGood || bestOverall;
+      miles[i] = winner.mile;
+      pts[i] = winner.point;
+      cursorMile = winner.mile;
+    }
+    SNAPPED_TURN_MILES[loopId] = miles;
+    SNAPPED_TURN_COORDS[loopId] = pts;
+  });
+})();
+
+// Walk a loop's coordinate array between two cumulative miles, returning
+// the polyline that connects them. Used to draw the highlighted segment
+// for the active turn (turn[idx] → turn[idx+1]).
+function coordsBetweenMiles(loopId, startMi, endMi) {
+  var loop = LOOPS[loopId];
+  if (!loop || !loop.geojson) return [];
+  var coords = loop.geojson.geometry.coordinates;
+  var dists = loopCoordDistances[loopId];
+  if (endMi < startMi) { var tmp = startMi; startMi = endMi; endMi = tmp; }
+  var out = [];
+  var startCoord = getCoordAtMile(loopId, startMi);
+  var endCoord = getCoordAtMile(loopId, endMi);
+  out.push(startCoord);
+  for (var j = 1; j < dists.length; j++) {
+    if (dists[j] > startMi && dists[j] < endMi) out.push(coords[j]);
+  }
+  out.push(endCoord);
+  return out;
+}
+
+// Interpolate a [lng,lat] at any mile along a loop. Mirrors the
+// helper bundled inline in config.js for the simulator.
+function getCoordAtMile(loopId, mile) {
+  var loop = LOOPS[loopId];
+  if (!loop || !loop.geojson) return [0, 0];
+  var coords = loop.geojson.geometry.coordinates;
+  var dists = loopCoordDistances[loopId];
+  for (var j = 1; j < dists.length; j++) {
+    if (dists[j] >= mile) {
+      var t = (mile - dists[j - 1]) / Math.max(dists[j] - dists[j - 1], 1e-9);
+      var c0 = coords[j - 1], c1 = coords[j];
+      return [c0[0] + (c1[0] - c0[0]) * t, c0[1] + (c1[1] - c0[1]) * t];
+    }
+  }
+  return coords[coords.length - 1];
+}
+
+// Build the interleaved within-loop list: TBT turns merged with LOOP_CUES
+// (hazard/water/landmark/surface notes) sorted by mile. Each row carries
+// its own .kind so click handlers and styling can branch. Turn rows use
+// snapped mile so they read in the order the runner actually encounters
+// them on the rendered route, not the raw GPX mile.
+function buildInterleavedListFor(loopId) {
+  var rows = [];
+  var turns = (typeof LOOP_TURNS !== 'undefined' && LOOP_TURNS[loopId]) ? LOOP_TURNS[loopId] : [];
+  var snapped = SNAPPED_TURN_MILES[loopId] || [];
+  for (var i = 0; i < turns.length; i++) {
+    var t = turns[i];
+    var mile = (snapped[i] != null) ? snapped[i] : t.mile;
+    rows.push({
+      kind: 'turn',
+      mile: mile,
+      turnIdx: i,
+      direction: t.direction,
+      intensity: t.intensity,
+      label: t.label,
+      labelType: t.labelType,
+    });
+  }
+  var cues = (typeof LOOP_CUES !== 'undefined' && LOOP_CUES[loopId]) ? LOOP_CUES[loopId] : [];
+  for (var c = 0; c < cues.length; c++) {
+    rows.push({
+      kind: cues[c].kind || 'note',
+      mile: cues[c].mile,
+      text: cues[c].text,
+    });
+  }
+  rows.sort(function(a, b) { return a.mile - b.mile; });
+  return rows;
+}
 
 function initMap() {
   map = new maplibregl.Map({
@@ -185,10 +349,58 @@ function initMap() {
 
     addHqMarker();
     addTurnMarkers();
+
+    // Active-turn segment highlight. One geojson source per page;
+    // setActiveTurn() swaps its data to the polyline running from the
+    // active turn to the next turn. The yellow halo + dark inner read
+    // strongly against either the pink, blue, or checkered course line
+    // beneath. Layer is added LAST so it draws on top of every loop.
+    map.addSource('dir-active-segment', {
+      type: 'geojson',
+      data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } }
+    });
+    map.addLayer({
+      id: 'dir-active-segment-halo', type: 'line', source: 'dir-active-segment',
+      paint: { 'line-color': '#FDD80D', 'line-width': 10, 'line-opacity': 0.7, 'line-blur': 1.5 },
+      layout: { 'line-cap': 'round', 'line-join': 'round' }
+    });
+    map.addLayer({
+      id: 'dir-active-segment-line', type: 'line', source: 'dir-active-segment',
+      paint: { 'line-color': '#1f1d18', 'line-width': 3.5 },
+      layout: { 'line-cap': 'round', 'line-join': 'round' }
+    });
+
     selectRace(currentRaceId);
     // HQ is on by default; reflect that in both button sets.
     syncToggleButtons('aid', aidOn);
+
+    // Honor the persisted zoom-to-step preference on first load.
+    var box = document.getElementById('zoomToStepCheckbox');
+    if (box) box.checked = zoomToStep;
   });
+}
+
+// Dim all loops except the focused one. Restores full opacity when
+// dimmed=false. Wild Goose loops have an `<id>` color line and an
+// `<id>-outline` halo; the checkered loop also has `<id>-white`.
+function setCourseDimmed(focusLoopId, dimmed) {
+  if (!map) return;
+  var loopIds = ['pink', 'blue', 'checkered'];
+  for (var i = 0; i < loopIds.length; i++) {
+    var lid = loopIds[i];
+    var isFocus = lid === focusLoopId;
+    var op = dimmed && !isFocus ? 0.18 : 1;
+    var haloOp = dimmed && !isFocus ? 0.08 : 0.22;
+    if (map.getLayer(lid)) map.setPaintProperty(lid, 'line-opacity', op);
+    if (map.getLayer(lid + '-outline')) map.setPaintProperty(lid + '-outline', 'line-opacity', haloOp);
+    if (map.getLayer(lid + '-white')) map.setPaintProperty(lid + '-white', 'line-opacity', op);
+  }
+  // Dim the shared-segment offsets along with their owners (blue + pink).
+  if (map.getLayer('shared-blue-offset')) {
+    var sharedOp = dimmed && focusLoopId !== 'blue' && focusLoopId !== 'pink' ? 0.18 : 1;
+    map.setPaintProperty('shared-blue-offset', 'line-opacity', sharedOp);
+    map.setPaintProperty('shared-pink-offset', 'line-opacity', sharedOp);
+  }
 }
 
 function addHqMarker() {
@@ -339,24 +551,19 @@ function selectAssemblyStep(idx) {
     );
   }
 
-  var cues = (typeof LOOP_CUES !== 'undefined' && LOOP_CUES[lid]) ? LOOP_CUES[lid] : [];
-  var listEl = document.getElementById('loopCueList');
-  if (listEl) {
-    var listHtml;
-    if (!cues.length) {
-      listHtml = '<li class="loop-cue loop-cue--empty">Terrain is uniform on this loop — no specific cues. Stay with the blazes.</li>';
-    } else {
-      listHtml = cues.map(function(c) {
-        return '<li class="loop-cue loop-cue--' + c.kind + '">' +
-          '<span class="loop-cue__mile">' + c.mile.toFixed(1) + ' mi</span>' +
-          '<span class="loop-cue__kind" aria-hidden="true">' + cueKindIcon(c.kind) + '</span>' +
-          '<span class="loop-cue__text">' + escapeText(c.text) + '</span>' +
-          '</li>';
-      }).join('');
-    }
-    setHtml(listEl, listHtml);
+  // Swap the within-loop list to this loop's interleaved turns + cues,
+  // and drop any prior active selection from the previous loop.
+  activeTurnIdx = -1;
+  renderInterleavedList(lid);
+  if (map && map.getSource('dir-active-segment')) {
+    map.getSource('dir-active-segment').setData({
+      type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] }
+    });
   }
+  setCourseDimmed(lid, false);
 
+  // Pan to the chosen loop's full extent when zoom-to-step is on. Within
+  // the loop, individual turn clicks will tighten the camera further.
   if (zoomToStep && map && loop.geojson && loop.geojson.geometry) {
     var coords = loop.geojson.geometry.coordinates;
     var minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
@@ -368,6 +575,132 @@ function selectAssemblyStep(idx) {
     }
     map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 60, duration: 700, maxZoom: 14.5 });
   }
+}
+
+// Render the within-loop list as one ordered <ol> containing both
+// turn-by-turn rows (from LOOP_TURNS) and hazard/landmark cue rows
+// (from LOOP_CUES), sorted by mile so they read in the order a runner
+// encounters them.
+function renderInterleavedList(loopId) {
+  var listEl = document.getElementById('loopCueList');
+  if (!listEl) return;
+  var rows = buildInterleavedListFor(loopId);
+  if (!rows.length) {
+    setHtml(listEl, '<li class="loop-cue loop-cue--empty">Terrain is uniform on this loop — no specific cues. Stay with the blazes.</li>');
+    return;
+  }
+  var html = rows.map(function(r, rowIdx) {
+    if (r.kind === 'turn') {
+      var modifier = r.intensity === 'sharp' ? 'sharp ' : (r.intensity === 'slight' ? 'slight ' : '');
+      var actionLabel = (modifier + r.direction).toUpperCase();
+      return '<li class="loop-cue loop-cue--turn loop-cue--turn-' + r.direction +
+        (r.intensity === 'sharp' ? ' loop-cue--turn-sharp' : '') +
+        '" data-row="' + rowIdx + '" data-kind="turn" data-turn-idx="' + r.turnIdx + '" onclick="setActiveTurnByRow(' + rowIdx + ')">' +
+        '<span class="loop-cue__mile">' + r.mile.toFixed(2) + ' mi</span>' +
+        '<span class="loop-cue__kind" aria-hidden="true">' + turnArrow(r.direction, r.intensity) + '</span>' +
+        '<span class="loop-cue__text"><strong>' + actionLabel + '</strong>' +
+        (r.label ? ' onto ' + escapeText(r.label) : '') + '</span>' +
+        '</li>';
+    }
+    return '<li class="loop-cue loop-cue--' + r.kind + '" data-row="' + rowIdx + '" data-kind="' + r.kind + '" onclick="setActiveTurnByRow(' + rowIdx + ')">' +
+      '<span class="loop-cue__mile">' + r.mile.toFixed(1) + ' mi</span>' +
+      '<span class="loop-cue__kind" aria-hidden="true">' + cueKindIcon(r.kind) + '</span>' +
+      '<span class="loop-cue__text">' + escapeText(r.text || '') + '</span>' +
+      '</li>';
+  }).join('');
+  setHtml(listEl, html);
+}
+
+// Click handler bound on each row. Looks up the row in the cached
+// interleaved list, runs the right action (turn → segment highlight;
+// cue → fly to mile), and toggles the active class.
+function setActiveTurnByRow(rowIdx) {
+  var race = RACES[currentRaceId];
+  if (!race) return;
+  var lid = race.loops[currentAssemblyStepIdx];
+  if (!lid) return;
+  var rows = buildInterleavedListFor(lid);
+  var row = rows[rowIdx];
+  if (!row) return;
+  activeTurnIdx = rowIdx;
+  syncListActiveDom(rowIdx);
+
+  if (row.kind === 'turn') {
+    var nextRow = null;
+    for (var i = rowIdx + 1; i < rows.length; i++) {
+      if (rows[i].kind === 'turn') { nextRow = rows[i]; break; }
+    }
+    var endMile = nextRow ? nextRow.mile : LOOPS[lid].miles;
+    var segCoords = coordsBetweenMiles(lid, row.mile, endMile);
+    if (map && map.getSource('dir-active-segment')) {
+      map.getSource('dir-active-segment').setData({
+        type: 'Feature', properties: {},
+        geometry: { type: 'LineString', coordinates: segCoords }
+      });
+    }
+    setCourseDimmed(lid, true);
+    if (zoomToStep) flyToCoords(segCoords);
+  } else {
+    // Hazard / landmark cue — point highlight, fly to the precise
+    // coord at that mile. Clear the segment line so we don't show
+    // a stale turn segment under the cue we just jumped to.
+    if (map && map.getSource('dir-active-segment')) {
+      map.getSource('dir-active-segment').setData({
+        type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] }
+      });
+    }
+    setCourseDimmed(lid, false);
+    if (zoomToStep && map) {
+      var pt = getCoordAtMile(lid, row.mile);
+      map.flyTo({ center: pt, zoom: 15.5, duration: 700 });
+    }
+  }
+}
+
+function syncListActiveDom(rowIdx) {
+  var listEl = document.getElementById('loopCueList');
+  if (!listEl) return;
+  var items = listEl.children;
+  for (var i = 0; i < items.length; i++) {
+    items[i].classList.toggle('active', i === rowIdx);
+  }
+  var activeEl = listEl.querySelector('.loop-cue.active');
+  if (activeEl) activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+// Fit-bounds wrapper that handles degenerate (single-point) segments by
+// recentering with a fixed zoom instead of a zero-area fitBounds.
+function flyToCoords(coords) {
+  if (!map || !coords || !coords.length) return;
+  if (coords.length === 1) {
+    map.flyTo({ center: coords[0], zoom: 15.5, duration: 600 });
+    return;
+  }
+  var minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  for (var i = 0; i < coords.length; i++) {
+    if (coords[i][0] < minLng) minLng = coords[i][0];
+    if (coords[i][0] > maxLng) maxLng = coords[i][0];
+    if (coords[i][1] < minLat) minLat = coords[i][1];
+    if (coords[i][1] > maxLat) maxLat = coords[i][1];
+  }
+  if (minLng === maxLng && minLat === maxLat) {
+    map.flyTo({ center: [minLng, minLat], zoom: 15.5, duration: 600 });
+    return;
+  }
+  map.fitBounds([[minLng, minLat], [maxLng, maxLat]], {
+    padding: { top: 80, right: 60, bottom: 80, left: 60 },
+    duration: 600,
+    maxZoom: 16,
+  });
+}
+
+function turnArrow(direction, intensity) {
+  if (direction === 'left'  && intensity === 'sharp')   return '↰';
+  if (direction === 'right' && intensity === 'sharp')   return '↱';
+  if (direction === 'left')                              return '←';
+  if (direction === 'right')                             return '→';
+  if (direction === 'straight')                          return '↑';
+  return '·';
 }
 
 function cueKindIcon(kind) {
@@ -486,7 +819,56 @@ function syncToggleButtons(key, on) {
     var el = document.getElementById(ids[i]);
     if (el) el.classList.toggle('active', !!on);
   }
+  // Layers popover checkboxes — mirror state both directions. The
+  // hidden inline buttons (.map-btns) are kept for back-compat with
+  // older e2e scripts, but the checkboxes are now the primary UI.
+  var checkboxId = {
+    aid: 'layerAid', streetview: 'layerStreetview',
+    trails: 'layerTrails', terrain: 'layer3D'
+  }[key];
+  if (checkboxId) {
+    var box = document.getElementById(checkboxId);
+    if (box) box.checked = !!on;
+  }
+  // Show a count of active layers in the trigger so the runner can see
+  // at a glance how many overlays they've enabled without opening the
+  // panel. Aid Stations is on by default → count starts at 1.
+  updateLayersCount();
 }
+
+// Open/close the layers popover. Tap the trigger to toggle; clicking
+// anywhere outside (or pressing Escape) closes it. Mirrors the
+// MapLibre control pattern + Google Maps "Layers" affordance.
+function toggleLayersPopover(force) {
+  var root = document.querySelector('.map-layers');
+  var trigger = document.getElementById('mapLayersBtn');
+  if (!root || !trigger) return;
+  var open = (typeof force === 'boolean') ? force : (root.getAttribute('data-state') !== 'open');
+  root.setAttribute('data-state', open ? 'open' : 'closed');
+  trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+function updateLayersCount() {
+  var trigger = document.getElementById('mapLayersBtn');
+  if (!trigger) return;
+  var ids = ['layerAid', 'layerStreetview', 'layerTrails', 'layer3D'];
+  var on = 0;
+  for (var i = 0; i < ids.length; i++) {
+    var b = document.getElementById(ids[i]);
+    if (b && b.checked) on++;
+  }
+  trigger.setAttribute('data-active-count', String(on));
+}
+
+// Close-on-outside + Escape. Registered once at script load.
+document.addEventListener('click', function(e) {
+  var root = document.querySelector('.map-layers');
+  if (!root || root.getAttribute('data-state') !== 'open') return;
+  if (!root.contains(e.target)) toggleLayersPopover(false);
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') toggleLayersPopover(false);
+});
 
 function toggle3D() {
   terrain3D = !terrain3D;
@@ -1301,10 +1683,10 @@ function reorderCueColumn() {
   var dir = document.getElementById('directionsSection');
   if (!cues || !dir || dir.parentElement !== cues) return;
   // Anchor: insert directions immediately after the visually-hidden h1
-  // (or, if no h1, after the scope note). Falling back to prepend is
-  // safe — those headers were already first.
-  var anchor = cues.querySelector('h1.visually-hidden')
-            || cues.querySelector('.scope-note');
+  // so the cue stream starts at the top of the column. The scope-note
+  // band that used to sit here has been removed sitewide (Wild Goose
+  // mobile review · May 2026 — it didn't earn its space).
+  var anchor = cues.querySelector('h1.visually-hidden');
   if (anchor && anchor.nextSibling) {
     cues.insertBefore(dir, anchor.nextSibling);
   } else {

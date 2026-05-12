@@ -26,24 +26,29 @@
 <body class="race-page race-{{SLUG}}">
 
 <!-- ── 1. Top bar — small race mark left, race-day strip right, FSS credit far-right ── -->
-<header class="top-bar" aria-label="Race header">
+<!-- Mobile collapses to a single row (race name + countdown + chevron).
+     Tap the chevron to reveal the edition line, gun time, weather, embed
+     buttons, and studio credit. Desktop ≥1024px ignores the collapse and
+     shows everything. Initial mobile state is data-expanded="false"; the
+     editorial-runtime hydrates from localStorage so the preference sticks. -->
+<header class="top-bar" data-expanded="false" aria-label="Race header">
   <a class="race-mark" href="{{HOST_URL}}" target="_blank" rel="noopener">
     <span class="race-mark__name">{{RACE_NAME_SHORT}}</span>
-    <span class="race-mark__edition">{{EDITION_LINE}}</span>
+    <span class="race-mark__edition top-bar__detail">{{EDITION_LINE}}</span>
   </a>
   <div class="race-day-strip" id="raceDayStrip" aria-label="Race day at a glance">
-    <span class="rds-cell rds-date">{{RACE_DAY_DISPLAY}}</span>
-    <span class="rds-sep" aria-hidden="true">·</span>
-    <span class="rds-cell rds-start">Gun {{GUN_TIME}}</span>
-    <span class="rds-sep" aria-hidden="true">·</span>
+    <span class="rds-cell rds-date top-bar__detail">{{RACE_DAY_DISPLAY}}</span>
+    <span class="rds-sep top-bar__detail" aria-hidden="true">·</span>
+    <span class="rds-cell rds-start top-bar__detail">Gun {{GUN_TIME}}</span>
+    <span class="rds-sep top-bar__detail" aria-hidden="true">·</span>
     <span class="rds-cell rds-countdown" id="raceCountdown" data-race-date="{{RACE_DATE_ISO}}">…</span>
-    <span class="rds-sep rds-sep--weather" aria-hidden="true">·</span>
-    <span class="rds-cell rds-weather" id="rdsWeather" aria-label="Race-day weather">
+    <span class="rds-sep rds-sep--weather top-bar__detail" aria-hidden="true">·</span>
+    <span class="rds-cell rds-weather top-bar__detail" id="rdsWeather" aria-label="Race-day weather">
       <span class="rds-weather__temp" id="rdsWeatherTemp">--°</span>
       <span class="rds-weather__cond" id="rdsWeatherCond">checking…</span>
     </span>
   </div>
-  <div class="top-bar__utility">
+  <div class="top-bar__utility top-bar__detail">
     <button type="button" class="top-bar__util-btn" onclick="openEmbedModal()">Embed</button>
     <button type="button" class="top-bar__util-btn" onclick="openPocketModal()">Pocket map</button>
     <a class="studio-credit" href="https://falsesummitstudio.com" target="_blank" rel="noopener" title="Cartography by False Summit Studio">
@@ -51,6 +56,13 @@
       <span class="studio-credit__label">Cartography · FSS</span>
     </a>
   </div>
+  <button type="button" class="top-bar__expand" id="topBarExpand"
+          aria-expanded="false" aria-controls="raceDayStrip"
+          aria-label="Show race details" onclick="toggleTopBar()">
+    <svg viewBox="0 0 12 12" aria-hidden="true">
+      <path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
 </header>
 
 <main class="race-page__main">
@@ -69,12 +81,6 @@
     </aside>
 
     <section class="course__cues" aria-labelledby="cueHeading">
-      <p class="scope-note" role="note">
-        <span class="scope-note__icon" aria-hidden="true">▴</span>
-        {{SCOPE_NOTE}}
-        <a class="scope-note__link" href="{{HOST_URL}}" target="_blank" rel="noopener">Host race site →</a>
-      </p>
-
       <h1 id="cueHeading" class="visually-hidden">{{RACE_NAME_DISPLAY}} — Run course, turn-by-turn</h1>
 
       {{CUES_HTML}}
