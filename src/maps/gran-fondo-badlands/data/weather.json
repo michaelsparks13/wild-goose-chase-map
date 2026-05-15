@@ -1,0 +1,218 @@
+{
+  "fetchedAt": "2026-05-15T23:06:05.762Z",
+  "raceDate": "2026-07-04",
+  "dataYears": 15,
+  "location": {
+    "lat": 51.4665,
+    "lng": -112.705
+  },
+  "riskSummary": {
+    "heat": {
+      "level": "moderate",
+      "label": "Moderate",
+      "color": "#F9A825",
+      "detail": "67°F heat stress"
+    },
+    "storm": {
+      "level": "moderate",
+      "label": "Moderate",
+      "color": "#F9A825",
+      "detail": "47% rain chance"
+    },
+    "air": {
+      "level": "low",
+      "label": "Good",
+      "color": "#4CAF50",
+      "detail": "Avg AQI 38"
+    },
+    "wind": {
+      "level": "low",
+      "label": "Light",
+      "color": "#4CAF50",
+      "detail": "5.5 mph avg"
+    }
+  },
+  "heatStress": {
+    "estimated": 67,
+    "risk": "moderate",
+    "riskColor": "#F9A825",
+    "riskLabel": "Moderate"
+  },
+  "dailyAverages": [
+    {
+      "date": "2026-07-01",
+      "dayLabel": "Wed",
+      "isRaceDay": false,
+      "temperature": {
+        "avgHighF": 77,
+        "avgLowF": 54
+      },
+      "humidity": {
+        "avgPct": 64
+      },
+      "wind": {
+        "avgMph": 5.5
+      },
+      "precipProbPct": 27,
+      "aqi": {
+        "avgAQI": 41
+      },
+      "heatStress": {
+        "estimated": 72.3,
+        "risk": "moderate",
+        "riskColor": "#F9A825",
+        "riskLabel": "Moderate"
+      }
+    },
+    {
+      "date": "2026-07-02",
+      "dayLabel": "Thu",
+      "isRaceDay": false,
+      "temperature": {
+        "avgHighF": 76,
+        "avgLowF": 53
+      },
+      "humidity": {
+        "avgPct": 63
+      },
+      "wind": {
+        "avgMph": 5.9
+      },
+      "precipProbPct": 20,
+      "aqi": {
+        "avgAQI": 36
+      },
+      "heatStress": {
+        "estimated": 71.2,
+        "risk": "moderate",
+        "riskColor": "#F9A825",
+        "riskLabel": "Moderate"
+      }
+    },
+    {
+      "date": "2026-07-03",
+      "dayLabel": "Fri",
+      "isRaceDay": false,
+      "temperature": {
+        "avgHighF": 75,
+        "avgLowF": 53
+      },
+      "humidity": {
+        "avgPct": 65
+      },
+      "wind": {
+        "avgMph": 6.4
+      },
+      "precipProbPct": 33,
+      "aqi": {
+        "avgAQI": 34
+      },
+      "heatStress": {
+        "estimated": 70.6,
+        "risk": "moderate",
+        "riskColor": "#F9A825",
+        "riskLabel": "Moderate"
+      }
+    },
+    {
+      "date": "2026-07-04",
+      "dayLabel": "Sat",
+      "isRaceDay": true,
+      "temperature": {
+        "avgHighF": 71,
+        "avgLowF": 52
+      },
+      "humidity": {
+        "avgPct": 66
+      },
+      "wind": {
+        "avgMph": 5.5
+      },
+      "precipProbPct": 47,
+      "aqi": {
+        "avgAQI": 38
+      },
+      "heatStress": {
+        "estimated": 67,
+        "risk": "moderate",
+        "riskColor": "#F9A825",
+        "riskLabel": "Moderate"
+      }
+    },
+    {
+      "date": "2026-07-05",
+      "dayLabel": "Sun",
+      "isRaceDay": false,
+      "temperature": {
+        "avgHighF": 73,
+        "avgLowF": 51
+      },
+      "humidity": {
+        "avgPct": 63
+      },
+      "wind": {
+        "avgMph": 4.9
+      },
+      "precipProbPct": 13,
+      "aqi": {
+        "avgAQI": 39
+      },
+      "heatStress": {
+        "estimated": 68.4,
+        "risk": "moderate",
+        "riskColor": "#F9A825",
+        "riskLabel": "Moderate"
+      }
+    },
+    {
+      "date": "2026-07-06",
+      "dayLabel": "Mon",
+      "isRaceDay": false,
+      "temperature": {
+        "avgHighF": 75,
+        "avgLowF": 53
+      },
+      "humidity": {
+        "avgPct": 63
+      },
+      "wind": {
+        "avgMph": 4.8
+      },
+      "precipProbPct": 40,
+      "aqi": {
+        "avgAQI": 38
+      },
+      "heatStress": {
+        "estimated": 70.3,
+        "risk": "moderate",
+        "riskColor": "#F9A825",
+        "riskLabel": "Moderate"
+      }
+    },
+    {
+      "date": "2026-07-07",
+      "dayLabel": "Tue",
+      "isRaceDay": false,
+      "temperature": {
+        "avgHighF": 77,
+        "avgLowF": 54
+      },
+      "humidity": {
+        "avgPct": 63
+      },
+      "wind": {
+        "avgMph": 5
+      },
+      "precipProbPct": 13,
+      "aqi": {
+        "avgAQI": 37
+      },
+      "heatStress": {
+        "estimated": 72.2,
+        "risk": "moderate",
+        "riskColor": "#F9A825",
+        "riskLabel": "Moderate"
+      }
+    }
+  ]
+}
