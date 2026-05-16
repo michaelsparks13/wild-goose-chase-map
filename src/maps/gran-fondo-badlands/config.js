@@ -314,7 +314,7 @@ function buildDirectionsHtml() {
         <span class="directions-race" id="directionsRaceLabel">— km · — m gain</span>
       </div>
       <label class="dir-zoom-toggle">
-        <input type="checkbox" id="zoomToStepCheckbox" checked onchange="setZoomToStep(this.checked)">
+        <input type="checkbox" id="zoomToStepCheckbox" onchange="setZoomToStep(this.checked)">
         <span>Zoom to step</span>
       </label>
       <span class="dir-cutoff-pill" id="dirCutoffPill"></span>

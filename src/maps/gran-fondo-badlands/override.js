@@ -49,7 +49,7 @@ var BASEMAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
 var map;
 var aidOn = true;
-var terrain3D = false;
+var terrain3D = true;  // default ON — the badlands geology IS the visual story
 var allRoutesOn = false;
 var hqMarker = null;
 var aidMarkers = [];
@@ -238,25 +238,32 @@ function addLoopLayers() {
   });
 
   // Active-segment overlay — drawn ON TOP of all course layers so the
-  // halo + dark line read above the route. Source starts empty.
+  // highlight reads above the route. Source starts empty.
+  //
+  // Color logic: the course backbone is dark (#1A1A1A casing) + rust
+  // brand line on top. A magenta or rust highlight (like our earlier
+  // accent token) doesn't pop against either of those — it muddies
+  // into the route. The classic highlighter-yellow contrast wins:
+  //
+  //   - Outer halo: bright yellow (#FFE74C), 14 px wide, blur 1.5 —
+  //     reads as fluorescent against dark base AND against rust route.
+  //   - Inner line: pure white (#FFFFFF), 4 px — punches through the
+  //     dark casing so the active segment isn't lost in the backbone.
+  //
+  // High contrast in both directions: dark course → light halo;
+  // light areas of the route → dark inner line is still visible
+  // through the yellow.
   map.addSource('dir-active-segment', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-  // Seed with a fallback color; we read the computed --accent token at
-  // runtime below since CSS vars don't apply inside WebGL paint values.
-  var accentColor = '#8B2668';
-  try {
-    var v = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-    if (v) accentColor = v;
-  } catch (e) { /* noop */ }
   map.addLayer({
     id: 'dir-active-segment-halo',
     type: 'line',
     source: 'dir-active-segment',
     layout: { 'line-cap': 'round', 'line-join': 'round' },
     paint: {
-      'line-color': accentColor,
-      'line-width': 11,
-      'line-opacity': 0.7,
-      'line-blur': 2,
+      'line-color': '#FFE74C',
+      'line-width': 14,
+      'line-opacity': 0.92,
+      'line-blur': 1.5,
     },
   });
   map.addLayer({
@@ -265,8 +272,8 @@ function addLoopLayers() {
     source: 'dir-active-segment',
     layout: { 'line-cap': 'round', 'line-join': 'round' },
     paint: {
-      'line-color': '#1A1A1A',
-      'line-width': 3.5,
+      'line-color': '#FFFFFF',
+      'line-width': 4,
     },
   });
 }
@@ -479,25 +486,27 @@ function toggleAid() {
   updateLayersCount();
 }
 
-function toggle3D() {
-  terrain3D = !terrain3D;
-  var box = document.getElementById('layer3D');
-  if (box) box.checked = terrain3D;
+// Apply the 3D terrain state to the map. Re-uses the existing
+// hillshade-dem source (added in the map.on('load') handler) so we
+// don't double-fetch the same Terrarium tiles. `animate=false` is
+// used for the initial-load enable so the map doesn't tilt in front
+// of the rider after page load.
+function applyTerrain(animate) {
   if (terrain3D) {
-    if (!map.getSource('terrain-dem')) {
-      map.addSource('terrain-dem', {
-        type: 'raster-dem',
-        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-        tileSize: 256, maxzoom: 15, encoding: 'terrarium',
-      });
-    }
-    map.setTerrain({ source: 'terrain-dem', exaggeration: 1.4 });
-    map.easeTo({ pitch: 50, duration: 800 });
+    map.setTerrain({ source: 'hillshade-dem', exaggeration: 1.4 });
+    map.easeTo({ pitch: 50, duration: animate ? 800 : 0 });
   } else {
     map.setTerrain(null);
-    map.easeTo({ pitch: 0, duration: 800 });
+    map.easeTo({ pitch: 0, duration: animate ? 800 : 0 });
   }
+  var box = document.getElementById('layer3D');
+  if (box) box.checked = terrain3D;
   updateLayersCount();
+}
+
+function toggle3D() {
+  terrain3D = !terrain3D;
+  applyTerrain(true);
 }
 
 function toggleAllRoutes() {
@@ -686,14 +695,16 @@ function directionLabel(dir, intensity) {
 }
 
 // Persisted across reloads; gates ONLY the camera move when a cue is
-// clicked, never the highlight itself. Hydrated from localStorage on
-// boot.
+// clicked, never the highlight itself. Default is OFF — clicking a
+// cue should ALWAYS highlight the segment, but most riders prefer
+// the camera to stay put unless they explicitly opt in. Hydrated
+// from localStorage on boot.
 var zoomToStep = (function() {
   try {
     var saved = localStorage.getItem('granFondoBadlands.zoomToStep');
-    if (saved === '0') return false;
+    if (saved === '1') return true;
   } catch (e) { /* private mode */ }
-  return true;
+  return false;
 })();
 function setZoomToStep(on) {
   zoomToStep = !!on;
@@ -1468,6 +1479,7 @@ function initMap() {
     renderAidMarkers();
     rebuildKmMarkers();
     fitToActiveLoop(false);
+    applyTerrain(false);  // honors the default terrain3D = true
     drawProfile();
     renderDirectionsList();
     updateRaceMeta();

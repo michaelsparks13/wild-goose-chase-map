@@ -379,11 +379,13 @@ body.race-page.race-gran-fondo-badlands {
 .race-gran-fondo-badlands .loop-cue--landmark,
 .race-gran-fondo-badlands .loop-cue--surface,
 .race-gran-fondo-badlands .loop-cue--note { cursor: pointer; }
+/* Active cue row — uses the same highlighter yellow as the map
+ * segment highlight so the cross-eye link is unmistakable. */
 .race-gran-fondo-badlands .loop-cue--active {
-  background: var(--bone);
-  box-shadow: inset 3px 0 0 var(--accent);
+  background: #FFF7C2;
+  box-shadow: inset 4px 0 0 #E5B800;
 }
-.race-gran-fondo-badlands .loop-cue--active .loop-cue__mile { color: var(--accent); }
+.race-gran-fondo-badlands .loop-cue--active .loop-cue__mile { color: #B57E00; }
 .race-gran-fondo-badlands .loop-cue--turn:hover { background: var(--surface-warm); }
 .race-gran-fondo-badlands .loop-cue:last-child { border-bottom: none; }
 .race-gran-fondo-badlands .loop-cue__mile {
