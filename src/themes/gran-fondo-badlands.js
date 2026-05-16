@@ -100,6 +100,16 @@ module.exports = {
   // for schema parity, but every label the rider reads is metric.
   displayUnits: 'km',
 
+  // Per-race subtitles for the editorial chrome's Profile / Aid / Day
+  // essentials sections. The race-shell defaults reference Tinman +
+  // triathlon legs; cycling races (and any non-triathlon race) need
+  // their own copy. See [[race-map-editorial-copy-overrides]].
+  editorialCopy: {
+    profileSub: 'Full course · 163 km flagship loop',
+    aidSub:     'Eight stations on a shared spine — your distance hits the subset listed in the directions panel. F2C Nutrition supplies hydration; PB&J, fruit, and Dino-sours at the longer stops.',
+    daySub:     'Cycling start times by distance. The 9:15 AM wave covers Triceratops + Velociraptor; T-Rex rolls in waves at 7:45 / 8:30 / 9:15 AM; Brontosaurus rolls out at 7:00 AM.',
+  },
+
   raceFormat: {
     discipline: 'road-cycle',
     hasSwim: false,

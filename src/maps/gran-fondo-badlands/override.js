@@ -29,60 +29,21 @@ function setHtml(el, html) {
 var protocol = new pmtiles.Protocol();
 maplibregl.addProtocol('pmtiles', protocol.tile);
 
-var PMTILES_URL = 'pmtiles://https://pub-e494904da8db4a209e8229adcd8b63f9.r2.dev/basemap.pmtiles';
-
-// Warm earth-tone overrides for the Drumheller Valley — sandy hoodoo
-// background, prairie-grass landcover, river-blue water. Merged INTO
-// the named light flavor (Object.assign was required — passing as the
-// 2nd arg to namedFlavor silently no-ops; verified via wild-goose).
-var BASEMAP_FLAVOR_OVERRIDES = {
-  background: '#EFE4CC',
-  earth:      '#EFE4CC',
-  park_a:     '#D6CDA5',
-  park_b:     '#D6CDA5',
-  wood_a:     '#C7B98A',
-  wood_b:     '#C7B98A',
-  scrub_a:    '#E0D5A8',
-  scrub_b:    '#E0D5A8',
-  water:      '#A6C8D8',
-  sand:       '#E8D9B0',
-  beach:      '#E8D9B0',
-  glacier:    '#EDF3F8',
-};
-
-var BASEMAP_STYLE = {
-  version: 8,
-  glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
-  sprite: 'https://protomaps.github.io/basemaps-assets/sprites/v4/light',
-  sources: {
-    protomaps: {
-      type: 'vector',
-      url: PMTILES_URL,
-      attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>',
-    },
-    'hillshade-dem': {
-      type: 'raster-dem',
-      tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-      tileSize: 256, maxzoom: 15, encoding: 'terrarium',
-    },
-  },
-  layers: [].concat(
-    basemaps.layers(
-      'protomaps',
-      Object.assign({}, basemaps.namedFlavor('light'), BASEMAP_FLAVOR_OVERRIDES),
-      { lang: 'en' }
-    ),
-    [{
-      id: 'hillshade', type: 'hillshade', source: 'hillshade-dem',
-      paint: {
-        'hillshade-exaggeration': 0.45,
-        'hillshade-shadow-color': '#7a5a3a',
-        'hillshade-highlight-color': '#fff5e0',
-        'hillshade-accent-color': '#a87b48',
-      },
-    }]
-  ),
-};
+// The FSS R2 protomaps PMTiles (pub-e494904da8db4a209e8229adcd8b63f9
+// .r2.dev/basemap.pmtiles, 18 GB) is a US-focused regional extract
+// that has zero coverage over Drumheller, Alberta (verified: 6
+// features at z15.5 over downtown). Until FSS hosts its own
+// globally-covered PMTiles, this race fetches its base style from
+// OpenFreeMap Liberty — a free, no-key, CORS-OK protomaps-style
+// vector tile service built on the OpenMapTiles schema with full
+// global coverage (Drumheller / Kirkpatrick / Nacmine / Rosedale /
+// East Coulee / Wayne all named, Red Deer River + tributaries
+// rendered, all rural Alberta roads in the grid).
+//
+// AWS Terrarium hillshade is stacked on top in map.on('load') for
+// the dramatic Drumheller badlands terrain — the geology is the
+// visual story this race needs to tell.
+var BASEMAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
 // ─── State ───────────────────────────────────────────────────────────
 
@@ -1231,7 +1192,7 @@ function drawSimTerrain(atMi) {
 
   var dpr = Math.max(1, window.devicePixelRatio || 1);
   var rect = canvas.getBoundingClientRect();
-  var W = rect.width, H = Math.max(120, rect.height || 140);
+  var W = rect.width, H = Math.max(140, rect.height || 160);
   if (canvas.width !== Math.round(W * dpr)) {
     canvas.width = W * dpr;
     canvas.height = H * dpr;
@@ -1249,17 +1210,39 @@ function drawSimTerrain(atMi) {
   }
   if (maxE - minE < 50) { var mid = (maxE + minE) / 2; minE = mid - 25; maxE = mid + 25; }
 
-  var pad = 8;
-  // Filled area
-  ctx.fillStyle = hexToRgba(race.color, 0.35);
-  ctx.beginPath();
-  ctx.moveTo(pad, H - pad);
-  for (var p = 0; p < profile.length; p++) {
-    var x = pad + (profile[p].d / maxD) * (W - pad * 2);
-    var y = (H - pad) - ((profile[p].e - minE) / (maxE - minE)) * (H - pad * 2);
-    ctx.lineTo(x, y);
+  // Plot area — leave room for the y-axis labels on the left and
+  // x-axis labels at the bottom, just like the bigger map-view profile.
+  var padL = 42, padR = 10, padT = 10, padB = 22;
+  var plotW = W - padL - padR;
+  var plotH = H - padT - padB;
+
+  // y-axis grid + meters labels
+  ctx.strokeStyle = 'rgba(248,242,234,0.12)';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = 'rgba(248,242,234,0.6)';
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (var g = 0; g <= 3; g++) {
+    var ee = maxE - (maxE - minE) * (g / 3);
+    var y = padT + (plotH * g) / 3;
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(padL + plotW, y);
+    ctx.stroke();
+    ctx.fillText(Math.round(ee * M_PER_FT) + 'm', padL - 5, y);
   }
-  ctx.lineTo(W - pad, H - pad);
+
+  // Filled area
+  ctx.fillStyle = hexToRgba(race.color, 0.45);
+  ctx.beginPath();
+  ctx.moveTo(padL, padT + plotH);
+  for (var p = 0; p < profile.length; p++) {
+    var x = padL + (profile[p].d / maxD) * plotW;
+    var y2 = padT + plotH - ((profile[p].e - minE) / (maxE - minE)) * plotH;
+    ctx.lineTo(x, y2);
+  }
+  ctx.lineTo(padL + plotW, padT + plotH);
   ctx.closePath();
   ctx.fill();
 
@@ -1268,19 +1251,41 @@ function drawSimTerrain(atMi) {
   ctx.lineWidth = 1.6;
   ctx.beginPath();
   for (var p2 = 0; p2 < profile.length; p2++) {
-    var x2 = pad + (profile[p2].d / maxD) * (W - pad * 2);
-    var y2 = (H - pad) - ((profile[p2].e - minE) / (maxE - minE)) * (H - pad * 2);
-    if (p2 === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);
+    var px = padL + (profile[p2].d / maxD) * plotW;
+    var py = padT + plotH - ((profile[p2].e - minE) / (maxE - minE)) * plotH;
+    if (p2 === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
   }
   ctx.stroke();
 
+  // x-axis km labels
+  ctx.fillStyle = 'rgba(248,242,234,0.6)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  var totalKm = race ? race.kilometers : maxD * KM_PER_MI;
+  var ticks = totalKm > 100 ? 5 : 4;
+  for (var t = 0; t <= ticks; t++) {
+    var km = (totalKm * t) / ticks;
+    var tx = padL + (plotW * t) / ticks;
+    ctx.fillText(Math.round(km) + 'km', tx, H - padB + 6);
+  }
+
   // Marker at current km
-  var mx = pad + (atMi / maxD) * (W - pad * 2);
+  var mx = padL + (atMi / maxD) * plotW;
   ctx.strokeStyle = '#fff';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(mx, pad);
-  ctx.lineTo(mx, H - pad);
+  ctx.moveTo(mx, padT);
+  ctx.lineTo(mx, padT + plotH);
+  ctx.stroke();
+  // Marker dot at current elevation
+  var sample = sampleProfileAtMi(profile, atMi);
+  var my = padT + plotH - ((sample.eM / M_PER_FT - minE) / (maxE - minE)) * plotH;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(mx, my, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = race.color;
+  ctx.lineWidth = 2;
   ctx.stroke();
 }
 
@@ -1416,14 +1421,45 @@ function initMap() {
     attributionControl: { compact: true },
   });
 
-  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-left');
+  // No NavigationControl on the main map — the editorial layout puts
+  // course branding (BCF badge top-left, Layers popover top-right) in
+  // those slots. Wild Goose's e2e suite has an explicit assertion
+  // against this. Scale bar at the bottom is the one MapLibre control
+  // we keep for situational scale awareness.
   map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }));
 
   map.on('load', function() {
-    ['roads_other', 'roads_bridges_other', 'roads_bridges_other_casing',
-     'roads_tunnels_other', 'roads_tunnels_other_casing', 'roads_labels_minor'].forEach(function(id) {
-      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
-    });
+    // Add the AWS Terrarium hillshade overlay on top of OpenFreeMap's
+    // Liberty style. beforeId targets one of Liberty's label layers
+    // so labels stay on top of the shading. We find the first symbol
+    // layer (OMT labels are all symbol-type) and insert hillshade
+    // just before it.
+    if (!map.getSource('hillshade-dem')) {
+      map.addSource('hillshade-dem', {
+        type: 'raster-dem',
+        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+        tileSize: 256, maxzoom: 15, encoding: 'terrarium',
+      });
+    }
+    var firstSymbolId = null;
+    var styleLayers = map.getStyle().layers;
+    for (var li = 0; li < styleLayers.length; li++) {
+      if (styleLayers[li].type === 'symbol') { firstSymbolId = styleLayers[li].id; break; }
+    }
+    map.addLayer({
+      id: 'hillshade',
+      type: 'hillshade',
+      source: 'hillshade-dem',
+      paint: {
+        // Higher exaggeration than other FSS races — the badlands
+        // carry the visual story for Gran Fondo. Warm shadow + cream
+        // highlight keep the rust palette consistent.
+        'hillshade-exaggeration': 0.7,
+        'hillshade-shadow-color': '#5e4226',
+        'hillshade-highlight-color': '#fff5d8',
+        'hillshade-accent-color': '#9e6e36',
+      },
+    }, firstSymbolId);
 
     addLoopLayers();
     precomputeSnappedTurns();

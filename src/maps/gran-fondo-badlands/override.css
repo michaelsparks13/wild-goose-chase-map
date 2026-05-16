@@ -549,6 +549,22 @@ body.race-page.race-gran-fondo-badlands {
   color: var(--sage-quiet);
 }
 
+/* Weather panel was originally designed to live as a 340-380px wide
+ * sticky sidebar beside the map. Our override.js's relocateWeatherPanel()
+ * lifts it into a full-width .essentials section instead. The shared
+ * weather.css width rules at >=1024px / >=1440px stick the panel at
+ * 340/380px even after relocation, leaving a huge empty gap on the
+ * right. Reset to fill the parent. */
+.race-gran-fondo-badlands section.essentials .weather-panel {
+  width: 100%;
+  max-width: none;
+  background: var(--paper-card);
+  flex-shrink: initial;
+}
+.race-gran-fondo-badlands section.essentials .weather-panel .weather-toggle-btn {
+  display: none;
+}
+
 /* ─── Course simulator (relocated into essentials) ─────────────────── */
 
 /* Bust the .essentials 720px reading-width cap for the sim section — at
@@ -778,7 +794,13 @@ body.race-page.race-gran-fondo-badlands {
   height: 100%;
   display: block;
 }
-.race-gran-fondo-badlands .terrain-wrap { height: 140px; }
+.race-gran-fondo-badlands .terrain-wrap {
+  height: 160px;
+  background: #1c1310;
+  padding: 0;
+  border: none;
+}
+.race-gran-fondo-badlands #simTerrain { width: 100%; height: 100%; display: block; }
 .race-gran-fondo-badlands .runner-info {
   position: absolute;
   top: 10px; left: 12px;

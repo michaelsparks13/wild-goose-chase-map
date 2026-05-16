@@ -143,6 +143,22 @@ function aidTableDistHeader(theme) {
   return theme.displayUnits === 'km' ? 'Km' : 'Mile';
 }
 
+// Editorial-section subtitles. The race-shell.html template has three
+// "essentials" sections whose subs default to Tinman/triathlon copy
+// ("Run leg only", "Run-leg timing", "Tinman half — Sprint and Olympic").
+// Themes override these via `theme.editorialCopy.{profileSub,aidSub,daySub}`.
+// Fallbacks preserve the historical Tinman copy so existing races
+// without the override (Wild Goose, Tinman, Escarpment, etc.) render
+// identically until each is migrated.
+function editorialCopy(theme) {
+  const c = (theme && theme.editorialCopy) || {};
+  return {
+    profileSub: c.profileSub || 'Run leg only',
+    aidSub:     c.aidSub     || 'All stocks on-course for the run leg. Pass numbers reflect the Tinman half — Sprint and Olympic see the early stations only.',
+    daySub:     c.daySub     || 'Run-leg timing only. Swim/bike timing is on the host race site.',
+  };
+}
+
 function buildDayGridRows(theme) {
   const rd = theme.raceDay || {};
   const rows = [];
@@ -466,6 +482,9 @@ function buildMap(slug, templates) {
       .replace(/{{SIM_VIEW}}/g, simView)
       .replace(/{{AID_TABLE_ROWS}}/g, buildAidTableRows(t))
       .replace(/{{AID_TABLE_DIST_HEADER}}/g, aidTableDistHeader(t))
+      .replace(/{{PROFILE_SUB}}/g, escapeHtml(editorialCopy(t).profileSub))
+      .replace(/{{AID_SUB}}/g, escapeHtml(editorialCopy(t).aidSub))
+      .replace(/{{DAY_SUB}}/g, escapeHtml(editorialCopy(t).daySub))
       .replace(/{{DAY_GRID_ROWS}}/g, buildDayGridRows(t))
       .replace(/{{LOGISTICS_PARKING}}/g, escapeHtml(t.logistics.parking))
       .replace(/{{LOGISTICS_PACKET}}/g, escapeHtml(t.logistics.packetPickup))
