@@ -1,0 +1,74 @@
+[
+  {
+    "name": "Badlands Community Facility — Start / Finish",
+    "caption": "Race HQ. Riders roll out east into the Red Deer River valley at gun time.",
+    "kilometer": 0.0,
+    "coords": [-112.704970, 51.466500],
+    "pano": "Sit6jDAoWQVTWqVMumVUtw",
+    "yaw": 326.40,
+    "pitch": 11.17
+  },
+  {
+    "name": "Horsethief Canyon overlook",
+    "caption": "First sweeping hoodoo + Red Deer River valley view along North Dinosaur Trail.",
+    "kilometer": 13.0,
+    "coords": [-112.851935, 51.510724],
+    "pano": "WMqU4g4cpariQUw1QdsaxQ",
+    "yaw": 117.91,
+    "pitch": 10.95
+  },
+  {
+    "name": "Bleriot Ferry crossing",
+    "caption": "Working cable ferry on the Red Deer River — yield to volunteers, single-file across.",
+    "kilometer": 24.5,
+    "coords": [-112.883805, 51.573053],
+    "pano": "jjHdSNkBLED5nww9rv8inw",
+    "yaw": 347.91,
+    "pitch": 7.14
+  },
+  {
+    "name": "Wayne / Rosebud Coulee descent",
+    "caption": "One of eleven historic single-lane bridges descending into the Rosebud Creek coulee.",
+    "kilometer": 58.0,
+    "coords": [-112.666414, 51.403842],
+    "pano": "q2XJEjTsALZ4eo_IeF2T8g",
+    "yaw": 96.49,
+    "pitch": 0
+  },
+  {
+    "name": "Last Chance Saloon · Bacon Station turnaround",
+    "caption": "Triceratops turnaround. Bacon at the Bacon Station is real — slow down for it.",
+    "kilometer": 61.2,
+    "coords": [-112.659962, 51.383210],
+    "pano": "8kmi_ZSUSuNOiIKhGkSHhA",
+    "yaw": 210.01,
+    "pitch": 1.40
+  },
+  {
+    "name": "Hoodoo Trail formations",
+    "caption": "The classic roadside hoodoos between East Coulee and the Atlas Coal Mine.",
+    "kilometer": 82.0,
+    "coords": [-112.478353, 51.333039],
+    "pano": "J04NsL67JkA8aLJ7cq2v7Q",
+    "yaw": 330.08,
+    "pitch": 14.02
+  },
+  {
+    "name": "Hwy 570 prairie outpost",
+    "caption": "Range Road 16-0 aid stop — Brontosaurus-only deep prairie crossing.",
+    "kilometer": 111.6,
+    "coords": [-112.110475, 51.270592],
+    "pano": "4Myek4e5TrB9lhEf4UhKbA",
+    "yaw": 275.43,
+    "pitch": 10.07
+  },
+  {
+    "name": "Dorothy Community Centre turnaround",
+    "caption": "Brontosaurus eastward turnaround — ghost-town grain elevators on the prairie.",
+    "kilometer": 127.5,
+    "coords": [-112.328867, 51.282594],
+    "pano": "IzM7x4pgwXvDkxajxTqi-A",
+    "yaw": 109.74,
+    "pitch": 8.46
+  }
+]
