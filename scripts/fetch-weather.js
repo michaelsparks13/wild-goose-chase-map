@@ -33,6 +33,7 @@ const RACE_DATES = {
   'golden-leaf': { month: 9, day: 27 },
   'manitous-revenge': { month: 7, day: 19 },
   'tinman': { month: 6, day: 27 },
+  'gran-fondo-badlands': { month: 7, day: 4 },
 };
 const raceDate = RACE_DATES[slug] || { month: 9, day: 1 };
 

@@ -991,3 +991,43 @@ Use `['Noto Sans Medium']` for all text layers. Glyphs are hosted by Protomaps.
 | Golden Leaf Half Marathon | Aspen, CO | Point-to-point trail | `/maps/golden-leaf/` | Migrated |
 | Manitou's Revenge | Catskill Mountains, NY | Point-to-point | `/maps/manitous-revenge/` | Migrated |
 | Shawangunk Ridge Trail Run 70M | Shawangunk Ridge, NY | Point-to-point | `/maps/shawangunk-ridge/` | GPX only |
+| Tupper Lake Tinman Triathlon | Tupper Lake, NY | Triathlon (run leg) | `/maps/tupper-lake-tinman/` | Migrated |
+| Javelina Jundred | McDowell Mountain Park, AZ | Multi-loop ultra | `/maps/javelina-jundred/` | Migrated |
+| TransRockies Gran Fondo Badlands | Drumheller, AB · Canada | Multi-distance road cycling | `/maps/gran-fondo-badlands/` | Migrated · km units |
+
+## Per-race display units
+
+Every race map renders distances in miles by default — internal data is
+stored in miles, profile sample points use mi/ft, build.js's
+`buildAidTableRows` and `buildDayGridRows` emit "Mile" headers and
+"Cutoff · mile X" labels. To opt into native km display:
+
+1. Set `displayUnits: 'km'` at the top level of the race theme
+   (`src/themes/<slug>.js`).
+2. Populate `kilometer` on every `aidStations[]` entry — the editorial
+   table and on-map markers use this value when the flag is on.
+3. The renderer (`override.js`) reads the same flag via the inlined
+   `DISPLAY_UNITS` global and labels stats / pace / scrubber labels in km.
+
+Currently set on: `gran-fondo-badlands` only. The build.js change is
+back-compatible — when `displayUnits` is unset, all existing races keep
+their mile labels and `Mile` column header.
+
+## Multi-distance vs multi-loop-assembly formats
+
+Two patterns exist in the catalog. Pick the closest match for new builds:
+
+- **Multi-loop-assembly** (`wild-goose`): a small set of named loops
+  (Pink, Blue, Checkered) compose into many race distances — the 100M
+  is `[pink, checkered, blue, pink, checkered, ...]`. Theme declares
+  `loops[]` once with cues + colors; each `distances[]` carries an
+  `assembly[]` of `{ loopId, direction }` steps. Within-loop cue list
+  is reusable across every distance that includes that loop.
+- **Multi-distance, single-loop-per-distance** (`gran-fondo-badlands`):
+  each distance has its own complete loop GPX (Brontosaurus 163K
+  ≠ T-Rex 100K geometry; they share an aid spine but the courses
+  diverge at separate turnaround points). Theme declares `loops[]`
+  with one entry per distance; `distances[]` assembly is length-1.
+  The override.js renderer suppresses the assembly chip strip when
+  `assembly.length <= 1` so the directions panel reads as a single
+  per-distance cue list.
