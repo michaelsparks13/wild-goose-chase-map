@@ -381,7 +381,7 @@ function renderAidMarkers() {
         '<div class="aid-popup__stocked">' + escapeHtml(stn.stocked) + '</div>' +
       '</div>';
 
-    var marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+    var marker = new maplibregl.Marker({ element: el, anchor: 'center', opacityWhenCovered: '1' })
       .setLngLat(coord)
       .setPopup(new maplibregl.Popup({ offset: 16, maxWidth: '300px' }).setHTML(popupHtml))
       .addTo(map);
@@ -468,7 +468,7 @@ function ensureHqMarker() {
       '<text x="16" y="20" text-anchor="middle" font-size="11" font-weight="700" fill="#fff" font-family="Big Shoulders Display, sans-serif" letter-spacing="0.5">BCF</text>' +
     '</svg>'
   );
-  hqMarker = new maplibregl.Marker({ element: el, anchor: 'center' })
+  hqMarker = new maplibregl.Marker({ element: el, anchor: 'center', opacityWhenCovered: '1' })
     .setLngLat(HQ)
     .setPopup(new maplibregl.Popup({ offset: 18 }).setHTML(
       '<div class="aid-popup"><div class="aid-popup__name">Badlands Community Facility</div><div class="aid-popup__km">Start / Finish · 80 Veterans Way · Drumheller</div></div>'
@@ -493,8 +493,14 @@ function toggleAid() {
 // of the rider after page load.
 function applyTerrain(animate) {
   if (terrain3D) {
-    map.setTerrain({ source: 'hillshade-dem', exaggeration: 1.4 });
-    map.easeTo({ pitch: 50, duration: animate ? 800 : 0 });
+    // Exaggeration 1.0 keeps the badlands valley readable in
+    // perspective without distorting Liberty's labels off-screen.
+    // Earlier we used 1.4 and labels at the valley floor pushed
+    // behind hills (terrain occlusion check hid them).
+    map.setTerrain({ source: 'hillshade-dem', exaggeration: 1.0 });
+    // Pitch 45° instead of 50° — same perspective drama, less
+    // angle for labels + markers to be raycast as "covered".
+    map.easeTo({ pitch: 45, duration: animate ? 800 : 0 });
   } else {
     map.setTerrain(null);
     map.easeTo({ pitch: 0, duration: animate ? 800 : 0 });
