@@ -68,9 +68,13 @@ describe('gran-fondo-badlands · theme + config', () => {
       const fc = JSON.parse(readFileSync(join(DATA_DIR, id + '-turns.geojson'), 'utf8'));
       expect(fc.type).toBe('FeatureCollection');
       expect(fc.features.length).toBeGreaterThan(5);
-      // a meaningful share of turns should have OSM-resolved labels
+      // OSM enrichment should resolve street names for the vast majority
+      // of turns. Current floor is 82% (Triceratops, planned-route GPX
+      // has only 11 turns; the 2 unnamed are the BCF start + finish).
+      // Brontosaurus + T-Rex hit 100%. Tighten the gate to 0.80 so a
+      // GPX swap that silently degrades naming breaks the build.
       const named = fc.features.filter(f => f.properties.label).length;
-      expect(named / fc.features.length).toBeGreaterThanOrEqual(0.6);
+      expect(named / fc.features.length).toBeGreaterThanOrEqual(0.80);
     }
   });
 });
