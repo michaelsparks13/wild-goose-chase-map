@@ -49,7 +49,14 @@ var BASEMAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
 var map;
 var aidOn = true;
-var terrain3D = true;  // default ON — the badlands geology IS the visual story
+// 3D terrain default is OFF: MapLibre 5.x + OpenFreeMap Liberty drops
+// town labels under pitch + terrain (the symbols are queryable but
+// the GL paint step culls them, and no exposed style property fixes
+// it). Riders need the labels for orientation more than they need
+// the perspective tilt. The hillshade alone (exaggeration cranked
+// to 1.1) carries the dramatic badlands geology look; 3D is one
+// click away in the Layers popover for riders who want it.
+var terrain3D = false;
 var allRoutesOn = false;
 var hqMarker = null;
 var aidMarkers = [];
@@ -1468,10 +1475,12 @@ function initMap() {
       type: 'hillshade',
       source: 'hillshade-dem',
       paint: {
-        // Higher exaggeration than other FSS races — the badlands
-        // carry the visual story for Gran Fondo. Warm shadow + cream
-        // highlight keep the rust palette consistent.
-        'hillshade-exaggeration': 0.7,
+        // Maxed at 1.0 (MapLibre caps hillshade-exaggeration there)
+        // — since we default to 2D, the hillshade does ALL the
+        // heavy lifting for the badlands geology story. Warm rust
+        // shadow + cream highlight match the rust palette and pull
+        // out the dramatic Red Deer River bluffs.
+        'hillshade-exaggeration': 1.0,
         'hillshade-shadow-color': '#5e4226',
         'hillshade-highlight-color': '#fff5d8',
         'hillshade-accent-color': '#9e6e36',
