@@ -101,4 +101,49 @@ describe('gran-fondo-badlands · built HTML', () => {
     const html = readFileSync(DIST_HTML, 'utf8');
     expect(html).toContain('#A84D24');
   });
+
+  it('Feature 1: active-segment highlighting wiring is present', () => {
+    const html = readFileSync(DIST_HTML, 'utf8');
+    // Source + halo + line layers + the snapped-turn precompute
+    expect(html).toContain('dir-active-segment');
+    expect(html).toContain('dir-active-segment-halo');
+    expect(html).toContain('dir-active-segment-line');
+    expect(html).toContain('precomputeSnappedTurns');
+    expect(html).toContain('SNAPPED_TURN_MILES');
+    expect(html).toContain('setActiveTurnByRow');
+    // Zoom-to-step preference persistence
+    expect(html).toContain('granFondoBadlands.zoomToStep');
+  });
+
+  it('Feature 2: cycling simulator playback wiring is present', () => {
+    const html = readFileSync(DIST_HTML, 'utf8');
+    // Simulator state + render functions
+    expect(html).toContain('initSimulator');
+    expect(html).toContain('relocateSimulator');
+    expect(html).toContain('drawSimCourse');
+    expect(html).toContain('drawSimTerrain');
+    expect(html).toContain('sampleProfileAtMi');
+    expect(html).toContain('simTick');
+    // km/h pace label (not mi pace)
+    expect(html).toContain('km/h');
+    // The MVP banner is gone
+    expect(html).not.toContain('Cycling simulator playback is in active development');
+  });
+
+  it('Feature 3: editorial aid table renders km header for this race', () => {
+    const html = readFileSync(DIST_HTML, 'utf8');
+    expect(html).toContain('aid-table__mile">Km<');
+    // Cutoff labels say "km" not "mile"
+    expect(html).toContain('Cutoff · km');
+    expect(html).not.toContain('Cutoff · mile');
+  });
+});
+
+describe('gran-fondo-badlands · regression — other races still render in miles', () => {
+  it('Wild Goose still uses Mile in the editorial aid table', () => {
+    const wgPath = join(ROOT, 'dist', 'maps', 'wild-goose', 'index.html');
+    if (!existsSync(wgPath)) return; // build hasn't covered this map; skip
+    const html = readFileSync(wgPath, 'utf8');
+    expect(html).toContain('aid-table__mile">Mile<');
+  });
 });

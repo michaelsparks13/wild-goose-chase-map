@@ -349,7 +349,17 @@ body.race-page.race-gran-fondo-badlands {
   cursor: default;
   transition: background 120ms;
 }
-.race-gran-fondo-badlands .loop-cue--turn { cursor: pointer; }
+.race-gran-fondo-badlands .loop-cue--turn,
+.race-gran-fondo-badlands .loop-cue--hazard,
+.race-gran-fondo-badlands .loop-cue--water,
+.race-gran-fondo-badlands .loop-cue--landmark,
+.race-gran-fondo-badlands .loop-cue--surface,
+.race-gran-fondo-badlands .loop-cue--note { cursor: pointer; }
+.race-gran-fondo-badlands .loop-cue--active {
+  background: var(--bone);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.race-gran-fondo-badlands .loop-cue--active .loop-cue__mile { color: var(--accent); }
 .race-gran-fondo-badlands .loop-cue--turn:hover { background: var(--surface-warm); }
 .race-gran-fondo-badlands .loop-cue:last-child { border-bottom: none; }
 .race-gran-fondo-badlands .loop-cue__mile {
@@ -515,18 +525,274 @@ body.race-page.race-gran-fondo-badlands {
   color: var(--sage-quiet);
 }
 
-/* ─── Simulator MVP banner ─────────────────────────────────────────── */
+/* ─── Course simulator (relocated into essentials) ─────────────────── */
 
-.race-gran-fondo-badlands .sim-mvp-banner {
-  margin: 0 0 14px 0;
-  padding: 10px 14px;
-  background: var(--bone);
-  border-left: 3px solid var(--race-brand);
-  border-radius: 4px;
+.race-gran-fondo-badlands .sim-essentials .sim-container {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 16px;
+}
+.race-gran-fondo-badlands .sim-panel {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.race-gran-fondo-badlands .sim-races {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.race-gran-fondo-badlands .sim-race-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px;
+  background: var(--paper-card);
+  border: 1.5px solid #e2d7c2;
+  border-radius: 6px;
+  cursor: pointer;
   font-family: var(--font-body);
+  font-size: 12px;
+  text-align: left;
+  transition: border-color 140ms, transform 140ms;
+}
+.race-gran-fondo-badlands .sim-race-chip:hover { border-color: var(--chip-color); transform: translateY(-1px); }
+.race-gran-fondo-badlands .sim-race-chip.active {
+  border-color: var(--chip-color);
+  box-shadow: 0 0 0 1px var(--chip-color) inset;
+}
+.race-gran-fondo-badlands .sim-race-chip__icon {
+  width: 32px; height: 22px;
+  color: var(--chip-color);
+  flex-shrink: 0;
+}
+.race-gran-fondo-badlands .sim-race-chip__icon svg { width: 100%; height: 100%; }
+.race-gran-fondo-badlands .sim-race-chip__label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  flex: 1;
+}
+.race-gran-fondo-badlands .sim-race-chip__km {
+  font-family: var(--font-micro);
+  font-size: 10.5px;
+  color: var(--sage-quiet);
+}
+.race-gran-fondo-badlands .goal-time-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface-warm);
+  border-radius: 6px;
+}
+.race-gran-fondo-badlands .goal-label {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sage-quiet);
+}
+.race-gran-fondo-badlands .goal-inputs {
+  display: inline-flex; align-items: center; gap: 2px;
+}
+.race-gran-fondo-badlands .goal-input {
+  width: 44px;
+  padding: 4px 6px;
+  border: 1px solid #d8cdb6;
+  border-radius: 3px;
+  background: var(--paper-card);
+  font-family: var(--font-micro);
   font-size: 13px;
+  text-align: center;
+  color: var(--ink);
+}
+.race-gran-fondo-badlands .goal-colon { font-family: var(--font-micro); color: var(--ink); }
+.race-gran-fondo-badlands .goal-pace {
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.race-gran-fondo-badlands .scrubber { padding: 4px 0; }
+.race-gran-fondo-badlands .scrub-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.race-gran-fondo-badlands .play-btn {
+  width: 36px; height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: var(--race-brand);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.race-gran-fondo-badlands .play-btn:hover { background: var(--primary-dark); }
+.race-gran-fondo-badlands .scrub-track {
+  position: relative;
+  flex: 1;
+  height: 32px;
+  cursor: pointer;
+}
+.race-gran-fondo-badlands .scrub-bg {
+  position: absolute; left: 0; right: 0; top: 50%;
+  transform: translateY(-50%);
+  height: 6px;
+  background: var(--surface-warm);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.race-gran-fondo-badlands .scrub-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--race-brand);
+  transition: width 80ms;
+}
+.race-gran-fondo-badlands .scrub-handle {
+  position: absolute; top: 50%; left: 0%;
+  transform: translate(-50%, -50%);
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--paper-card);
+  border: 2px solid var(--race-brand);
+  pointer-events: none;
+}
+.race-gran-fondo-badlands .speed-btns {
+  display: inline-flex; gap: 2px;
+}
+.race-gran-fondo-badlands .speed-btn {
+  padding: 5px 8px;
+  background: var(--paper-card);
+  border: 1px solid #d8cdb6;
+  border-radius: 3px;
+  font-family: var(--font-micro);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sage-quiet);
+  cursor: pointer;
+}
+.race-gran-fondo-badlands .speed-btn.active {
+  background: var(--race-brand);
+  color: #fff;
+  border-color: var(--race-brand);
+}
+.race-gran-fondo-badlands .sim-clock {
+  padding: 10px 12px;
+  background: var(--paper-card);
+  border: 1px solid #ece2cc;
+  border-radius: 6px;
+}
+.race-gran-fondo-badlands .clock-time {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.race-gran-fondo-badlands .clock-label {
+  font-family: var(--font-micro);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sage-quiet);
+}
+.race-gran-fondo-badlands .clock-finish {
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-size: 12px;
   color: var(--text-secondary);
-  line-height: 1.5;
+}
+.race-gran-fondo-badlands .sim-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.race-gran-fondo-badlands .sim-stat {
+  background: var(--paper-card);
+  border: 1px solid #ece2cc;
+  border-radius: 6px;
+  padding: 8px 10px;
+  text-align: center;
+}
+.race-gran-fondo-badlands .sim-stat .val {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--race-brand);
+  line-height: 1.1;
+}
+.race-gran-fondo-badlands .sim-stat .label {
+  font-family: var(--font-micro);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sage-quiet);
+  margin-top: 2px;
+}
+.race-gran-fondo-badlands .sim-visual {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.race-gran-fondo-badlands .course-map-wrap {
+  position: relative;
+  background: #1c1310;
+  border-radius: 6px;
+  overflow: hidden;
+  height: 320px;
+}
+.race-gran-fondo-badlands #courseMapCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.race-gran-fondo-badlands .terrain-wrap { height: 140px; }
+.race-gran-fondo-badlands .runner-info {
+  position: absolute;
+  top: 10px; left: 12px;
+  color: var(--paper);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+.race-gran-fondo-badlands .runner-ele {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.race-gran-fondo-badlands .runner-meta {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  color: rgba(248,242,234,0.75);
+  letter-spacing: 0.04em;
+  margin-top: 1px;
+}
+.race-gran-fondo-badlands .loop-pill {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-family: var(--font-micro);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.race-gran-fondo-badlands .terrain-wrap {
+  background: var(--paper-card);
+  border: 1px solid #ece2cc;
+  border-radius: 6px;
+  padding: 8px;
+}
+.race-gran-fondo-badlands #simTerrain { width: 100%; display: block; }
+
+@media (max-width: 1023px) {
+  .race-gran-fondo-badlands .sim-essentials .sim-container {
+    grid-template-columns: 1fr;
+  }
+  .race-gran-fondo-badlands .sim-races {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .race-gran-fondo-badlands .sim-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 /* ─── Mobile chrome shrink (≤ 1023px) ──────────────────────────────── */

@@ -102,6 +102,94 @@ function getCoordAtMile(loopId, mile) {
   return coords[coords.length - 1];
 }
 
+// Walk a loop's coordinate array between two cumulative miles, returning
+// the polyline that connects them. Used to draw the highlighted segment
+// for the active turn (turn[idx] → turn[idx+1]).
+function coordsBetweenMiles(loopId, startMi, endMi) {
+  var loop = LOOPS[loopId];
+  if (!loop || !loop.geojson) return [];
+  var coords = loop.geojson.geometry.coordinates;
+  var dists = loopCoordDistances[loopId];
+  if (endMi < startMi) { var tmp = startMi; startMi = endMi; endMi = tmp; }
+  var out = [];
+  out.push(getCoordAtMile(loopId, startMi));
+  for (var j = 1; j < dists.length; j++) {
+    if (dists[j] > startMi && dists[j] < endMi) out.push(coords[j]);
+  }
+  out.push(getCoordAtMile(loopId, endMi));
+  return out;
+}
+
+function distSqPointToSegment(p, a, b) {
+  var midLat = (p[1] + a[1] + b[1]) / 3;
+  var cosLat = Math.cos(midLat * Math.PI / 180);
+  var ax = a[0] * cosLat, ay = a[1];
+  var bx = b[0] * cosLat, by = b[1];
+  var px = p[0] * cosLat, py = p[1];
+  var dx = bx - ax, dy = by - ay;
+  var len2 = dx * dx + dy * dy;
+  if (len2 === 0) return { d2: (px - ax) * (px - ax) + (py - ay) * (py - ay), t: 0 };
+  var t = ((px - ax) * dx + (py - ay) * dy) / len2;
+  if (t < 0) t = 0; else if (t > 1) t = 1;
+  var cx = ax + t * dx, cy = ay + t * dy;
+  return { d2: (px - cx) * (px - cx) + (py - cy) * (py - cy), t: t };
+}
+
+// Project each TBT turn onto the rendered geojson polyline so click-to-
+// highlight lights up the correct segment. The OSRM-derived turn
+// locations sit a few feet off the simplified rendered route at zoom
+// crossings; without this projection the segment highlight lands on a
+// different road than the cue text names.
+// SNAPPED_TURN_MILES[loopId][i] — projected cumulative mile
+// SNAPPED_TURN_COORDS[loopId][i] — projected [lng,lat] on the route
+var SNAPPED_TURN_MILES = {};
+var SNAPPED_TURN_COORDS = {};
+function precomputeSnappedTurns() {
+  if (typeof LOOP_TURNS === 'undefined') return;
+  var GOOD_MATCH_FT = 250; // first-good-match window — wider than Tinman's 150 ft because cycling GPX is recorded at higher speed
+  var GOOD_MATCH_DEG = GOOD_MATCH_FT / 364000;
+  var GOOD_MATCH_DEG2 = GOOD_MATCH_DEG * GOOD_MATCH_DEG;
+  Object.keys(LOOP_TURNS).forEach(function(loopId) {
+    var turns = LOOP_TURNS[loopId] || [];
+    var loop = LOOPS[loopId];
+    if (!loop || !loop.geojson || !turns.length) {
+      SNAPPED_TURN_MILES[loopId] = [];
+      SNAPPED_TURN_COORDS[loopId] = [];
+      return;
+    }
+    var coords = loop.geojson.geometry.coordinates;
+    var dists = loopCoordDistances[loopId];
+    var miles = new Array(turns.length);
+    var pts = new Array(turns.length);
+    var cursorMile = 0;
+    var EPS_BACKTRACK = 1 / 5280; // 1 ft tolerance at intersections
+    for (var i = 0; i < turns.length; i++) {
+      var t = turns[i];
+      if (!t.location) { miles[i] = cursorMile; pts[i] = coords[0]; continue; }
+      var firstGood = null;
+      var bestOverall = { d2: Infinity, mile: cursorMile, point: t.location };
+      var minMile = cursorMile - EPS_BACKTRACK;
+      for (var j = 1; j < coords.length; j++) {
+        if (dists[j] < minMile) continue;
+        var r = distSqPointToSegment(t.location, coords[j - 1], coords[j]);
+        var ax = coords[j - 1][0], ay = coords[j - 1][1];
+        var bx = coords[j][0],     by = coords[j][1];
+        var snapMile = dists[j - 1] + r.t * (dists[j] - dists[j - 1]);
+        if (snapMile < minMile) snapMile = minMile;
+        var snapPt = [ax + r.t * (bx - ax), ay + r.t * (by - ay)];
+        if (r.d2 < bestOverall.d2) bestOverall = { d2: r.d2, mile: snapMile, point: snapPt };
+        if (firstGood == null && r.d2 <= GOOD_MATCH_DEG2) firstGood = { d2: r.d2, mile: snapMile, point: snapPt };
+      }
+      var winner = firstGood || bestOverall;
+      miles[i] = winner.mile;
+      pts[i] = winner.point;
+      cursorMile = winner.mile;
+    }
+    SNAPPED_TURN_MILES[loopId] = miles;
+    SNAPPED_TURN_COORDS[loopId] = pts;
+  });
+}
+
 function loopBounds(loopId) {
   var loop = LOOPS[loopId];
   if (!loop || !loop.geojson) return null;
@@ -162,6 +250,39 @@ function addLoopLayers() {
         'line-width': ['interpolate', ['linear'], ['zoom'], 9, 2.5, 14, 5.5, 18, 9],
       },
     });
+  });
+
+  // Active-segment overlay — drawn ON TOP of all course layers so the
+  // halo + dark line read above the route. Source starts empty.
+  map.addSource('dir-active-segment', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  // Seed with a fallback color; we read the computed --accent token at
+  // runtime below since CSS vars don't apply inside WebGL paint values.
+  var accentColor = '#8B2668';
+  try {
+    var v = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    if (v) accentColor = v;
+  } catch (e) { /* noop */ }
+  map.addLayer({
+    id: 'dir-active-segment-halo',
+    type: 'line',
+    source: 'dir-active-segment',
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: {
+      'line-color': accentColor,
+      'line-width': 11,
+      'line-opacity': 0.7,
+      'line-blur': 2,
+    },
+  });
+  map.addLayer({
+    id: 'dir-active-segment-line',
+    type: 'line',
+    source: 'dir-active-segment',
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: {
+      'line-color': '#1A1A1A',
+      'line-width': 3.5,
+    },
   });
 }
 
@@ -347,6 +468,7 @@ document.addEventListener('keydown', function(ev) {
 function selectRace(raceId) {
   if (!RACES[raceId]) return;
   currentRaceId = raceId;
+  clearActiveSegment();
   document.querySelectorAll('.dir-race-tab').forEach(function(btn) {
     var on = btn.getAttribute('data-race') === raceId;
     btn.classList.toggle('active', on);
@@ -408,9 +530,8 @@ function renderDirectionsList() {
       var arrow = directionArrow(r.direction, r.intensity);
       var dirLabel = directionLabel(r.direction, r.intensity);
       var trail = r.label ? ' <span class="loop-cue__target">' + escapeHtml(r.label) + '</span>' : '';
-      var locAttr = r.location ? '[' + r.location[0] + ',' + r.location[1] + ']' : 'null';
       return '<li class="loop-cue loop-cue--turn loop-cue--turn-' + (r.direction || 'straight') +
-        '" data-kind="turn" onclick="flyToCueLocation(' + locAttr + ')">' +
+        '" data-kind="turn" data-turn-idx="' + r.idx + '">' +
         '<span class="loop-cue__mile">' + km + '<small>km</small></span>' +
         '<span class="loop-cue__icon">' + arrow + '</span>' +
         '<span class="loop-cue__body"><strong>' + dirLabel + '</strong>' + trail + '</span>' +
@@ -423,13 +544,38 @@ function renderDirectionsList() {
       surface:  '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 12 14 4M2 8l4 4M8 14l4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
       note:     '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3.5M8 11v.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
     };
-    return '<li class="loop-cue loop-cue--' + r.kind + '" data-kind="' + r.kind + '">' +
+    // Resolve a coord for cue rows so clicking a hazard/water/landmark
+    // can flyTo the exact point (mile-derived from the rendered route).
+    var cueCoord = getCoordAtMile(loopId, r.mile);
+    var coordAttr = ' data-coord=&quot;[' + cueCoord[0] + ',' + cueCoord[1] + ']&quot;';
+    return '<li class="loop-cue loop-cue--' + r.kind + '" data-kind="' + r.kind + '"' + coordAttr.replace(/&quot;/g, '"') + '>' +
       '<span class="loop-cue__mile">' + km + '<small>km</small></span>' +
       '<span class="loop-cue__icon">' + (iconMap[r.kind] || iconMap.note) + '</span>' +
       '<span class="loop-cue__body">' + escapeHtml(r.text) + '</span>' +
     '</li>';
   }).join('');
   setHtml(ol, html);
+
+  // Delegate row clicks: turns highlight a route segment; cues fly to
+  // a single point. Wired here (not via inline onclick) so the row el
+  // is in scope for setActiveTurnByRow's row-class toggle.
+  ol.onclick = function(ev) {
+    var li = ev.target.closest && ev.target.closest('li.loop-cue');
+    if (!li) return;
+    var kind = li.getAttribute('data-kind');
+    if (kind === 'turn') {
+      var idx = parseInt(li.getAttribute('data-turn-idx'), 10);
+      if (!isNaN(idx)) setActiveTurnByRow(idx, li);
+    } else {
+      // Hazard / water / landmark / surface — fly to coord, leave
+      // segment highlight cleared since these are point cues.
+      var locAttr = li.getAttribute('data-coord');
+      if (locAttr) {
+        try { flyToCueLocation(JSON.parse(locAttr)); } catch (e) { /* noop */ }
+      }
+      clearActiveSegment();
+    }
+  };
 }
 
 function flyToCueLocation(coord) {
@@ -455,11 +601,77 @@ function directionLabel(dir, intensity) {
   return 'CONTINUE';
 }
 
+// Persisted across reloads; gates ONLY the camera move when a cue is
+// clicked, never the highlight itself. Hydrated from localStorage on
+// boot.
+var zoomToStep = (function() {
+  try {
+    var saved = localStorage.getItem('granFondoBadlands.zoomToStep');
+    if (saved === '0') return false;
+  } catch (e) { /* private mode */ }
+  return true;
+})();
 function setZoomToStep(on) {
-  // Stub for parity with the wild-goose hook; this MVP does not yet
-  // do active-segment highlighting on cue click, only flyTo. Persist
-  // the preference for the future enhancement.
-  try { localStorage.setItem('granFondoBadlands.zoomToStep', on ? '1' : '0'); } catch (e) { /* noop */ }
+  zoomToStep = !!on;
+  try { localStorage.setItem('granFondoBadlands.zoomToStep', zoomToStep ? '1' : '0'); } catch (e) { /* noop */ }
+  var box = document.getElementById('zoomToStepCheckbox');
+  if (box && box.checked !== zoomToStep) box.checked = zoomToStep;
+}
+
+// ─── Active-segment highlighting on cue click ────────────────────────
+// Click a turn row → draw the segment from this turn's snapped mile to
+// the next turn's snapped mile (or the loop end if it's the last turn).
+// Cue rows (hazard/water/landmark) get a single-point highlight via
+// flyToCueLocation. The active row gets a class for visual sync.
+
+var activeRowEl = null;
+
+function clearActiveSegment() {
+  var src = map && map.getSource('dir-active-segment');
+  if (src) src.setData({ type: 'FeatureCollection', features: [] });
+  if (activeRowEl) {
+    activeRowEl.classList.remove('loop-cue--active');
+    activeRowEl = null;
+  }
+}
+
+function setActiveTurnByRow(turnIdx, rowEl) {
+  if (!map || !map.getSource('dir-active-segment')) return;
+  var snapMiles = SNAPPED_TURN_MILES[currentRaceId];
+  var snapPts = SNAPPED_TURN_COORDS[currentRaceId];
+  if (!snapMiles || snapMiles[turnIdx] == null) return;
+  var loopLen = LOOPS[currentRaceId].miles;
+  var startMi = snapMiles[turnIdx];
+  var endMi = (turnIdx + 1 < snapMiles.length) ? snapMiles[turnIdx + 1] : loopLen;
+  var coords = coordsBetweenMiles(currentRaceId, startMi, endMi);
+  map.getSource('dir-active-segment').setData({
+    type: 'FeatureCollection',
+    features: [{
+      type: 'Feature',
+      properties: {},
+      geometry: { type: 'LineString', coordinates: coords },
+    }],
+  });
+
+  if (activeRowEl) activeRowEl.classList.remove('loop-cue--active');
+  if (rowEl) {
+    rowEl.classList.add('loop-cue--active');
+    activeRowEl = rowEl;
+  }
+
+  if (zoomToStep && coords.length >= 2) {
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (var i = 0; i < coords.length; i++) {
+      if (coords[i][0] < minX) minX = coords[i][0];
+      if (coords[i][0] > maxX) maxX = coords[i][0];
+      if (coords[i][1] < minY) minY = coords[i][1];
+      if (coords[i][1] > maxY) maxY = coords[i][1];
+    }
+    var pad = window.innerWidth < 700
+      ? { top: 80, right: 32, bottom: 80, left: 32 }
+      : { top: 100, right: 80, bottom: 100, left: 80 };
+    map.fitBounds([[minX, minY], [maxX, maxY]], { padding: pad, maxZoom: 16, duration: 600 });
+  }
 }
 
 // ─── Aid table (below-map essentials) ────────────────────────────────
@@ -579,32 +791,457 @@ function drawProfile() {
   }
 }
 
-// ─── Simulator stub ──────────────────────────────────────────────────
+// ─── Cycling simulator ───────────────────────────────────────────────
+// 30-second sim for any distance — same playback model as the shared
+// sim-engine.js (which assumes one full simulation = ~30s of real time).
+// What's bike-specific: km / km/h units, no per-mile pace, no swim/T2.
+//
+// State: simProgress (0..1 along the active route), simSpeed (1x/2x/4x),
+// simFinishHours (rider's GOAL hours, separate from playback speed).
+// renderSim() is called every tick + on race-switch + on goal change.
 
-var simSpeed = 1;
+var simProgress = 0;
 var simPlaying = false;
-function togglePlay() {
-  simPlaying = !simPlaying;
-  var btn = document.getElementById('playBtn');
-  if (btn) setHtml(btn, simPlaying ? '&#10074;&#10074;' : '&#9654;');
+var simSpeed = 1;
+var simFinishHours = 6.5;
+var simLastTick = 0;
+var simInitialized = false;
+
+function initSimRaces() {
+  var host = document.getElementById('simRaces');
+  if (!host) return;
+  var html = Object.keys(RACES).map(function(id) {
+    var r = RACES[id];
+    var active = (id === currentRaceId);
+    var dino = (typeof DINO_SVGS !== 'undefined' && DINO_SVGS[r.dinosaur]) ? DINO_SVGS[r.dinosaur] : '';
+    return '<button type="button" class="sim-race-chip' + (active ? ' active' : '') +
+      '" data-sim-race="' + id + '" style="--chip-color:' + r.color + '">' +
+      '<span class="sim-race-chip__icon">' + dino + '</span>' +
+      '<span class="sim-race-chip__label">' + escapeHtml(r.name) + '</span>' +
+      '<span class="sim-race-chip__km">' + r.kilometers + ' km</span>' +
+    '</button>';
+  }).join('');
+  setHtml(host, html);
+  host.onclick = function(ev) {
+    var btn = ev.target.closest && ev.target.closest('.sim-race-chip');
+    if (!btn) return;
+    var id = btn.getAttribute('data-sim-race');
+    if (!id || id === currentRaceId) return;
+    selectRace(id);
+    initSimRaces();
+    // Reset sim state since the route changed
+    simProgress = 0;
+    var pb = document.getElementById('playBtn');
+    if (pb) setHtml(pb, '&#9654;');
+    simPlaying = false;
+    renderSim();
+  };
 }
-function setSpeed(s, btn) {
-  simSpeed = s;
-  document.querySelectorAll('.speed-btn').forEach(function(b) { b.classList.remove('active'); });
-  if (btn) btn.classList.add('active');
-}
+
 function updateGoalTime() {
   var hrsEl = document.getElementById('goalHrs');
   var minsEl = document.getElementById('goalMins');
   if (!hrsEl || !minsEl) return;
   var hrs = parseInt(hrsEl.value, 10) || 0;
   var mins = parseInt(minsEl.value, 10) || 0;
-  var totalH = hrs + mins / 60;
+  simFinishHours = Math.max(0.1, hrs + mins / 60);
+  updateGoalPace();
+  renderSim();
+}
+
+function updateGoalPace() {
   var race = RACES[currentRaceId];
-  if (!race || !totalH) return;
-  var pace = race.kilometers / totalH;
+  if (!race) return;
+  var pace = race.kilometers / simFinishHours;
   var paceEl = document.getElementById('goalPace');
   if (paceEl) setHtml(paceEl, 'Avg pace: <strong>' + pace.toFixed(1) + ' km/h</strong>');
+}
+
+function togglePlay() {
+  simPlaying = !simPlaying;
+  var btn = document.getElementById('playBtn');
+  if (btn) setHtml(btn, simPlaying ? '&#10074;&#10074;' : '&#9654;');
+  if (simPlaying) {
+    if (simProgress >= 0.999) simProgress = 0;
+    simLastTick = performance.now();
+    simTick();
+  }
+}
+
+function setSpeed(s, btn) {
+  simSpeed = s;
+  document.querySelectorAll('.speed-btn').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+}
+
+function simTick() {
+  if (!simPlaying) return;
+  var now = performance.now();
+  var dt = (now - simLastTick) / 1000;
+  simLastTick = now;
+  // 30s of real time = 1 full lap at 1x speed
+  simProgress = Math.min(1, simProgress + (1 / 30) * simSpeed * dt);
+  renderSim();
+  if (simProgress >= 1) {
+    simPlaying = false;
+    var pb = document.getElementById('playBtn');
+    if (pb) setHtml(pb, '&#9654;');
+    return;
+  }
+  requestAnimationFrame(simTick);
+}
+
+function renderSim() {
+  var race = RACES[currentRaceId];
+  var loop = LOOPS[currentRaceId];
+  if (!race || !loop || !loop.geojson || !loop.profile) return;
+
+  var totalKm = race.kilometers;
+  var totalGainM = race.gainM;
+  var currentKm = totalKm * simProgress;
+  var currentMi = currentKm / KM_PER_MI;
+
+  // Stats
+  setText('statDist', currentKm.toFixed(1));
+  setText('statPct', Math.round(simProgress * 100) + '%');
+
+  // Elevation + gain so far via profile sampling
+  var prof = loop.profile;
+  var sample = sampleProfileAtMi(prof, currentMi);
+  setText('statEle', Math.round(sample.eM));
+  setText('statGain', Math.round(sample.gainM));
+  setText('statTotalGain', Math.round(totalGainM));
+  setText('statGrade', sample.grade.toFixed(1) + '%');
+
+  // Clock
+  var elapsedHours = simProgress * simFinishHours;
+  var clockMs = (race.startTime ? parseClockToHours(race.startTime) : 7) * 3600 * 1000 + elapsedHours * 3600 * 1000;
+  setText('clockTime', formatClock(clockMs));
+  setText('clockStart', race.startTime || '7:00 AM');
+  setText('finishTime', formatClock((race.startTime ? parseClockToHours(race.startTime) : 7) * 3600 * 1000 + simFinishHours * 3600 * 1000));
+
+  // Runner readouts above the course canvas
+  setText('runnerDist', 'km ' + currentKm.toFixed(1));
+  setText('runnerMeta', Math.round(sample.eM) + ' m · ' + sample.grade.toFixed(1) + '% grade');
+  var pill = document.getElementById('loopPill');
+  if (pill) {
+    pill.textContent = race.name;
+    pill.style.background = race.color;
+    pill.style.color = '#fff';
+  }
+
+  // Scrubber position
+  var fill = document.getElementById('scrubFill');
+  var handle = document.getElementById('scrubHandle');
+  if (fill) fill.style.width = (simProgress * 100) + '%';
+  if (handle) handle.style.left = (simProgress * 100) + '%';
+
+  // Canvases
+  drawSimCourse(currentMi);
+  drawSimTerrain(currentMi);
+}
+
+function setText(id, v) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = String(v);
+}
+
+// Returns { eM, gainM (gain so far in meters), grade (% over the local 1 km window) }
+function sampleProfileAtMi(profile, atMi) {
+  if (!profile || !profile.length) return { eM: 0, gainM: 0, grade: 0 };
+  // profile entries are { d (mi), e (ft) } — convert to meters
+  var idx = 0;
+  for (var i = 1; i < profile.length; i++) {
+    if (profile[i].d >= atMi) { idx = i; break; }
+    idx = i;
+  }
+  var eFt = profile[idx].e;
+  var eM = eFt * M_PER_FT;
+  // gain so far
+  var gainFt = 0;
+  for (var j = 1; j <= idx; j++) {
+    var d = profile[j].e - profile[j - 1].e;
+    if (d > 0) gainFt += d;
+  }
+  var gainM = gainFt * M_PER_FT;
+  // local grade over a ~1 km window centered on idx
+  var miPerKm = 1 / KM_PER_MI;
+  var halfWin = miPerKm / 2;
+  var lo = idx, hi = idx;
+  while (lo > 0 && profile[idx].d - profile[lo].d < halfWin) lo--;
+  while (hi < profile.length - 1 && profile[hi].d - profile[idx].d < halfWin) hi++;
+  var dMi = Math.max(0.001, profile[hi].d - profile[lo].d);
+  var dFt = profile[hi].e - profile[lo].e;
+  var grade = (dFt / (dMi * 5280)) * 100;
+  return { eM: eM, gainM: gainM, grade: grade };
+}
+
+function parseClockToHours(s) {
+  // "7:00 AM" / "9:15 AM" / "3:45 PM" / "7:45 / 8:30 / 9:15 AM (waves)"
+  if (!s) return 7;
+  var m = String(s).match(/(\d+):(\d+)\s*(AM|PM)?/i);
+  if (!m) return 7;
+  var h = parseInt(m[1], 10);
+  var mn = parseInt(m[2], 10);
+  if (m[3] && m[3].toUpperCase() === 'PM' && h < 12) h += 12;
+  if (m[3] && m[3].toUpperCase() === 'AM' && h === 12) h = 0;
+  return h + mn / 60;
+}
+
+function formatClock(ms) {
+  var d = new Date(ms);
+  var h = d.getUTCHours();
+  var mn = d.getUTCMinutes();
+  var ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if (h === 0) h = 12;
+  return h + ':' + String(mn).padStart(2, '0') + ' ' + ap;
+}
+
+// ─── Sim canvases ────────────────────────────────────────────────────
+
+var simCourseDpr = null;
+var simCourseProj = null;
+
+function drawSimCourse(atMi) {
+  var canvas = document.getElementById('courseMapCanvas');
+  if (!canvas) return;
+  var dpr = Math.max(1, window.devicePixelRatio || 1);
+  var rect = canvas.getBoundingClientRect();
+  var W = rect.width, H = Math.max(220, rect.height || 280);
+  if (simCourseDpr !== dpr || canvas.width !== Math.round(W * dpr)) {
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.height = H + 'px';
+    simCourseDpr = dpr;
+  }
+  var ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  var loop = LOOPS[currentRaceId];
+  var coords = loop.geojson.geometry.coordinates;
+  var pad = 22;
+  // Compute projection (cached per loop+canvas size)
+  var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (var i = 0; i < coords.length; i++) {
+    if (coords[i][0] < minX) minX = coords[i][0];
+    if (coords[i][0] > maxX) maxX = coords[i][0];
+    if (coords[i][1] < minY) minY = coords[i][1];
+    if (coords[i][1] > maxY) maxY = coords[i][1];
+  }
+  var midLat = (minY + maxY) / 2;
+  var cosLat = Math.cos(midLat * Math.PI / 180);
+  var spanX = (maxX - minX) * cosLat;
+  var spanY = (maxY - minY);
+  var scale = Math.min((W - pad * 2) / spanX, (H - pad * 2) / spanY);
+  var ox = pad + ((W - pad * 2) - spanX * scale) / 2;
+  var oy = pad + ((H - pad * 2) - spanY * scale) / 2;
+  function project(c) {
+    var x = ox + (c[0] - minX) * cosLat * scale;
+    var y = (H - oy) - (c[1] - minY) * scale;
+    return [x, y];
+  }
+
+  // Background route line (paper to ink contrast)
+  ctx.strokeStyle = 'rgba(248,242,234,0.25)';
+  ctx.lineWidth = 7;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  for (var k = 0; k < coords.length; k++) {
+    var p = project(coords[k]);
+    if (k === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (var k2 = 0; k2 < coords.length; k2++) {
+    var p2 = project(coords[k2]);
+    if (k2 === 0) ctx.moveTo(p2[0], p2[1]); else ctx.lineTo(p2[0], p2[1]);
+  }
+  ctx.stroke();
+
+  // Completed-so-far overlay in race color
+  var dists = loopCoordDistances[currentRaceId];
+  var race = RACES[currentRaceId];
+  ctx.strokeStyle = race.color;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  var started = false;
+  for (var j = 0; j < coords.length; j++) {
+    if (dists[j] > atMi) break;
+    var pp = project(coords[j]);
+    if (!started) { ctx.moveTo(pp[0], pp[1]); started = true; }
+    else ctx.lineTo(pp[0], pp[1]);
+  }
+  ctx.stroke();
+
+  // Rider dot at current position
+  var riderCoord = getCoordAtMile(currentRaceId, atMi);
+  var rp = project(riderCoord);
+  ctx.fillStyle = race.color;
+  ctx.beginPath();
+  ctx.arc(rp[0], rp[1], 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // BCF marker (start = end)
+  var bcfP = project(coords[0]);
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(bcfP[0], bcfP[1], 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = race.color;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function drawSimTerrain(atMi) {
+  var canvas = document.getElementById('simTerrain');
+  if (!canvas) return;
+  var loop = LOOPS[currentRaceId];
+  var race = RACES[currentRaceId];
+  var profile = loop.profile;
+
+  var dpr = Math.max(1, window.devicePixelRatio || 1);
+  var rect = canvas.getBoundingClientRect();
+  var W = rect.width, H = Math.max(120, rect.height || 140);
+  if (canvas.width !== Math.round(W * dpr)) {
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.height = H + 'px';
+  }
+  var ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  var minE = Infinity, maxE = -Infinity, maxD = 0;
+  for (var i = 0; i < profile.length; i++) {
+    if (profile[i].e < minE) minE = profile[i].e;
+    if (profile[i].e > maxE) maxE = profile[i].e;
+    if (profile[i].d > maxD) maxD = profile[i].d;
+  }
+  if (maxE - minE < 50) { var mid = (maxE + minE) / 2; minE = mid - 25; maxE = mid + 25; }
+
+  var pad = 8;
+  // Filled area
+  ctx.fillStyle = hexToRgba(race.color, 0.35);
+  ctx.beginPath();
+  ctx.moveTo(pad, H - pad);
+  for (var p = 0; p < profile.length; p++) {
+    var x = pad + (profile[p].d / maxD) * (W - pad * 2);
+    var y = (H - pad) - ((profile[p].e - minE) / (maxE - minE)) * (H - pad * 2);
+    ctx.lineTo(x, y);
+  }
+  ctx.lineTo(W - pad, H - pad);
+  ctx.closePath();
+  ctx.fill();
+
+  // Line
+  ctx.strokeStyle = race.color;
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  for (var p2 = 0; p2 < profile.length; p2++) {
+    var x2 = pad + (profile[p2].d / maxD) * (W - pad * 2);
+    var y2 = (H - pad) - ((profile[p2].e - minE) / (maxE - minE)) * (H - pad * 2);
+    if (p2 === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);
+  }
+  ctx.stroke();
+
+  // Marker at current km
+  var mx = pad + (atMi / maxD) * (W - pad * 2);
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(mx, pad);
+  ctx.lineTo(mx, H - pad);
+  ctx.stroke();
+}
+
+function relocateSimulator() {
+  // The race-shell template wraps {{SIM_VIEW}} in a `hidden` div so the
+  // editorial-first layout doesn't surface a sim by default. We lift it
+  // into a dedicated essentials section so cycling-sim playback is
+  // visible without forking the shell template.
+  var sim = document.getElementById('simView');
+  if (!sim) return;
+  var hiddenWrap = sim.parentElement;
+  var section = document.createElement('section');
+  section.className = 'essentials race-day-essentials sim-essentials';
+  section.id = 'essentialsSim';
+  var heading = document.createElement('h2');
+  heading.className = 'essentials__title';
+  heading.textContent = 'Course simulator';
+  var sub = document.createElement('p');
+  sub.className = 'essentials__sub';
+  sub.textContent = 'Set your goal time, hit play, and ride the course at 1x / 2x / 4x. Use the chips to switch distances.';
+  section.appendChild(heading);
+  section.appendChild(sub);
+  sim.classList.add('view', 'active');
+  sim.removeAttribute('hidden');
+  sim.style.display = '';
+  section.appendChild(sim);
+  // Insert just after the .course block (matching the weather panel pattern)
+  var anchor = document.querySelector('.course');
+  if (anchor && anchor.parentNode) {
+    anchor.parentNode.insertBefore(section, anchor.nextSibling);
+  } else {
+    document.querySelector('main')?.appendChild(section);
+  }
+  if (hiddenWrap && hiddenWrap.children.length === 0) hiddenWrap.remove();
+}
+
+function initSimulator() {
+  if (simInitialized) return;
+  simInitialized = true;
+  initSimRaces();
+  // Default goal time per active race — ~22 km/h average for cyclo-cross
+  var race = RACES[currentRaceId];
+  if (race) {
+    var totalH = race.kilometers / 22;
+    document.getElementById('goalHrs').value = Math.floor(totalH);
+    document.getElementById('goalMins').value = Math.round((totalH - Math.floor(totalH)) * 60);
+  }
+  updateGoalTime();
+
+  // Scrubber drag
+  var track = document.getElementById('scrubTrack');
+  if (track) {
+    var scrubbing = false;
+    function scrubTo(e) {
+      var rect = track.getBoundingClientRect();
+      var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      simProgress = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      renderSim();
+    }
+    track.addEventListener('mousedown', function(e) {
+      scrubbing = true; simPlaying = false;
+      var pb = document.getElementById('playBtn');
+      if (pb) setHtml(pb, '&#9654;');
+      scrubTo(e);
+    });
+    window.addEventListener('mousemove', function(e) { if (scrubbing) scrubTo(e); });
+    window.addEventListener('mouseup', function() { scrubbing = false; });
+    track.addEventListener('touchstart', function(e) {
+      scrubbing = true; simPlaying = false;
+      var pb = document.getElementById('playBtn');
+      if (pb) setHtml(pb, '&#9654;');
+      scrubTo(e);
+    }, { passive: true });
+    window.addEventListener('touchmove', function(e) { if (scrubbing) scrubTo(e); }, { passive: true });
+    window.addEventListener('touchend', function() { scrubbing = false; });
+  }
+
+  renderSim();
+  // Re-render canvases on resize
+  var rDraw;
+  window.addEventListener('resize', function() {
+    clearTimeout(rDraw);
+    rDraw = setTimeout(function() { simCourseDpr = null; renderSim(); }, 120);
+  });
 }
 
 // ─── Editorial relocations ───────────────────────────────────────────
@@ -633,15 +1270,10 @@ function relocateWeatherPanel() {
   if (src) src.remove();
 }
 
-function injectSimBanner() {
-  var sim = document.getElementById('simView');
-  if (!sim) return;
-  if (sim.querySelector('.sim-mvp-banner')) return;
-  var banner = document.createElement('div');
-  banner.className = 'sim-mvp-banner';
-  banner.textContent = 'Cycling simulator playback is in active development for Gran Fondo Badlands. For now you can preview the goal-time → average-pace calculator below; full route playback ships in the next refresh.';
-  sim.insertBefore(banner, sim.firstChild);
-}
+// `injectSimBanner` was the placeholder for the MVP-cut sim. The
+// simulator is now real (initSimulator); the banner is no longer
+// needed. Kept as a no-op so older callers / tests don't throw.
+function injectSimBanner() {}
 
 function toggleWeatherPanel() {
   var panel = document.getElementById('weatherPanel');
@@ -671,6 +1303,7 @@ function initMap() {
     });
 
     addLoopLayers();
+    precomputeSnappedTurns();
     setActiveDistance(currentRaceId);
     ensureHqMarker();
     renderAidMarkers();
@@ -680,6 +1313,9 @@ function initMap() {
     updateRaceMeta();
     updateAidTable();
     updateLayersCount();
+    // Hydrate the zoom-to-step checkbox from localStorage on first paint
+    var box = document.getElementById('zoomToStepCheckbox');
+    if (box) box.checked = zoomToStep;
 
     var rDraw;
     window.addEventListener('resize', function() {
@@ -701,8 +1337,8 @@ function startUp() {
   initMap();
   setTimeout(function() {
     relocateWeatherPanel();
-    injectSimBanner();
-    updateGoalTime();
+    relocateSimulator();
+    initSimulator();
   }, 0);
 }
 

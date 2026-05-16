@@ -123,16 +123,24 @@ function buildEditionLine(theme) {
 }
 
 function buildAidTableRows(theme) {
+  const km = theme.displayUnits === 'km';
   return (theme.aidStations || []).map(a => {
     const cutoff = a.cutoff
       ? `<br/><span class="aid-table__cutoff">Cutoff ${escapeHtml(a.cutoff)}</span>`
       : '';
+    const distVal = km && a.kilometer != null
+      ? a.kilometer.toFixed(1)
+      : (a.mile != null ? a.mile.toFixed(1) : '—');
     return `<tr>
-      <td class="aid-table__mile">${a.mile.toFixed(1)}</td>
+      <td class="aid-table__mile">${distVal}</td>
       <td class="aid-table__name">${escapeHtml(a.name)}${cutoff}</td>
       <td class="aid-table__stock">${escapeHtml(a.stocked)}</td>
     </tr>`;
   }).join('\n');
+}
+
+function aidTableDistHeader(theme) {
+  return theme.displayUnits === 'km' ? 'Km' : 'Mile';
 }
 
 function buildDayGridRows(theme) {
@@ -157,10 +165,14 @@ function buildDayGridRows(theme) {
       <dd>${escapeHtml(d.runStartWindow)}<span class="day-grid__sub">${d.runMiles} mi · ${d.runGainFt} ft gain</span></dd>
     </div>`);
   }
-  // Cutoffs
+  // Cutoffs — labels in mile or km depending on theme.displayUnits
+  const km = theme.displayUnits === 'km';
   for (const c of rd.cutoffs || []) {
+    const distLabel = km
+      ? `km ${(c.mile * 1.609344).toFixed(0)}`
+      : `mile ${c.mile}`;
     rows.push(`<div class="day-grid__row">
-      <dt>Cutoff · mile ${c.mile}</dt>
+      <dt>Cutoff · ${distLabel}</dt>
       <dd>${escapeHtml(c.time)}<span class="day-grid__sub">${escapeHtml(c.label)}</span></dd>
     </div>`);
   }
@@ -453,6 +465,7 @@ function buildMap(slug, templates) {
       .replace(/{{MAP_VIEW}}/g, mapView)
       .replace(/{{SIM_VIEW}}/g, simView)
       .replace(/{{AID_TABLE_ROWS}}/g, buildAidTableRows(t))
+      .replace(/{{AID_TABLE_DIST_HEADER}}/g, aidTableDistHeader(t))
       .replace(/{{DAY_GRID_ROWS}}/g, buildDayGridRows(t))
       .replace(/{{LOGISTICS_PARKING}}/g, escapeHtml(t.logistics.parking))
       .replace(/{{LOGISTICS_PACKET}}/g, escapeHtml(t.logistics.packetPickup))
