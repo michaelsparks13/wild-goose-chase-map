@@ -372,10 +372,6 @@ const mapViewHtml = `<div id="mapView" class="view active">
         <input type="checkbox" id="layer3D" onchange="toggle3D()">
         <span class="map-layers__row-text">3D terrain</span>
       </label>
-      <label class="map-layers__row">
-        <input type="checkbox" id="layerAllRoutes" onchange="toggleAllRoutes()">
-        <span class="map-layers__row-text">Show all 4 routes</span>
-      </label>
     </div>
   </div>
   <div class="map-btns" hidden aria-hidden="true">

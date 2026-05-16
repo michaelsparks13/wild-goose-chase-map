@@ -57,7 +57,6 @@ var aidOn = true;
 // to 1.1) carries the dramatic badlands geology look; 3D is one
 // click away in the Layers popover for riders who want it.
 var terrain3D = false;
-var allRoutesOn = false;
 var hqMarker = null;
 var aidMarkers = [];
 var currentRaceId = (typeof DEFAULT_DISTANCE_ID === 'string') ? DEFAULT_DISTANCE_ID : 'brontosaurus';
@@ -297,15 +296,14 @@ function showLoop(id, visible) {
 function setActiveDistance(distanceId) {
   LOOP_IDS.forEach(function(id) {
     var isActive = (id === distanceId);
-    var visible = allRoutesOn || isActive;
-    showLoop(id, visible);
+    showLoop(id, isActive);
     var lineId = 'loop-' + id + '-line';
     var casingId = 'loop-' + id + '-casing';
     if (map.getLayer(lineId)) {
-      map.setPaintProperty(lineId, 'line-opacity', isActive ? 1 : (allRoutesOn ? 0.45 : 0));
+      map.setPaintProperty(lineId, 'line-opacity', isActive ? 1 : 0);
     }
     if (map.getLayer(casingId)) {
-      map.setPaintProperty(casingId, 'line-opacity', isActive ? 0.9 : (allRoutesOn ? 0.35 : 0));
+      map.setPaintProperty(casingId, 'line-opacity', isActive ? 0.9 : 0);
     }
   });
 }
@@ -522,14 +520,6 @@ function toggle3D() {
   applyTerrain(true);
 }
 
-function toggleAllRoutes() {
-  allRoutesOn = !allRoutesOn;
-  var box = document.getElementById('layerAllRoutes');
-  if (box) box.checked = allRoutesOn;
-  setActiveDistance(currentRaceId);
-  updateLayersCount();
-}
-
 function toggleLayersPopover(force) {
   var wrap = document.querySelector('.map-layers');
   if (!wrap) return;
@@ -544,7 +534,6 @@ function updateLayersCount() {
   var n = 0;
   if (aidOn) n++;
   if (terrain3D) n++;
-  if (allRoutesOn) n++;
   var trigger = document.getElementById('mapLayersBtn');
   if (!trigger) return;
   var existing = trigger.querySelector('.map-layers__count');
