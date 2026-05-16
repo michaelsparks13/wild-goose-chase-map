@@ -122,6 +122,19 @@
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.2;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Risk dot — carries the vivid signal color the risk label used to
+ * use as text color (axe-core failed amber-on-cream contrast). */
+.weather-risk-card .risk-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 .weather-risk-card .risk-label {
   font-size: 0.65rem;
@@ -233,8 +246,12 @@
 }
 .weather-day-card .day-precip {
   font-size: 0.6rem;
-  color: #42A5F5;
-  font-weight: 500;
+  /* Darkened from #42A5F5 to #1565C0 (Material blue 800) so the precip
+   * percentage hits WCAG AA 4.5:1 on the cream / paper substrates the
+   * editorial chrome ships. The SVG droplet inside keeps the brighter
+   * #64B5F6 — it's a graphical signal, not text. */
+  color: #1565C0;
+  font-weight: 600;
 }
 
 /* Current conditions */

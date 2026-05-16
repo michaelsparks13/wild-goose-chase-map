@@ -59,6 +59,8 @@ var aidOn = true;
 var terrain3D = false;
 var hqMarker = null;
 var aidMarkers = [];
+var streetviewMarkers = [];
+var streetviewOn = false;
 var currentRaceId = (typeof DEFAULT_DISTANCE_ID === 'string') ? DEFAULT_DISTANCE_ID : 'brontosaurus';
 
 var KM_PER_MI = 1.609344;
@@ -340,6 +342,19 @@ function renderAidMarkers() {
 
     var isStart = (n === 0);
     var isFinish = (n === idxs.length - 1);
+    // For loop courses (start coord === finish coord, within ~50m) the
+    // finish marker would stack directly on top of the start marker.
+    // axe-core flags this as a target-size violation (each obscures
+    // the other down to a sub-pixel hit area), and visually it's
+    // redundant — one rust "S/F" pennant carries the meaning. Skip
+    // the finish marker entirely; let the start marker's popup name
+    // tell the rider "Start / Finish".
+    if (isFinish && !isStart) {
+      var startCoord = LOOPS[currentRaceId].geojson.geometry.coordinates[0];
+      var dx = (coord[0] - startCoord[0]) * 111000 * Math.cos(startCoord[1] * Math.PI / 180);
+      var dy = (coord[1] - startCoord[1]) * 111000;
+      if (Math.hypot(dx, dy) < 50) return; // overlap; skip
+    }
     var el = document.createElement('div');
     el.className = isFinish ? 'aid-marker aid-marker--finish' : (isStart ? 'aid-marker aid-marker--start' : 'aid-marker');
 
@@ -394,6 +409,81 @@ function renderAidMarkers() {
   });
 }
 
+// ─── Street View POI markers ─────────────────────────────────────────
+// Eight scenic Street View panoramas along the course's shared spine
+// (BCF start, Horsethief Canyon, Bleriot Ferry, Wayne coulee, Bacon
+// Station, Hoodoo Trail, Hwy 570, Dorothy ghost town). Toggled together
+// from the Layers popover. Each marker holds a thumbnail popup with a
+// link out to the full Google Maps Street View. Schema-parallel to
+// the Tinman map but simpler: no exit-direction chevron overlay (these
+// are landmarks, not turn cues).
+
+function buildStreetviewPopupHtml(turn) {
+  var thumbUrl =
+    'https://streetviewpixels-pa.googleapis.com/v1/thumbnail' +
+    '?cb_client=maps_sv.tactile&w=720&h=400' +
+    '&panoid=' + encodeURIComponent(turn.pano) +
+    '&yaw=' + turn.yaw +
+    '&pitch=' + turn.pitch;
+
+  var mapsUrl =
+    'https://www.google.com/maps/@?api=1&map_action=pano' +
+    '&pano=' + encodeURIComponent(turn.pano) +
+    '&heading=' + turn.yaw +
+    '&pitch=' + turn.pitch;
+
+  var km = (turn.kilometer != null) ? turn.kilometer.toFixed(1) : '—';
+  var caption = turn.caption ? ('<div class="streetview-caption">' + escapeHtml(turn.caption) + '</div>') : '';
+
+  return (
+    '<div class="streetview-popup-inner">' +
+      '<div class="streetview-title">' + escapeHtml(turn.name) + '</div>' +
+      '<div class="streetview-meta">KM ' + km + '</div>' +
+      '<div class="streetview-photo-wrap">' +
+        '<img class="streetview-photo" src="' + thumbUrl + '" alt="Street View at ' + escapeHtml(turn.name) + '" loading="lazy">' +
+      '</div>' +
+      caption +
+      '<a class="streetview-link" href="' + mapsUrl + '" target="_blank" rel="noopener noreferrer">Open in Google Maps →</a>' +
+    '</div>'
+  );
+}
+
+function clearStreetviewMarkers() {
+  streetviewMarkers.forEach(function(m) { m.remove(); });
+  streetviewMarkers = [];
+}
+
+function renderStreetviewMarkers() {
+  clearStreetviewMarkers();
+  if (!streetviewOn) return;
+  if (typeof STREETVIEW_TURNS === 'undefined' || !STREETVIEW_TURNS.length) return;
+  STREETVIEW_TURNS.forEach(function(turn) {
+    var el = document.createElement('div');
+    el.className = 'streetview-marker';
+    el.dataset.panoId = turn.pano;
+    // Rust disc + ivory camera body — matches the gran-fondo-badlands
+    // editorial palette. Currents-color drives the disc fill so the CSS
+    // can theme it via .streetview-marker { color: var(--race-brand) }.
+    setHtml(el,
+      '<svg viewBox="0 0 28 28" aria-hidden="true">' +
+        '<circle cx="14" cy="14" r="11" fill="currentColor" stroke="#fff" stroke-width="2"/>' +
+        '<rect x="8" y="11" width="12" height="8" rx="1.2" fill="#fff"/>' +
+        '<polygon points="11,11 13,9 15,9 17,11" fill="#fff"/>' +
+        '<circle cx="14" cy="14.8" r="2.2" fill="currentColor"/>' +
+      '</svg>'
+    );
+    var marker = new maplibregl.Marker({ element: el, anchor: 'center', opacityWhenCovered: '0.99' })
+      .setLngLat(turn.coords)
+      .setPopup(new maplibregl.Popup({
+        offset: 16,
+        className: 'streetview-popup',
+        maxWidth: '380px',
+      }).setHTML(buildStreetviewPopupHtml(turn)))
+      .addTo(map);
+    streetviewMarkers.push(marker);
+  });
+}
+
 // ─── Km markers ──────────────────────────────────────────────────────
 // Numbered circles along the active route. Stride = 10 km on the long
 // distances (Bronto / T-Rex), 5 km on the shorter ones (Trike / Velo).
@@ -433,7 +523,7 @@ function rebuildKmMarkers() {
       },
     });
     // Brand-color stroke (read at runtime since CSS vars don't apply in WebGL)
-    var brand = '#A84D24';
+    var brand = '#A24414';
     try {
       var v = getComputedStyle(document.documentElement).getPropertyValue('--race-brand').trim();
       if (v) brand = v;
@@ -463,23 +553,15 @@ function clearKmMarkers() {
   if (map.getSource(kmMarkerSourceId)) map.removeSource(kmMarkerSourceId);
 }
 
-function ensureHqMarker() {
-  if (hqMarker) return;
-  var el = document.createElement('div');
-  el.className = 'hq-marker';
-  setHtml(el,
-    '<svg viewBox="0 0 32 32" aria-hidden="true">' +
-      '<circle cx="16" cy="16" r="13" fill="currentColor" stroke="#fff" stroke-width="2.5"/>' +
-      '<text x="16" y="20" text-anchor="middle" font-size="11" font-weight="700" fill="#fff" font-family="Big Shoulders Display, sans-serif" letter-spacing="0.5">BCF</text>' +
-    '</svg>'
-  );
-  hqMarker = new maplibregl.Marker({ element: el, anchor: 'center', opacityWhenCovered: '0.99' })
-    .setLngLat(HQ)
-    .setPopup(new maplibregl.Popup({ offset: 18 }).setHTML(
-      '<div class="aid-popup"><div class="aid-popup__name">Badlands Community Facility</div><div class="aid-popup__km">Start / Finish · 80 Veterans Way · Drumheller</div></div>'
-    ))
-    .addTo(map);
-}
+// ensureHqMarker() used to render a third "BCF" disc at the Badlands
+// Community Facility coord. The aid-marker--start (rust + triangle
+// pennant) is ALREADY at the same coord — having two markers stacked
+// triggered axe-core's target-size rule (each obscured the other
+// down to a 36x2 hit area). Plus the bottom-left .hq-badge already
+// labels "BCF · START / FINISH" persistently. The HQ marker was
+// redundant; removing it gives the aid-marker--start its full 32x32
+// tap target.
+function ensureHqMarker() { /* intentionally a no-op — see comment above */ }
 
 // ─── Layer toggles ───────────────────────────────────────────────────
 
@@ -488,6 +570,14 @@ function toggleAid() {
   var box = document.getElementById('layerAid');
   if (box) box.checked = aidOn;
   renderAidMarkers();
+  updateLayersCount();
+}
+
+function toggleStreetview() {
+  streetviewOn = !streetviewOn;
+  var box = document.getElementById('layerStreetview');
+  if (box) box.checked = streetviewOn;
+  renderStreetviewMarkers();
   updateLayersCount();
 }
 
@@ -533,6 +623,7 @@ function toggleLayersPopover(force) {
 function updateLayersCount() {
   var n = 0;
   if (aidOn) n++;
+  if (streetviewOn) n++;
   if (terrain3D) n++;
   var trigger = document.getElementById('mapLayersBtn');
   if (!trigger) return;
@@ -1481,6 +1572,7 @@ function initMap() {
     setActiveDistance(currentRaceId);
     ensureHqMarker();
     renderAidMarkers();
+    renderStreetviewMarkers();
     rebuildKmMarkers();
     fitToActiveLoop(false);
     applyTerrain(false);  // honors the default terrain3D = true

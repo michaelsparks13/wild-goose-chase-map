@@ -103,7 +103,11 @@ describe('gran-fondo-badlands · built HTML', () => {
 
   it('compiled HTML applies the rust brand color', () => {
     const html = readFileSync(DIST_HTML, 'utf8');
-    expect(html).toContain('#A84D24');
+    // Brand rust darkened from #A84D24 (host CTA hex) → #C85A28 →
+    // #A24414 during accessibility tuning (WCAG 1.4.11 needs 3:1
+    // against the OpenFreeMap Liberty cream substrate; #A24414 hits
+    // 5.69 vs earth, 3.52 vs water, 4.79 vs park).
+    expect(html).toContain('#A24414');
   });
 
   it('Feature 1: active-segment highlighting wiring is present', () => {

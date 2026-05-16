@@ -41,16 +41,16 @@ module.exports = {
     // recognizably hoodoo-rust but the route line and the "RIGHT
     // Riverside Drive East" target text in the cue list pop on
     // ivory paper instead of muddying into it.
-    raceBrand:    '#C85A28', // hoodoo rust (brightened) — primary
+    raceBrand:    '#A24414', // hoodoo rust (brightened) — primary
     raceInk:      '#1A1A1A', // near-black, matches their dark nav
     paper:        '#F8F2EA', // warm ivory — never pure #ffffff
     paperCard:    '#FFFFFF', // card surfaces inside the ivory paper
     surfaceWarm:  '#EDE6DC', // recessed substrate, deeper than paper
     routeColor:   '#1A1A1A', // course default ink
-    aidStation:   '#C68E1E', // ochre — secondary brand accent (Triceratops)
+    aidStation:   '#8D5F11', // ochre — secondary brand accent (Triceratops)
     hazard:       '#B53528', // warm rust — heat / no-aid strip
     accent:       '#8B2668', // magenta from logo banner — active states
-    sageQuiet:    '#77796E', // sage olive — muted text
+    sageQuiet:    '#5E6058', // sage olive — muted text (darkened from #77796E to hit WCAG AA 4.5:1 across every cream-tone surface in the catalog: white, paper, surface-warm, AND the editorial recessed #e6e1d9 used by profile-stats / clock-label / etc. Verified via axe-core)
     bone:         '#E8DCC4', // cream-bone — chip rests, callouts
 
     // Header-bar accent — applied to the race wordmark + "Race in X
@@ -63,9 +63,9 @@ module.exports = {
     // Per-distance loop colors. Brontosaurus tracks the brightened
     // brand primary; T-Rex / Triceratops / Velociraptor stay where
     // they were so the four-chip distance picker remains diverse.
-    loopBrontosaurus: '#C85A28', // hoodoo rust (brightened) — flagship
+    loopBrontosaurus: '#A24414', // hoodoo rust (brightened) — flagship
     loopTrex:         '#8B2668', // magenta — fierce predator
-    loopTriceratops:  '#C68E1E', // golden ochre — sturdy plant-eater
+    loopTriceratops:  '#8D5F11', // golden ochre — sturdy plant-eater
     loopVelociraptor: '#3F6B5F', // teal — sleek + agile
   },
 
@@ -131,7 +131,7 @@ module.exports = {
         miles: 101.4,
         elevationGain: 2935,  // ft (≈895m)
         elevationGainM: 895,
-        color: '#A84D24',
+        color: '#A24414',
         defaultDirection: 'CW',
         cues: [
           { mile: 0.0,  kind: 'landmark', text: 'Roll out from the Badlands Community Facility — east into the Red Deer River valley as the sun comes over the hoodoos.' },
@@ -166,7 +166,7 @@ module.exports = {
         miles: 47.2,
         elevationGain: 1309,  // ft (≈399m)
         elevationGainM: 399,
-        color: '#C68E1E',
+        color: '#8D5F11',
         defaultDirection: 'CW',
         cues: [
           { mile: 0.0,  kind: 'landmark', text: 'Roll out from the Badlands Community Facility at 9:15 AM — the workhorse 75K loop heads east into the river valley.' },
@@ -206,7 +206,7 @@ module.exports = {
         runMiles: 101.4,
         runGainFt: 2935,
         runGainM: 895,
-        color: '#A84D24',
+        color: '#A24414',
         cutoff: '9h',
         startTime: '7:00 AM',
         startWindow: '7:00 AM',
@@ -238,7 +238,7 @@ module.exports = {
         runMiles: 47.2,
         runGainFt: 1309,
         runGainM: 399,
-        color: '#C68E1E',
+        color: '#8D5F11',
         cutoff: '7h',
         startTime: '9:15 AM',
         startWindow: '9:15 AM',

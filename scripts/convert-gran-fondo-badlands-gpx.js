@@ -11,10 +11,15 @@ const path = require('path');
 
 const SRC = path.join(__dirname, '..', 'src', 'maps', 'gran-fondo-badlands', 'data');
 
+// Colors here are stored as metadata only — the actual map render
+// color comes from src/themes/gran-fondo-badlands.js. Keep them in
+// sync so the geojson properties don't lie. Updated 2026-05-16 after
+// the accessibility audit: rust + ochre both darkened to meet WCAG
+// 1.4.11 3:1 contrast against OpenFreeMap Liberty's cream substrate.
 const DISTANCES = [
-  { id: 'brontosaurus', label: 'Brontosaurus 163K', color: '#A84D24' },
+  { id: 'brontosaurus', label: 'Brontosaurus 163K', color: '#A24414' },
   { id: 'trex',         label: 'T-Rex 100K',        color: '#8B2668' },
-  { id: 'triceratops',  label: 'Triceratops 75K',   color: '#C68E1E' },
+  { id: 'triceratops',  label: 'Triceratops 75K',   color: '#8D5F11' },
   { id: 'velociraptor', label: 'Velociraptor 50K',  color: '#3F6B5F' },
 ];
 

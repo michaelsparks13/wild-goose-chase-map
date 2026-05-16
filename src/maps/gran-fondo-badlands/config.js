@@ -32,6 +32,18 @@ const veloProfile   = loadJSON('data/velociraptor-profile.json');
 const weatherData   = fs.existsSync(path.join(__dirname, 'data/weather.json'))
   ? loadJSON('data/weather.json') : null;
 
+// Eight scenic Street View POIs along the shared spine of the four
+// distances (BCF start, Horsethief Canyon, Bleriot Ferry, Wayne coulee
+// bridges, Bacon Station, Hoodoo Trail, Hwy 570, Dorothy ghost town).
+// Captured manually from Google Street View — each entry carries the
+// panorama id + yaw/pitch needed to reproduce the framing in the popup.
+// Schema parity with src/maps/tupper-lake-tinman/data/streetview.json
+// (name, kilometer, coords, pano, yaw, pitch). No `bearingAfter` field
+// here — these are landmark POIs, not turn cues, so the popup omits
+// the exit-direction chevron the Tinman map uses.
+const streetviewTurns = fs.existsSync(path.join(__dirname, 'data/streetview.json'))
+  ? loadJSON('data/streetview.json') : [];
+
 // Per-loop turn-by-turn — produced by the FSS TBT pipeline against each
 // distance's GPX (scripts/fetch-gran-fondo-badlands-turns.py). Each
 // loop's turns sit in data/<id>-turns.geojson. If the file is missing,
@@ -245,6 +257,8 @@ var DINO_SVGS = ${dinoSvgsJs};
 
 var AID_STATIONS_ALL = ${aidStationsJs};
 
+var STREETVIEW_TURNS = ${JSON.stringify(streetviewTurns)};
+
 var HQ = [-112.7050, 51.4665];
 
 var brontoData = ${JSON.stringify(Object.assign({}, brontoGeo, { profile: brontoProfile }))};
@@ -310,7 +324,7 @@ function buildDirectionsHtml() {
 
     <div class="directions-header">
       <div class="directions-titles">
-        <h3 class="directions-eyebrow">Course directions</h3>
+        <p class="directions-eyebrow">Course directions</p>
         <span class="directions-race" id="directionsRaceLabel">— km · — m gain</span>
       </div>
       <label class="dir-zoom-toggle">
@@ -369,6 +383,10 @@ const mapViewHtml = `<div id="mapView" class="view active">
         <span class="map-layers__row-text">Aid Stations</span>
       </label>
       <label class="map-layers__row">
+        <input type="checkbox" id="layerStreetview" onchange="toggleStreetview()">
+        <span class="map-layers__row-text">Street Views</span>
+      </label>
+      <label class="map-layers__row">
         <input type="checkbox" id="layer3D" onchange="toggle3D()">
         <span class="map-layers__row-text">3D terrain</span>
       </label>
@@ -376,6 +394,7 @@ const mapViewHtml = `<div id="mapView" class="view active">
   </div>
   <div class="map-btns" hidden aria-hidden="true">
     <button class="trail-btn" id="aidBtnInline" onclick="toggleAid()">Aid Stations</button>
+    <button class="trail-btn" id="streetviewBtnInline" onclick="toggleStreetview()">Street Views</button>
     <button class="trail-btn" id="terrainBtnInline" onclick="toggle3D()">3D</button>
   </div>
 </div>
@@ -399,9 +418,9 @@ const simViewHtml = `<div id="simView" class="view">
       <div class="goal-time-bar">
         <span class="goal-label">Goal Time</span>
         <div class="goal-inputs">
-          <input type="number" class="goal-input" id="goalHrs" min="0" max="12" value="6" onchange="updateGoalTime()" onclick="this.select()">
+          <input type="number" class="goal-input" id="goalHrs" min="0" max="12" value="6" onchange="updateGoalTime()" onclick="this.select()" aria-label="Goal time hours">
           <span class="goal-colon">:</span>
-          <input type="number" class="goal-input" id="goalMins" min="0" max="59" value="0" onchange="updateGoalTime()" onclick="this.select()">
+          <input type="number" class="goal-input" id="goalMins" min="0" max="59" value="0" onchange="updateGoalTime()" onclick="this.select()" aria-label="Goal time minutes">
         </div>
         <div class="goal-pace" id="goalPace">Avg pace: <strong>— km/h</strong></div>
       </div>

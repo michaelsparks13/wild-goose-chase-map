@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="{{THEME_COLOR}}">
 <!-- Iframing: race directors embed this page on their own sites. We do
@@ -69,7 +69,13 @@
 
   <!-- ── 2. The course — sticky map + scrolling cue sheet. The MAP is the hero. ── -->
   <section class="course" aria-label="Course map and turn-by-turn cues">
-    <aside class="course__map" id="courseMap">
+    <!-- Changed from <aside> to <div>: axe-core flags an <aside>
+         (implicit complementary landmark) inside the <section
+         class="course"> (implicit region landmark) as
+         landmark-complementary-is-top-level. The map column carries
+         no semantic value as a "complementary" landmark; div is the
+         right element. -->
+    <div class="course__map" id="courseMap">
       <div class="map-controls" aria-label="Map layers">
         <div class="map-toggles">
           <button type="button" class="map-toggle" id="aidBtn" onclick="toggleAid()">Aid stations</button>
@@ -78,7 +84,7 @@
         </div>
       </div>
       {{MAP_HTML}}
-    </aside>
+    </div>
 
     <section class="course__cues" aria-labelledby="cueHeading">
       <h1 id="cueHeading" class="visually-hidden">{{RACE_NAME_DISPLAY}} — Run course, turn-by-turn</h1>

@@ -124,9 +124,14 @@
       var key = cards[i];
       var r = weather.riskSummary[key];
       if (!r) continue;
+      // r.color is a vivid signal color (#F9A825 amber, #FF9800 orange,
+      // etc.) — fine for the icon badge + border accent, but axe-core
+      // flags it as low-contrast text on the cream substrate. Render the
+      // risk label in ink with a colored dot prefix instead, so the
+      // signal stays vivid without burning text legibility.
       html += '<div class="weather-risk-card" style="border-top-color:' + r.color + '">' +
         '<div class="risk-icon" style="background:' + r.color + '20">' + riskIcon(key, r.color) + '</div>' +
-        '<div class="risk-value" style="color:' + r.color + '">' + r.label + '</div>' +
+        '<div class="risk-value"><span class="risk-dot" style="background:' + r.color + '" aria-hidden="true"></span>' + r.label + '</div>' +
         '<div class="risk-label">' + labels[key] + '</div>' +
         '<div class="risk-detail">' + r.detail + '</div>' +
         '</div>';
@@ -142,7 +147,7 @@
     var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var html = '<div class="weather-daily-section">' +
       '<div class="weather-daily-title">' + weather.dataYears + '-Year Historical Averages</div>' +
-      '<div class="weather-daily-strip" id="weatherDailyStrip">';
+      '<div class="weather-daily-strip" id="weatherDailyStrip" tabindex="0" role="region" aria-label="7-day weather forecast around race day">';
 
     for (var i = 0; i < weather.dailyAverages.length; i++) {
       var d = weather.dailyAverages[i];
@@ -370,6 +375,11 @@
           paint: { 'circle-radius': 4, 'circle-color': '#ff3333', 'circle-opacity': 1 }
         });
       });
+      // Disambiguate from the main course map's canvas aria-label,
+      // which is also "Map" by default — axe-core flags duplicate
+      // landmarks with identical accessible names.
+      var radarCanvas = radarMap.getCanvas();
+      if (radarCanvas) radarCanvas.setAttribute('aria-label', 'Weather radar map');
     } catch (e) {
       console.warn('Radar map init failed:', e);
       renderRadarError();
