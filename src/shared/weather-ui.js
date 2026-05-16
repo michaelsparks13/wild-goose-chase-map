@@ -185,7 +185,7 @@
     container.innerHTML = '<div class="weather-explainer">' +
       '<div class="weather-explainer-title">What is Heat Stress Index?</div>' +
       '<div class="weather-explainer-text">Combines temperature, humidity, sun exposure, and wind ' +
-      'to estimate the actual heat load on your body \u2014 the single most useful metric for runners. ' +
+      'to estimate the actual heat load on your body \u2014 the single most useful metric for athletes. ' +
       'Unlike a simple temperature reading, it accounts for how humidity traps heat and how sun ' +
       'exposure raises your core temperature.</div>' +
       '</div>';
