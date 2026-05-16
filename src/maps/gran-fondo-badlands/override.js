@@ -388,7 +388,7 @@ function renderAidMarkers() {
         '<div class="aid-popup__stocked">' + escapeHtml(stn.stocked) + '</div>' +
       '</div>';
 
-    var marker = new maplibregl.Marker({ element: el, anchor: 'center', opacityWhenCovered: '1' })
+    var marker = new maplibregl.Marker({ element: el, anchor: 'center', opacityWhenCovered: '0.99' })
       .setLngLat(coord)
       .setPopup(new maplibregl.Popup({ offset: 16, maxWidth: '300px' }).setHTML(popupHtml))
       .addTo(map);
@@ -475,7 +475,7 @@ function ensureHqMarker() {
       '<text x="16" y="20" text-anchor="middle" font-size="11" font-weight="700" fill="#fff" font-family="Big Shoulders Display, sans-serif" letter-spacing="0.5">BCF</text>' +
     '</svg>'
   );
-  hqMarker = new maplibregl.Marker({ element: el, anchor: 'center', opacityWhenCovered: '1' })
+  hqMarker = new maplibregl.Marker({ element: el, anchor: 'center', opacityWhenCovered: '0.99' })
     .setLngLat(HQ)
     .setPopup(new maplibregl.Popup({ offset: 18 }).setHTML(
       '<div class="aid-popup"><div class="aid-popup__name">Badlands Community Facility</div><div class="aid-popup__km">Start / Finish · 80 Veterans Way · Drumheller</div></div>'
