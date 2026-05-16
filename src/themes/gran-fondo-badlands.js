@@ -36,7 +36,12 @@ module.exports = {
   // warm ivory to evoke a vintage trail-badge aesthetic without
   // tipping into pure-white (forbidden) or kraft-paper.
   palette: {
-    raceBrand:    '#A84D24', // hoodoo rust — primary CTA + sticky banner
+    // v2: brand primary brightened from #A84D24 (the literal CTA hex)
+    // to #C85A28 — same hue family, +20 saturation. The hue stays
+    // recognizably hoodoo-rust but the route line and the "RIGHT
+    // Riverside Drive East" target text in the cue list pop on
+    // ivory paper instead of muddying into it.
+    raceBrand:    '#C85A28', // hoodoo rust (brightened) — primary
     raceInk:      '#1A1A1A', // near-black, matches their dark nav
     paper:        '#F8F2EA', // warm ivory — never pure #ffffff
     paperCard:    '#FFFFFF', // card surfaces inside the ivory paper
@@ -48,11 +53,17 @@ module.exports = {
     sageQuiet:    '#77796E', // sage olive — muted text
     bone:         '#E8DCC4', // cream-bone — chip rests, callouts
 
-    // Per-distance loop colors. Each dinosaur gets a distinct hex; the
-    // flagship (Brontosaurus) wears the brand primary, T-Rex carries
-    // the brand secondary, the two shorter rides take complementary
-    // ochre and teal that sit naturally with rust + magenta.
-    loopBrontosaurus: '#A84D24', // hoodoo rust — flagship
+    // Header-bar accent — applied to the race wordmark + "Race in X
+    // days" countdown so they don't read as the same color as the
+    // rust REGISTER button. Wild Goose uses chartreuse-yellow for the
+    // same role; we use a warm golden yellow that contrasts the dark
+    // editorial top bar AND sits separately from rust / magenta / ochre.
+    headerAccent: '#FFD24A',
+
+    // Per-distance loop colors. Brontosaurus tracks the brightened
+    // brand primary; T-Rex / Triceratops / Velociraptor stay where
+    // they were so the four-chip distance picker remains diverse.
+    loopBrontosaurus: '#C85A28', // hoodoo rust (brightened) — flagship
     loopTrex:         '#8B2668', // magenta — fierce predator
     loopTriceratops:  '#C68E1E', // golden ochre — sturdy plant-eater
     loopVelociraptor: '#3F6B5F', // teal — sleek + agile

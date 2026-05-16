@@ -80,96 +80,137 @@ const racesJsLines = theme.raceFormat.distances.map(d => {
 // has to position a marker against the per-loop coordinate distances.
 const aidStationsJs = JSON.stringify(theme.aidStations);
 
-// Dinosaur silhouette SVG paths — one per distance. These render
-// inside the distance picker chips, the active-distance HQ badge, and
-// (color-mapped) as a watermark on the elevation profile. Drawn on a
-// 64x40 viewBox so a road bike fits below each silhouette. `currentColor`
-// lets the renderer color them per loop.
+// Dinosaur silhouettes (single-color, fill via currentColor) — drawn
+// at 100x60 viewBox so each species' identifying silhouette features
+// fit alongside a road bike below. Hand-crafted: nano-banana cartoon
+// generation hit daily quota. Aiming for Olympic-pictogram clarity at
+// the chip's ~40px display height — read as the right species first,
+// detail later.
+//
+// Each composition: dinosaur body in upper region (y=2..40), bike
+// wheels at y=52, frame triangle connecting them. The dino's belly /
+// legs visually rest on the bike saddle; the long tail or neck
+// extends past the rear / front wheel to give horizontal balance.
 const DINOSAUR_SVGS = {
-  brontosaurus: '<svg viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-    '<g fill="currentColor">' +
-      // body + tail + back
-      '<path d="M6 25 Q9 22 14 22 L40 22 Q44 19 48 19 L52 19 Q56 19 56 23 L56 26 Q56 28 54 28 L50 28 L50 27 Q44 27 40 27 L18 27 Q14 27 12 28 L8 28 Q6 28 6 26 Z"/>' +
-      // long neck + small head
-      '<path d="M48 19 Q50 14 52 11 Q54 8 57 7 Q60 6.5 61 8 Q61.5 9 60.5 10 Q58 11 57 12.5 Q56 14 55 17 Q54 19 53 19 Z"/>' +
-      // legs
-      '<rect x="14" y="27" width="2.6" height="6" rx="1"/>' +
-      '<rect x="22" y="27" width="2.6" height="6" rx="1"/>' +
-      '<rect x="40" y="27" width="2.6" height="6" rx="1"/>' +
-      '<rect x="48" y="27" width="2.6" height="6" rx="1"/>' +
-    '</g>' +
-    // bike wheels (outline)
-    '<g fill="none" stroke="currentColor" stroke-width="1.4">' +
-      '<circle cx="14" cy="35" r="3.2"/>' +
-      '<circle cx="48" cy="35" r="3.2"/>' +
-      '<path d="M14 35 L31 32 L48 35" stroke-width="1.2"/>' +
-    '</g>' +
-  '</svg>',
+  // Brontosaurus — defining silhouette: long S-curving neck swept up
+  // and forward, tiny head, big oval body, long horizontal tail
+  // trailing past the rear wheel.
+  brontosaurus:
+    '<svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+      '<g fill="currentColor">' +
+        // Long neck arching up + forward, with small head at the tip
+        '<path d="M62 10 Q57 6 60 4 Q66 1 70 4 Q73 7 71 11 L68 14 Q67 18 70 22 Q73 25 76 27 L70 27 Q67 25 65 22 Q63 19 62 16 Q61 13 60 12 Q58 14 56 18 Q54 22 54 26 Q54 29 56 32 L52 32 Q49 29 49 25 Q49 19 52 14 Q55 9 58 7 Q60 6 62 6 Z"/>' +
+        // Big body
+        '<ellipse cx="46" cy="36" rx="22" ry="9"/>' +
+        // Long horizontal tail trailing left past the rear wheel
+        '<path d="M28 34 Q18 33 8 35 Q4 36 2 38 Q4 39 8 39 Q18 41 30 40 Z"/>' +
+        // 4 stubby pillar legs
+        '<rect x="32" y="40" width="5" height="12" rx="2"/>' +
+        '<rect x="42" y="42" width="5" height="10" rx="2"/>' +
+        '<rect x="52" y="42" width="5" height="10" rx="2"/>' +
+        '<rect x="62" y="40" width="5" height="12" rx="2"/>' +
+        // Eye dot (negative space — punch a small lighter circle)
+      '</g>' +
+      '<circle cx="67" cy="8" r="0.9" fill="#fff"/>' +
+      // Bike: two wheels + frame triangle
+      '<g fill="none" stroke="currentColor" stroke-width="2">' +
+        '<circle cx="28" cy="52" r="6"/>' +
+        '<circle cx="76" cy="52" r="6"/>' +
+        '<path d="M28 52 L52 38 L76 52 Z" stroke-width="1.6"/>' +
+      '</g>' +
+    '</svg>',
 
-  trex: '<svg viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-    '<g fill="currentColor">' +
-      // big head + jaw
-      '<path d="M40 11 Q47 8 54 11 Q58 13 58 17 L58 19 L51 19 L48 21 Q44 21 42 19 L40 18 Z"/>' +
-      // teeth (notch)
-      '<path d="M51 19 L53 21 L55 19 L57 21 L58 19" fill="#fff" opacity="0.9" transform="translate(0,0)" stroke="#fff" stroke-width="0.4"/>' +
-      // body + tail
-      '<path d="M14 22 L40 22 Q44 19 48 19 L48 26 Q44 27 40 27 L18 27 Q12 27 9 24 Q6 21 4 22 Q2 23 4 25 L8 26 Q10 27 12 27 L14 27 Z"/>' +
-      // tiny arms
-      '<rect x="36" y="22" width="3.2" height="1.6" rx="0.6"/>' +
-      // legs
-      '<path d="M22 27 L20 33 L24 33 L25 27 Z"/>' +
-      '<path d="M40 27 L38 33 L42 33 L43 27 Z"/>' +
-    '</g>' +
-    '<g fill="none" stroke="currentColor" stroke-width="1.4">' +
-      '<circle cx="20" cy="35" r="3.2"/>' +
-      '<circle cx="44" cy="35" r="3.2"/>' +
-      '<path d="M20 35 L32 32 L44 35" stroke-width="1.2"/>' +
-    '</g>' +
-  '</svg>',
+  // T-Rex — defining silhouette: oversized head with open mouth +
+  // teeth notches, classic comically tiny arms, powerful bipedal
+  // crouch, heavy tail held out for balance.
+  trex:
+    '<svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+      '<g fill="currentColor">' +
+        // Body + crouched back + raised hips, tail trailing right
+        '<path d="M22 36 Q18 32 22 28 Q28 22 38 22 Q50 22 58 26 Q66 30 70 36 Q74 40 82 38 Q90 36 96 38 Q98 39 96 41 Q88 44 80 43 Q72 42 66 40 Q60 44 50 44 Q40 44 32 42 Q26 44 22 44 Z"/>' +
+        // Massive head with jagged jaw line on the left (open mouth)
+        '<path d="M22 28 Q15 26 10 28 Q6 30 4 33 L4 36 Q6 36 8 35 L10 37 L12 35 L14 37 L16 35 L18 37 L20 35 L22 37 Z"/>' +
+        // Tiny T-Rex arms (the meme)
+        '<rect x="44" y="32" width="6" height="2" rx="0.8"/>' +
+        '<rect x="50" y="34" width="3" height="2.5" rx="0.7"/>' +
+        // Powerful legs
+        '<path d="M40 42 L36 56 L42 56 L46 44 Z"/>' +
+        '<path d="M52 44 L50 56 L56 56 L58 44 Z"/>' +
+      '</g>' +
+      // Eye dot
+      '<circle cx="13" cy="30" r="1" fill="#fff"/>' +
+      // Bike
+      '<g fill="none" stroke="currentColor" stroke-width="2">' +
+        '<circle cx="36" cy="52" r="6"/>' +
+        '<circle cx="84" cy="52" r="6"/>' +
+        '<path d="M36 52 L60 38 L84 52 Z" stroke-width="1.6"/>' +
+      '</g>' +
+    '</svg>',
 
-  triceratops: '<svg viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-    '<g fill="currentColor">' +
-      // body
-      '<path d="M14 22 L42 22 Q46 22 48 24 L52 26 L52 28 L46 28 L42 28 L18 28 Q14 28 12 27 L6 26 Q4 26 4 24 Q4 22 6 22 Z"/>' +
-      // big head + frill
-      '<path d="M48 14 Q56 12 60 16 L60 22 L58 23 L52 23 L48 22 L46 18 Z"/>' +
-      // three horns
-      '<path d="M50 13 L50 16 L52 16 Z"/>' +
-      '<path d="M55 12 L57 9 L59 12 Z"/>' +
-      '<path d="M59 14 L61 17 L57 18 Z"/>' +
-      // legs
-      '<rect x="16" y="28" width="2.6" height="5" rx="1"/>' +
-      '<rect x="24" y="28" width="2.6" height="5" rx="1"/>' +
-      '<rect x="40" y="28" width="2.6" height="5" rx="1"/>' +
-      '<rect x="46" y="28" width="2.6" height="5" rx="1"/>' +
-    '</g>' +
-    '<g fill="none" stroke="currentColor" stroke-width="1.4">' +
-      '<circle cx="18" cy="35" r="3.2"/>' +
-      '<circle cx="44" cy="35" r="3.2"/>' +
-      '<path d="M18 35 L31 32 L44 35" stroke-width="1.2"/>' +
-    '</g>' +
-  '</svg>',
+  // Triceratops — defining silhouette: 3 horns (1 short snout horn,
+  // 2 long brow horns) + large bony scalloped frill behind the head.
+  triceratops:
+    '<svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+      '<g fill="currentColor">' +
+        // Body
+        '<ellipse cx="40" cy="34" rx="22" ry="10"/>' +
+        // Tail (short stubby)
+        '<path d="M19 34 Q12 34 8 32 Q4 30 2 32 Q2 36 6 37 Q12 38 19 38 Z"/>' +
+        // Big head + rounded scalloped frill
+        '<path d="M58 24 Q62 16 72 14 Q82 13 88 18 Q94 22 96 28 Q97 34 94 38 Q90 42 84 42 L74 42 Q66 42 60 38 Q56 35 56 32 Q56 28 58 24 Z"/>' +
+        // Frill scallops (subtle bumps along top)
+        '<circle cx="78" cy="14" r="2"/>' +
+        '<circle cx="86" cy="16" r="2.2"/>' +
+        '<circle cx="92" cy="20" r="2.2"/>' +
+        // Two long brow horns
+        '<path d="M76 16 L72 4 L78 4 Z"/>' +
+        '<path d="M68 18 L62 8 L70 10 Z"/>' +
+        // Short snout horn
+        '<path d="M56 28 L52 24 L56 22 Z"/>' +
+        // 4 stubby legs
+        '<rect x="28" y="42" width="5" height="10" rx="2"/>' +
+        '<rect x="38" y="42" width="5" height="10" rx="2"/>' +
+        '<rect x="50" y="42" width="5" height="10" rx="2"/>' +
+        '<rect x="60" y="42" width="5" height="10" rx="2"/>' +
+      '</g>' +
+      // Eye dot
+      '<circle cx="74" cy="26" r="1" fill="#fff"/>' +
+      // Bike
+      '<g fill="none" stroke="currentColor" stroke-width="2">' +
+        '<circle cx="22" cy="52" r="6"/>' +
+        '<circle cx="74" cy="52" r="6"/>' +
+        '<path d="M22 52 L48 38 L74 52 Z" stroke-width="1.6"/>' +
+      '</g>' +
+    '</svg>',
 
-  velociraptor: '<svg viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-    '<g fill="currentColor">' +
-      // sleek body + tail (long horizontal)
-      '<path d="M6 24 Q10 22 14 22 L42 22 Q46 21 50 22 L52 23 L52 26 L46 27 L40 27 L18 27 Q12 27 9 26 Q5 25 4 26 Q3 27 5 27.5 L8 28 Q6 27 6 25 Z"/>' +
-      // raised head (predatory pose)
-      '<path d="M48 22 Q52 16 56 13 Q58 11 60 12 Q61 13 60 14 L57 17 Q55 19 54 21 Z"/>' +
-      // open jaw notch
-      '<path d="M58 14 L61 13 L60.5 15 Z" fill="#fff" opacity="0.85"/>' +
-      // sickle claw + arms
-      '<path d="M40 22 L40 25 L37 27 L40 27 L42 25 Z"/>' +
-      // legs (powerful, bent)
-      '<path d="M22 27 L20 31 L23 33 L26 31 L25 27 Z"/>' +
-      '<path d="M40 27 L38 31 L41 33 L44 31 L43 27 Z"/>' +
-    '</g>' +
-    '<g fill="none" stroke="currentColor" stroke-width="1.4">' +
-      '<circle cx="22" cy="35" r="3.2"/>' +
-      '<circle cx="42" cy="35" r="3.2"/>' +
-      '<path d="M22 35 L32 32 L42 35" stroke-width="1.2"/>' +
-    '</g>' +
-  '</svg>',
+  // Velociraptor — defining silhouette: sleek bird-like bipedal,
+  // raised head with open beak, long stiff horizontal tail, bent
+  // back legs with sickle claw raised.
+  velociraptor:
+    '<svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+      '<g fill="currentColor">' +
+        // Long horizontal tail held parallel
+        '<path d="M2 36 Q8 35 18 35 L34 35 L34 39 L18 39 Q8 39 2 38 Z"/>' +
+        // Sleek S-curved body + back arching up
+        '<path d="M30 38 Q34 28 44 24 Q52 22 60 24 Q66 26 68 30 L68 36 Q66 40 58 40 L40 40 Q34 40 30 38 Z"/>' +
+        // Raised neck + head with open beak
+        '<path d="M60 24 Q66 18 74 14 Q82 11 88 12 Q92 13 91 16 Q88 16 84 18 L82 20 Q90 18 92 20 Q92 22 88 22 L82 22 Q76 22 72 24 Q68 25 66 26 Z"/>' +
+        // Crouched back legs with sickle claws raised
+        '<path d="M40 40 L34 50 L42 56 L46 50 L46 44 Z"/>' +
+        '<path d="M54 40 L48 50 L56 56 L60 50 L60 44 Z"/>' +
+        // Sickle claws (curved spurs at foot)
+        '<path d="M42 56 Q40 58 38 56 Z"/>' +
+        '<path d="M56 56 Q54 58 52 56 Z"/>' +
+      '</g>' +
+      // Eye dot
+      '<circle cx="78" cy="16" r="1" fill="#fff"/>' +
+      // Bike
+      '<g fill="none" stroke="currentColor" stroke-width="2">' +
+        '<circle cx="34" cy="52" r="6"/>' +
+        '<circle cx="78" cy="52" r="6"/>' +
+        '<path d="M34 52 L56 38 L78 52 Z" stroke-width="1.6"/>' +
+      '</g>' +
+    '</svg>',
 };
 
 const dinoSvgsJs = JSON.stringify(DINOSAUR_SVGS);
@@ -475,6 +516,7 @@ module.exports = {
     '--sage-quiet':    theme.palette.sageQuiet,
     '--bone':          theme.palette.bone,
     '--paper-card':    theme.palette.paperCard,
+    '--header-accent': theme.palette.headerAccent,
 
     '--font-display':  theme.type.displayStack,
     '--font-script':   theme.type.scriptStack,

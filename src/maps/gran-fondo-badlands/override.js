@@ -31,19 +31,23 @@ maplibregl.addProtocol('pmtiles', protocol.tile);
 
 var PMTILES_URL = 'pmtiles://https://pub-e494904da8db4a209e8229adcd8b63f9.r2.dev/basemap.pmtiles';
 
-var BASEMAP_FLAVOR = {
-  background: '#e8d7b8',
-  earth:      '#e8d7b8',
-  park_a:     '#d8c69b',
-  park_b:     '#d8c69b',
-  wood_a:     '#b8a075',
-  wood_b:     '#b8a075',
-  scrub_a:    '#d4c096',
-  scrub_b:    '#d4c096',
-  water:      '#a8c8d8',
-  sand:       '#e8d2a4',
-  beach:      '#e8d2a4',
-  glacier:    '#edf3f8',
+// Warm earth-tone overrides for the Drumheller Valley — sandy hoodoo
+// background, prairie-grass landcover, river-blue water. Merged INTO
+// the named light flavor (Object.assign was required — passing as the
+// 2nd arg to namedFlavor silently no-ops; verified via wild-goose).
+var BASEMAP_FLAVOR_OVERRIDES = {
+  background: '#EFE4CC',
+  earth:      '#EFE4CC',
+  park_a:     '#D6CDA5',
+  park_b:     '#D6CDA5',
+  wood_a:     '#C7B98A',
+  wood_b:     '#C7B98A',
+  scrub_a:    '#E0D5A8',
+  scrub_b:    '#E0D5A8',
+  water:      '#A6C8D8',
+  sand:       '#E8D9B0',
+  beach:      '#E8D9B0',
+  glacier:    '#EDF3F8',
 };
 
 var BASEMAP_STYLE = {
@@ -56,8 +60,28 @@ var BASEMAP_STYLE = {
       url: PMTILES_URL,
       attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>',
     },
+    'hillshade-dem': {
+      type: 'raster-dem',
+      tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+      tileSize: 256, maxzoom: 15, encoding: 'terrarium',
+    },
   },
-  layers: basemaps.layers('protomaps', basemaps.namedFlavor('light', BASEMAP_FLAVOR), { lang: 'en' }),
+  layers: [].concat(
+    basemaps.layers(
+      'protomaps',
+      Object.assign({}, basemaps.namedFlavor('light'), BASEMAP_FLAVOR_OVERRIDES),
+      { lang: 'en' }
+    ),
+    [{
+      id: 'hillshade', type: 'hillshade', source: 'hillshade-dem',
+      paint: {
+        'hillshade-exaggeration': 0.45,
+        'hillshade-shadow-color': '#7a5a3a',
+        'hillshade-highlight-color': '#fff5e0',
+        'hillshade-accent-color': '#a87b48',
+      },
+    }]
+  ),
 };
 
 // ─── State ───────────────────────────────────────────────────────────
@@ -341,17 +365,46 @@ function renderAidMarkers() {
     if (raceMile > loopLenMi) raceMile = loopLenMi;
     var coord = getCoordAtMile(currentRaceId, raceMile);
 
-    var isStartFinish = (n === 0) || (n === idxs.length - 1);
+    var isStart = (n === 0);
+    var isFinish = (n === idxs.length - 1);
     var el = document.createElement('div');
-    el.className = 'aid-marker';
-    setHtml(el,
-      '<svg viewBox="0 0 28 28" aria-hidden="true">' +
-        '<circle cx="14" cy="14" r="11" fill="' + (isStartFinish ? race.color : 'var(--aid-color)') + '" stroke="#fff" stroke-width="2"/>' +
-        (isStartFinish
-          ? '<path d="M9 14h10M14 9v10" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>'
-          : '<text x="14" y="18" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="JetBrains Mono, monospace">' + (n) + '</text>') +
-      '</svg>'
-    );
+    el.className = isFinish ? 'aid-marker aid-marker--finish' : (isStart ? 'aid-marker aid-marker--start' : 'aid-marker');
+
+    // SVGs use currentColor for fills; the wrapper sets color via CSS
+    // (.aid-marker / --start / --finish), since CSS var() in fill="..."
+    // attributes is not reliably supported across browsers.
+    var svgInner;
+    if (isFinish) {
+      // Finish flag — checkered pennant on a pole, brand-color disc
+      svgInner =
+        '<svg viewBox="0 0 32 32" aria-hidden="true">' +
+          '<circle cx="16" cy="16" r="13" fill="currentColor" stroke="#fff" stroke-width="2.5"/>' +
+          '<path d="M11 8 L11 24" stroke="#fff" stroke-width="2" stroke-linecap="round"/>' +
+          '<path d="M11.5 8 L21 8 L21 16 L11.5 16 Z" fill="#fff"/>' +
+          '<rect x="11.5" y="8"  width="3.2" height="2.7" fill="#1A1A1A"/>' +
+          '<rect x="17.8" y="8"  width="3.2" height="2.7" fill="#1A1A1A"/>' +
+          '<rect x="14.7" y="10.7" width="3.1" height="2.7" fill="#1A1A1A"/>' +
+          '<rect x="11.5" y="13.4" width="3.2" height="2.6" fill="#1A1A1A"/>' +
+          '<rect x="17.8" y="13.4" width="3.2" height="2.6" fill="#1A1A1A"/>' +
+        '</svg>';
+    } else if (isStart) {
+      // Start — single triangle pennant on a pole, brand-color disc
+      svgInner =
+        '<svg viewBox="0 0 32 32" aria-hidden="true">' +
+          '<circle cx="16" cy="16" r="13" fill="currentColor" stroke="#fff" stroke-width="2.5"/>' +
+          '<path d="M11 8 L11 24" stroke="#fff" stroke-width="2" stroke-linecap="round"/>' +
+          '<path d="M11.5 8 L21 11.5 L11.5 15 Z" fill="#fff"/>' +
+        '</svg>';
+    } else {
+      // Aid station — ochre disc with white water-drop + cross (Tinman style)
+      svgInner =
+        '<svg viewBox="0 0 28 28" aria-hidden="true">' +
+          '<circle cx="14" cy="14" r="11" fill="currentColor" stroke="#fff" stroke-width="2"/>' +
+          '<path d="M14 7 C 10.5 11.5, 9 13.5, 9 15.8 a5 5 0 0 0 10 0 C 19 13.5, 17.5 11.5, 14 7 Z" fill="#fff"/>' +
+          '<path d="M14 12.2 v3.2 M12.4 13.8 h3.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>' +
+        '</svg>';
+    }
+    setHtml(el, svgInner);
 
     var popupHtml =
       '<div class="aid-popup">' +
@@ -368,13 +421,82 @@ function renderAidMarkers() {
   });
 }
 
+// ─── Km markers ──────────────────────────────────────────────────────
+// Numbered circles along the active route. Stride = 10 km on the long
+// distances (Bronto / T-Rex), 5 km on the shorter ones (Trike / Velo).
+// Built as a MapLibre symbol layer so they scale with zoom rather than
+// HTML markers (numerous markers tank perf on Bronto's 16-marker count).
+
+var kmMarkerSourceId = 'km-markers';
+function rebuildKmMarkers() {
+  if (!map || !map.isStyleLoaded()) return;
+  var race = RACES[currentRaceId];
+  if (!race) return;
+  var totalKm = race.kilometers;
+  var stride = (totalKm > 70) ? 10 : 5;
+  var features = [];
+  for (var k = stride; k < totalKm - stride / 2; k += stride) {
+    var coord = getCoordAtMile(currentRaceId, k / KM_PER_MI);
+    features.push({
+      type: 'Feature',
+      properties: { km: k, label: String(k), priority: (k % 25 === 0) ? 1 : 2 },
+      geometry: { type: 'Point', coordinates: coord },
+    });
+  }
+  var fc = { type: 'FeatureCollection', features: features };
+  if (map.getSource(kmMarkerSourceId)) {
+    map.getSource(kmMarkerSourceId).setData(fc);
+  } else {
+    map.addSource(kmMarkerSourceId, { type: 'geojson', data: fc });
+    map.addLayer({
+      id: 'km-markers-circle',
+      type: 'circle',
+      source: kmMarkerSourceId,
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, 7, 14, 11, 17, 14],
+        'circle-color': '#1f1d18',
+        'circle-stroke-color': 'var-fallback', // overridden runtime below
+        'circle-stroke-width': 2,
+      },
+    });
+    // Brand-color stroke (read at runtime since CSS vars don't apply in WebGL)
+    var brand = '#A84D24';
+    try {
+      var v = getComputedStyle(document.documentElement).getPropertyValue('--race-brand').trim();
+      if (v) brand = v;
+    } catch (e) { /* noop */ }
+    map.setPaintProperty('km-markers-circle', 'circle-stroke-color', brand);
+    map.addLayer({
+      id: 'km-markers-label',
+      type: 'symbol',
+      source: kmMarkerSourceId,
+      layout: {
+        'text-field': ['get', 'label'],
+        'text-font': ['Noto Sans Medium'],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 9, 9, 14, 12, 17, 15],
+        'text-allow-overlap': true,
+        'text-ignore-placement': true,
+      },
+      paint: {
+        'text-color': '#ffffff',
+      },
+    });
+  }
+}
+function clearKmMarkers() {
+  ['km-markers-label', 'km-markers-circle'].forEach(function(id) {
+    if (map.getLayer(id)) map.removeLayer(id);
+  });
+  if (map.getSource(kmMarkerSourceId)) map.removeSource(kmMarkerSourceId);
+}
+
 function ensureHqMarker() {
   if (hqMarker) return;
   var el = document.createElement('div');
   el.className = 'hq-marker';
   setHtml(el,
     '<svg viewBox="0 0 32 32" aria-hidden="true">' +
-      '<circle cx="16" cy="16" r="13" fill="var(--race-brand)" stroke="#fff" stroke-width="2.5"/>' +
+      '<circle cx="16" cy="16" r="13" fill="currentColor" stroke="#fff" stroke-width="2.5"/>' +
       '<text x="16" y="20" text-anchor="middle" font-size="11" font-weight="700" fill="#fff" font-family="Big Shoulders Display, sans-serif" letter-spacing="0.5">BCF</text>' +
     '</svg>'
   );
@@ -477,6 +599,7 @@ function selectRace(raceId) {
   setActiveDistance(raceId);
   fitToActiveLoop(true);
   renderAidMarkers();
+  rebuildKmMarkers();
   ensureHqMarker();
   drawProfile();
   renderDirectionsList();
@@ -1307,6 +1430,7 @@ function initMap() {
     setActiveDistance(currentRaceId);
     ensureHqMarker();
     renderAidMarkers();
+    rebuildKmMarkers();
     fitToActiveLoop(false);
     drawProfile();
     renderDirectionsList();

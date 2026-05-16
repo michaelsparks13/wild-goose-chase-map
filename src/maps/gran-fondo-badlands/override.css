@@ -26,9 +26,20 @@ body.race-page.race-gran-fondo-badlands {
   font-weight: 700;
 }
 
+/* Header-accent for wordmark + countdown — distinct from the rust
+ * REGISTER button on the host site so the two don't collapse into a
+ * single color in the eye. The editorial chrome puts a rust pill
+ * background on #raceCountdown by default; we strip it so the golden
+ * text reads against the dark top bar instead of mimicking the
+ * host-site rust CTA button. */
 .race-gran-fondo-badlands .race-mark__name,
 .race-gran-fondo-badlands #raceCountdown {
-  color: var(--race-brand);
+  color: var(--header-accent);
+}
+.race-gran-fondo-badlands #raceCountdown {
+  background: transparent;
+  padding: 0;
+  font-weight: 600;
 }
 
 .race-gran-fondo-badlands main > section.essentials,
@@ -66,10 +77,20 @@ body.race-page.race-gran-fondo-badlands {
   width: 100%; height: 100%; display: block;
   filter: drop-shadow(0 2px 4px rgba(26,26,26,0.35));
 }
+/* Marker color via CSS — SVG fills use currentColor since CSS var() in
+ * fill="..." attributes is not reliably supported. Aid stations get
+ * ochre, start + finish get the brand rust. */
 .race-gran-fondo-badlands .aid-marker {
   width: 28px; height: 28px;
   cursor: pointer;
+  color: var(--aid-color);
 }
+.race-gran-fondo-badlands .aid-marker--start,
+.race-gran-fondo-badlands .aid-marker--finish {
+  width: 32px; height: 32px;
+  color: var(--race-brand);
+}
+.race-gran-fondo-badlands .hq-marker { color: var(--race-brand); }
 .race-gran-fondo-badlands .aid-marker svg {
   width: 100%; height: 100%; display: block;
   filter: drop-shadow(0 1.5px 3px rgba(26,26,26,0.28));
@@ -198,6 +219,10 @@ body.race-page.race-gran-fondo-badlands {
   margin: 0 0 16px 0;
   border-bottom: none;
 }
+/* Distance picker chips — borderless. The default tan/cream border
+ * read as four separate outlined boxes; rest state is now a flat
+ * paper-card surface with a tiny lift shadow, active state is an
+ * inner ring in the loop color (currentColor on the chip). */
 .race-gran-fondo-badlands .dir-dino-tab {
   display: flex;
   flex-direction: column;
@@ -205,21 +230,20 @@ body.race-page.race-gran-fondo-badlands {
   gap: 6px;
   padding: 12px 8px 10px 8px;
   background: var(--paper-card);
-  border: 1.5px solid #e2d7c2;
+  border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: border-color 160ms, transform 160ms, box-shadow 160ms;
+  transition: transform 160ms, box-shadow 160ms;
   text-align: center;
   font-family: var(--font-body);
+  box-shadow: 0 1px 2px rgba(26,26,26,0.04);
 }
 .race-gran-fondo-badlands .dir-dino-tab:hover {
-  border-color: var(--race-brand);
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(26,26,26,0.06);
+  box-shadow: 0 4px 10px rgba(26,26,26,0.08);
 }
 .race-gran-fondo-badlands .dir-dino-tab.active {
-  border-color: currentColor;
-  box-shadow: 0 4px 10px rgba(26,26,26,0.10), 0 0 0 1px currentColor inset;
+  box-shadow: 0 4px 10px rgba(26,26,26,0.12), 0 0 0 2px currentColor inset;
 }
 .race-gran-fondo-badlands .dir-dino-icon {
   width: 100%;
@@ -527,10 +551,21 @@ body.race-page.race-gran-fondo-badlands {
 
 /* ─── Course simulator (relocated into essentials) ─────────────────── */
 
+/* Bust the .essentials 720px reading-width cap for the sim section — at
+ * 720px the 2-column grid forces the panel column to 285px and its
+ * children (scrubber row, speed buttons, 3-col stats) overflow into
+ * the visual column. The course-simulator earns the wider canvas.
+ * Selector matches the 720px rule's specificity so it wins. */
+.race-gran-fondo-badlands main > section.essentials.sim-essentials {
+  max-width: 1080px;
+}
 .race-gran-fondo-badlands .sim-essentials .sim-container {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
-  gap: 16px;
+  /* 36px gap so the 1x/2x/4x speed buttons on the panel side don't
+   * crash into the course canvas on the visual side. Same regression
+   * we fixed on Wild Goose. */
+  gap: 36px;
 }
 .race-gran-fondo-badlands .sim-panel {
   display: flex; flex-direction: column; gap: 12px;
