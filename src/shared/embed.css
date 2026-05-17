@@ -34,15 +34,22 @@ body.embed-mode {
   flex-shrink: 0;
 }
 
-/* Map view fills remaining viewport height and scrolls content below */
+/* Embed layout — map pinned at the top of the iframe, directions panel
+ * below scrolls INTERNALLY. This keeps the map visible while the rider
+ * reads the turn-by-turn — clicking a turn row updates the active
+ * segment on the still-visible map without scrolling either out of
+ * view. #mapView itself is `overflow: hidden`; its scroll-target child
+ * is the .directions-section (editorial maps) or the natural overflow
+ * column (legacy maps, where #mapView falls back to `overflow-y: auto`
+ * via the .embed-mode.compact rules below). */
 body.embed-mode #mapView.active {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 40px);
-  overflow-y: auto;
+  overflow: hidden;
 }
 body.embed-mode .map-wrap {
-  flex-shrink: 0;
+  flex: 0 0 auto;
   /* Editorial maps style .map-wrap as `height: 100%` so the absolutely-
    * positioned #map can `inset: 0` against it. In a flex column inside
    * #mapView (which is `calc(100vh - 40px)` tall) that stretches the
@@ -78,26 +85,32 @@ body.embed-mode.compact .directions-section {
   display: none;
 }
 
-/* Editorial chrome trim — the race-shell-era mapViewHtml ships the full
- * Course-directions panel (within-loop turn-by-turn list, cutoff pill,
- * "Currently viewing" label, legacy hidden controls). In a 600px iframe
- * that explodes the page height by 30k+ pixels of unstyled content. Keep
- * the dinosaur / loop distance picker (race directors want it for multi-
- * distance races) and hide everything else inside the section. Profile
- * section likewise gets hidden — embed is a map, not an athlete dossier.
- * Both rules no-op for legacy maps that don't have these elements. */
-body.embed-mode .directions-header,
+/* Editorial mapViewHtml ships a full Course-directions panel —
+ * distance picker + within-loop turn-by-turn list. Race directors rely
+ * on the TBT cues being inside the iframe, so the cue list stays
+ * visible. The panel becomes the embed's scroll container (`flex: 1`
+ * inside #mapView so it grabs whatever space remains under the map),
+ * which keeps the map pinned at the top while the rider reads the
+ * directions and clicks rows to highlight segments. Only the
+ * "Currently viewing" sub-label and the legacy hidden stubs are
+ * stripped — they're decorative chrome for the main race page, not the
+ * iframe. Rules no-op for legacy maps that don't have these elements. */
 body.embed-mode .assembly-now,
-body.embed-mode .loop-cue-list,
 body.embed-mode .legacy-controls {
   display: none !important;
 }
 body.embed-mode .directions-section {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   margin: 0;
   padding: 8px 12px;
   background: transparent;
   border: none;
   box-shadow: none;
+}
+body.embed-mode .directions-header {
+  margin-top: 4px;
 }
 /* Editorial maps inline an in-flow .profile-section as part of their
  * custom mapViewHtml — designed for the wide cue-column layout on the
