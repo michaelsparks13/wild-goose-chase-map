@@ -57,7 +57,6 @@ var aidOn = true;
 // to 1.1) carries the dramatic badlands geology look; 3D is one
 // click away in the Layers popover for riders who want it.
 var terrain3D = false;
-var hqMarker = null;
 var aidMarkers = [];
 var streetviewMarkers = [];
 var streetviewOn = false;
@@ -332,6 +331,124 @@ function fitToActiveLoop(animate) {
   map.fitBounds([b[0], b[1]], { padding: pad, duration: animate ? 800 : 0, maxZoom: 12.5 });
 }
 
+// ─── HQ start marker (GL symbol layer) ───────────────────────────────
+// The start/finish pennant used to be an HTML maplibregl.Marker, but
+// HTML markers ALWAYS render above the GL canvas — meaning the rust
+// disc covered Liberty's place-name symbols (Drumheller in particular
+// sits within a stone's throw of the BCF coord). Rendering the pennant
+// as a GL symbol layer with beforeId = firstSymbol pushes it BELOW
+// the label_town / label_city layers so town names paint cleanly on
+// top.
+//
+// The icon is rasterized once into a 64×64 Canvas at pixelRatio: 2 so
+// it stays crisp on retina; icon-size: 0.7 renders it at ~22 px on
+// screen — 30% smaller than the original 32 px HTML marker. Since the
+// element is in the GL canvas rather than the DOM, axe-core's
+// target-size rule (which only audits DOM nodes) doesn't apply, so
+// the sub-24px footprint is acceptable here.
+
+function makeStartIconImage(pxSize, brandColor) {
+  var canvas = document.createElement('canvas');
+  canvas.width = canvas.height = pxSize;
+  var ctx = canvas.getContext('2d');
+  var s = pxSize / 32;
+  ctx.fillStyle = brandColor;
+  ctx.beginPath();
+  ctx.arc(16 * s, 16 * s, 13 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = 2.5 * s;
+  ctx.strokeStyle = '#fff';
+  ctx.stroke();
+  ctx.lineWidth = 2 * s;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(11 * s, 8 * s);
+  ctx.lineTo(11 * s, 24 * s);
+  ctx.stroke();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.moveTo(11.5 * s, 8 * s);
+  ctx.lineTo(21 * s, 11.5 * s);
+  ctx.lineTo(11.5 * s, 15 * s);
+  ctx.closePath();
+  ctx.fill();
+  return ctx.getImageData(0, 0, pxSize, pxSize);
+}
+
+var hqStartPopupHtml = '';
+function onHqStartClick(e) {
+  if (!e.features || !e.features.length || !hqStartPopupHtml) return;
+  new maplibregl.Popup({ offset: 14, maxWidth: '300px' })
+    .setLngLat(e.features[0].geometry.coordinates.slice())
+    .setHTML(hqStartPopupHtml)
+    .addTo(map);
+}
+
+function addHqStartLayer() {
+  var brand = '#A24414';
+  try {
+    var v = getComputedStyle(document.documentElement).getPropertyValue('--race-brand').trim();
+    if (v) brand = v;
+  } catch (e) { /* noop */ }
+  if (!map.hasImage('hq-start-icon')) {
+    map.addImage('hq-start-icon', makeStartIconImage(64, brand), { pixelRatio: 2 });
+  }
+  if (!map.getSource('hq-start-src')) {
+    map.addSource('hq-start-src', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  }
+  if (!map.getLayer('hq-start')) {
+    map.addLayer({
+      id: 'hq-start',
+      type: 'symbol',
+      source: 'hq-start-src',
+      layout: {
+        'icon-image': 'hq-start-icon',
+        'icon-size': 0.7,
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+      },
+    }, findFirstSymbolLayerId());
+    map.on('click', 'hq-start', onHqStartClick);
+    map.on('mouseenter', 'hq-start', function() { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'hq-start', function() { map.getCanvas().style.cursor = ''; });
+  }
+}
+
+function updateHqStartLayer(race) {
+  if (!map || !map.getLayer || !map.getLayer('hq-start')) return;
+  map.setLayoutProperty('hq-start', 'visibility', aidOn ? 'visible' : 'none');
+  var stn = null;
+  var coord = null;
+  if (race) {
+    var idxs = race.aidIdx || [];
+    if (idxs.length) {
+      stn = AID_STATIONS_ALL[idxs[0]];
+      if (stn) {
+        var raceMile = (stn.kilometer != null) ? stn.kilometer / KM_PER_MI : stn.mile || 0;
+        var loopLenMi = LOOPS[currentRaceId].miles;
+        if (raceMile > loopLenMi) raceMile = loopLenMi;
+        coord = getCoordAtMile(currentRaceId, raceMile);
+      }
+    }
+  }
+  var src = map.getSource('hq-start-src');
+  if (stn && coord) {
+    hqStartPopupHtml =
+      '<div class="aid-popup">' +
+        '<div class="aid-popup__name">' + escapeHtml(stn.name) + '</div>' +
+        '<div class="aid-popup__km">km ' + (stn.kilometer != null ? stn.kilometer.toFixed(1) : '—') + '</div>' +
+        '<div class="aid-popup__stocked">' + escapeHtml(stn.stocked) + '</div>' +
+      '</div>';
+    src.setData({
+      type: 'FeatureCollection',
+      features: [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: coord } }],
+    });
+  } else {
+    hqStartPopupHtml = '';
+    src.setData({ type: 'FeatureCollection', features: [] });
+  }
+}
+
 // ─── Aid station markers ─────────────────────────────────────────────
 
 function clearAidMarkers() {
@@ -341,39 +458,39 @@ function clearAidMarkers() {
 
 function renderAidMarkers() {
   clearAidMarkers();
-  if (!aidOn) return;
   var race = RACES[currentRaceId];
+  updateHqStartLayer(race);
+  if (!aidOn) return;
   if (!race) return;
   var idxs = race.aidIdx || [];
   idxs.forEach(function(i, n) {
     var stn = AID_STATIONS_ALL[i];
     if (!stn) return;
+    var isStart = (n === 0);
+    if (isStart) return; // rendered by the hq-start GL symbol layer (below place labels)
     var raceMile = (stn.kilometer != null) ? stn.kilometer / KM_PER_MI : stn.mile || 0;
     var loopLenMi = LOOPS[currentRaceId].miles;
     if (raceMile > loopLenMi) raceMile = loopLenMi;
     var coord = getCoordAtMile(currentRaceId, raceMile);
 
-    var isStart = (n === 0);
     var isFinish = (n === idxs.length - 1);
     // For loop courses (start coord === finish coord, within ~50m) the
-    // finish marker would stack directly on top of the start marker.
-    // axe-core flags this as a target-size violation (each obscures
-    // the other down to a sub-pixel hit area), and visually it's
-    // redundant — one rust "S/F" pennant carries the meaning. Skip
-    // the finish marker entirely; let the start marker's popup name
-    // tell the rider "Start / Finish".
-    if (isFinish && !isStart) {
+    // finish marker would stack directly on top of the start. Visually
+    // it's redundant — one rust "S/F" pennant carries the meaning. Skip
+    // the finish marker entirely; let the start popup name tell the
+    // rider "Start / Finish".
+    if (isFinish) {
       var startCoord = LOOPS[currentRaceId].geojson.geometry.coordinates[0];
       var dx = (coord[0] - startCoord[0]) * 111000 * Math.cos(startCoord[1] * Math.PI / 180);
       var dy = (coord[1] - startCoord[1]) * 111000;
       if (Math.hypot(dx, dy) < 50) return; // overlap; skip
     }
     var el = document.createElement('div');
-    el.className = isFinish ? 'aid-marker aid-marker--finish' : (isStart ? 'aid-marker aid-marker--start' : 'aid-marker');
+    el.className = isFinish ? 'aid-marker aid-marker--finish' : 'aid-marker';
 
     // SVGs use currentColor for fills; the wrapper sets color via CSS
-    // (.aid-marker / --start / --finish), since CSS var() in fill="..."
-    // attributes is not reliably supported across browsers.
+    // (.aid-marker / --finish), since CSS var() in fill="..." attributes
+    // is not reliably supported across browsers.
     var svgInner;
     if (isFinish) {
       // Finish flag — checkered pennant on a pole, brand-color disc
@@ -387,14 +504,6 @@ function renderAidMarkers() {
           '<rect x="14.7" y="10.7" width="3.1" height="2.7" fill="#1A1A1A"/>' +
           '<rect x="11.5" y="13.4" width="3.2" height="2.6" fill="#1A1A1A"/>' +
           '<rect x="17.8" y="13.4" width="3.2" height="2.6" fill="#1A1A1A"/>' +
-        '</svg>';
-    } else if (isStart) {
-      // Start — single triangle pennant on a pole, brand-color disc
-      svgInner =
-        '<svg viewBox="0 0 32 32" aria-hidden="true">' +
-          '<circle cx="16" cy="16" r="13" fill="currentColor" stroke="#fff" stroke-width="2.5"/>' +
-          '<path d="M11 8 L11 24" stroke="#fff" stroke-width="2" stroke-linecap="round"/>' +
-          '<path d="M11.5 8 L21 11.5 L11.5 15 Z" fill="#fff"/>' +
         '</svg>';
     } else {
       // Aid station — ochre disc with white water-drop + cross (Tinman style)
@@ -566,15 +675,6 @@ function clearKmMarkers() {
   if (map.getSource(kmMarkerSourceId)) map.removeSource(kmMarkerSourceId);
 }
 
-// ensureHqMarker() used to render a third "BCF" disc at the Badlands
-// Community Facility coord. The aid-marker--start (rust + triangle
-// pennant) is ALREADY at the same coord — having two markers stacked
-// triggered axe-core's target-size rule (each obscured the other
-// down to a 36x2 hit area). Plus the bottom-left .hq-badge already
-// labels "BCF · START / FINISH" persistently. The HQ marker was
-// redundant; removing it gives the aid-marker--start its full 32x32
-// tap target.
-function ensureHqMarker() { /* intentionally a no-op — see comment above */ }
 
 // ─── Layer toggles ───────────────────────────────────────────────────
 
@@ -676,7 +776,6 @@ function selectRace(raceId) {
   fitToActiveLoop(true);
   renderAidMarkers();
   rebuildKmMarkers();
-  ensureHqMarker();
   drawProfile();
   renderDirectionsList();
   updateRaceMeta();
@@ -1581,9 +1680,9 @@ function initMap() {
     }, firstSymbolId);
 
     addLoopLayers();
+    addHqStartLayer();
     precomputeSnappedTurns();
     setActiveDistance(currentRaceId);
-    ensureHqMarker();
     renderAidMarkers();
     renderStreetviewMarkers();
     rebuildKmMarkers();

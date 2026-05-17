@@ -84,13 +84,14 @@ body.race-page.race-gran-fondo-badlands {
 }
 /* Marker color via CSS — SVG fills use currentColor since CSS var() in
  * fill="..." attributes is not reliably supported. Aid stations get
- * ochre, start + finish get the brand rust. */
+ * ochre, finish gets the brand rust. (The start pennant moved to a GL
+ * symbol layer so it can sit beneath Liberty's place labels — see
+ * makeStartIconImage / addHqStartLayer in override.js.) */
 .race-gran-fondo-badlands .aid-marker {
   width: 28px; height: 28px;
   cursor: pointer;
   color: var(--aid-color);
 }
-.race-gran-fondo-badlands .aid-marker--start,
 .race-gran-fondo-badlands .aid-marker--finish {
   width: 32px; height: 32px;
   color: var(--race-brand);

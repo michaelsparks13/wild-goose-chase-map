@@ -138,6 +138,21 @@ describe('gran-fondo-badlands · built HTML', () => {
     expect(html).not.toContain('Cycling simulator playback is in active development');
   });
 
+  it('start/finish pennant is a GL symbol layer below place labels (not an HTML marker)', () => {
+    const html = readFileSync(DIST_HTML, 'utf8');
+    // Symbol-layer wiring + rasterized icon helper
+    expect(html).toContain("'hq-start'");
+    expect(html).toContain("'hq-start-icon'");
+    expect(html).toContain('makeStartIconImage');
+    expect(html).toContain('addHqStartLayer');
+    // Inserted before the first symbol layer so labels paint on top
+    expect(html).toContain('findFirstSymbolLayerId()');
+    // 30%-smaller render (icon-size 0.7 against the 32px source)
+    expect(html).toContain("'icon-size': 0.7");
+    // The old HTML start-pennant element is gone
+    expect(html).not.toContain('aid-marker--start');
+  });
+
   it('Feature 3: editorial aid table renders km header for this race', () => {
     const html = readFileSync(DIST_HTML, 'utf8');
     expect(html).toContain('aid-table__mile">Km<');
