@@ -43,6 +43,15 @@ body.embed-mode #mapView.active {
 }
 body.embed-mode .map-wrap {
   flex-shrink: 0;
+  /* Editorial maps style .map-wrap as `height: 100%` so the absolutely-
+   * positioned #map can `inset: 0` against it. In a flex column inside
+   * #mapView (which is `calc(100vh - 40px)` tall) that stretches the
+   * wrap to fill the column — the BCF badge then anchors to the bottom
+   * of the wrap instead of the bottom of the visible map. Pin the wrap
+   * to the same 60vh the map uses so badge + Layers popover land on the
+   * map, not in the whitespace below it. */
+  height: 60vh;
+  min-height: 250px;
 }
 body.embed-mode #map {
   height: 60vh;
@@ -64,7 +73,55 @@ body.embed-mode.compact #map {
 }
 body.embed-mode.compact .stats-section,
 body.embed-mode.compact .profile-section,
-body.embed-mode.compact .course-info {
+body.embed-mode.compact .course-info,
+body.embed-mode.compact .directions-section {
+  display: none;
+}
+
+/* Editorial chrome trim — the race-shell-era mapViewHtml ships the full
+ * Course-directions panel (within-loop turn-by-turn list, cutoff pill,
+ * "Currently viewing" label, legacy hidden controls). In a 600px iframe
+ * that explodes the page height by 30k+ pixels of unstyled content. Keep
+ * the dinosaur / loop distance picker (race directors want it for multi-
+ * distance races) and hide everything else inside the section. Profile
+ * section likewise gets hidden — embed is a map, not an athlete dossier.
+ * Both rules no-op for legacy maps that don't have these elements. */
+body.embed-mode .directions-header,
+body.embed-mode .assembly-now,
+body.embed-mode .loop-cue-list,
+body.embed-mode .legacy-controls {
+  display: none !important;
+}
+body.embed-mode .directions-section {
+  margin: 0;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+/* Editorial maps inline an in-flow .profile-section as part of their
+ * custom mapViewHtml — designed for the wide cue-column layout on the
+ * main race page, not for a 600px iframe. Hide for those so the embed
+ * stays map-focused. Legacy (non-editorial) maps keep their lean
+ * embed-friendly profile-section visible by default so URL params like
+ * `?show=map,elevation` still control visibility per the existing
+ * `data-embed-hide-elevation` mechanism. */
+body.embed-mode.race-gran-fondo-badlands #mapView .profile-section,
+body.embed-mode.race-wild-goose #mapView .profile-section,
+body.embed-mode.race-tupper-lake-tinman #mapView .profile-section,
+body.embed-mode.race-javelina-jundred #mapView .profile-section {
+  display: none;
+}
+
+/* Simulator tab uses switchView() which is only present for legacy
+ * (non-editorial) maps via view-switch.js. Editorial maps (gran-fondo,
+ * wild-goose, tinman, javelina) skip the shared JS so the Simulator tab
+ * is dead — hide it for those. Race director still gets the live Map
+ * label, just no broken click target. */
+body.embed-mode.race-gran-fondo-badlands .embed-tabs,
+body.embed-mode.race-wild-goose .embed-tabs,
+body.embed-mode.race-tupper-lake-tinman .embed-tabs,
+body.embed-mode.race-javelina-jundred .embed-tabs {
   display: none;
 }
 

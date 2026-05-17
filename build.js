@@ -587,11 +587,18 @@ function buildEmbed(slug, templates) {
       .replace('{{DEFAULT_RUNNER_META}}', config.defaultRunnerMeta || '');
   }
 
-  // Build final HTML from embed template
+  // Build final HTML from embed template. Editorial maps (config.theme set)
+  // need the same Google Fonts link the main map uses, so the dinosaur
+  // tabs / cue rows / display fonts render correctly inside the iframe —
+  // otherwise the embed falls back to the system stack and looks unstyled.
+  const embedFonts = (config.theme && config.theme.type && config.theme.type.googleFontsHref)
+    ? buildGoogleFontsLink(config.theme.type.googleFontsHref)
+    : (config.googleFontsUrl || '');
   let html = templates.embedShell
     .replace('{{THEME_COLOR}}', config.themeColor)
     .replace('{{TITLE}}', config.title)
-    .replace('{{GOOGLE_FONTS}}', config.googleFontsUrl || '')
+    .replace('{{GOOGLE_FONTS}}', embedFonts)
+    .replace(/{{SLUG}}/g, slug)
     .replace('{{CSS}}', fullCSS)
     .replace('{{RACE_NAME}}', config.raceName)
     .replace('{{MAP_VIEW}}', mapView)

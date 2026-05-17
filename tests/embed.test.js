@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 
-const slugs = ['escarpment', 'golden-leaf', 'javelina-jundred', 'manitous-revenge', 'sleeping-giant', 'wild-goose'];
+const slugs = ['escarpment', 'golden-leaf', 'gran-fondo-badlands', 'javelina-jundred', 'manitous-revenge', 'sleeping-giant', 'tupper-lake-tinman', 'wild-goose'];
 
 describe('Embed build output', () => {
   slugs.forEach(slug => {
@@ -30,7 +30,14 @@ describe('Embed build output', () => {
 
       it('has embed-mode body class', () => {
         const html = readFileSync(embedPath, 'utf-8');
-        expect(html).toContain('class="embed-mode"');
+        // Body now also carries race-{slug} so the per-race override.css
+        // (scoped to .race-{slug}) actually applies inside the iframe.
+        expect(html).toMatch(/<body class="embed-mode race-[a-z0-9-]+"/);
+      });
+
+      it('body class includes race-{slug} scope', () => {
+        const html = readFileSync(embedPath, 'utf-8');
+        expect(html).toContain(`race-${slug}"`);
       });
 
       it('has no footer element', () => {
