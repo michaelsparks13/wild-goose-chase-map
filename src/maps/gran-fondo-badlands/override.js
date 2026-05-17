@@ -211,7 +211,20 @@ function hexToRgba(hex, a) {
 
 var LOOP_IDS = ['brontosaurus', 'trex', 'triceratops', 'velociraptor'];
 
+// Find the first symbol layer in Liberty's style so route + highlight
+// layers can be inserted below it. Without this, the loop lines stack
+// above Liberty's place-name symbols and cover labels like "Drumheller".
+function findFirstSymbolLayerId() {
+  var styleLayers = map.getStyle().layers;
+  for (var li = 0; li < styleLayers.length; li++) {
+    if (styleLayers[li].type === 'symbol') return styleLayers[li].id;
+  }
+  return undefined;
+}
+
 function addLoopLayers() {
+  var beforeSymbol = findFirstSymbolLayerId();
+
   LOOP_IDS.forEach(function(id) {
     var loop = LOOPS[id];
     if (!loop || !loop.geojson) return;
@@ -231,7 +244,7 @@ function addLoopLayers() {
         'line-width': ['interpolate', ['linear'], ['zoom'], 9, 4, 14, 9, 18, 14],
         'line-opacity': 0.9,
       },
-    });
+    }, beforeSymbol);
 
     map.addLayer({
       id: 'loop-' + id + '-line',
@@ -242,7 +255,7 @@ function addLoopLayers() {
         'line-color': loop.color,
         'line-width': ['interpolate', ['linear'], ['zoom'], 9, 2.5, 14, 5.5, 18, 9],
       },
-    });
+    }, beforeSymbol);
   });
 
   // Active-segment overlay — drawn ON TOP of all course layers so the
@@ -273,7 +286,7 @@ function addLoopLayers() {
       'line-opacity': 0.92,
       'line-blur': 1.5,
     },
-  });
+  }, beforeSymbol);
   map.addLayer({
     id: 'dir-active-segment-line',
     type: 'line',
@@ -283,7 +296,7 @@ function addLoopLayers() {
       'line-color': '#FFFFFF',
       'line-width': 4,
     },
-  });
+  }, beforeSymbol);
 }
 
 function showLoop(id, visible) {
