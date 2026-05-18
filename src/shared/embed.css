@@ -122,7 +122,8 @@ body.embed-mode .directions-header {
 body.embed-mode.race-gran-fondo-badlands #mapView .profile-section,
 body.embed-mode.race-wild-goose #mapView .profile-section,
 body.embed-mode.race-tupper-lake-tinman #mapView .profile-section,
-body.embed-mode.race-javelina-jundred #mapView .profile-section {
+body.embed-mode.race-javelina-jundred #mapView .profile-section,
+body.embed-mode.race-pocantico-hills #mapView .profile-section {
   display: none;
 }
 
@@ -134,7 +135,8 @@ body.embed-mode.race-javelina-jundred #mapView .profile-section {
 body.embed-mode.race-gran-fondo-badlands .embed-tabs,
 body.embed-mode.race-wild-goose .embed-tabs,
 body.embed-mode.race-tupper-lake-tinman .embed-tabs,
-body.embed-mode.race-javelina-jundred .embed-tabs {
+body.embed-mode.race-javelina-jundred .embed-tabs,
+body.embed-mode.race-pocantico-hills .embed-tabs {
   display: none;
 }
 

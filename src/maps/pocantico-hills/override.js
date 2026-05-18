@@ -217,7 +217,7 @@ function hexToRgba(hex, a) {
 
 // ─── Layer management ────────────────────────────────────────────────
 
-var LOOP_IDS = ['brontosaurus', 'trex', 'triceratops', 'velociraptor'];
+var LOOP_IDS = ['marathon', 'half-marathon'];
 
 // Find the first symbol layer in Liberty's style so route + highlight
 // layers can be inserted below it. Without this, the loop lines stack

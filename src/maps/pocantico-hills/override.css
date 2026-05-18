@@ -335,6 +335,11 @@ body.race-page.race-pocantico-hills {
  * read as four separate outlined boxes; rest state is now a flat
  * paper-card surface with a tiny lift shadow, active state is an
  * inner ring in the loop color (currentColor on the chip). */
+/* Inactive chip: cream substrate with loop-colored numeral + label.
+ * Active chip: inverts to a filled block of the loop color with cream
+ * numeral + label — strong "selected" affordance that doesn't rely on
+ * a thin ring inset (which made the numeral disappear when its fill
+ * matched the ring color, the original bug). */
 .race-pocantico-hills .dir-dino-tab {
   display: flex;
   flex-direction: column;
@@ -345,7 +350,7 @@ body.race-page.race-pocantico-hills {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: transform 160ms, box-shadow 160ms;
+  transition: background-color 180ms, transform 160ms, box-shadow 160ms;
   text-align: center;
   font-family: var(--font-body);
   box-shadow: 0 1px 2px rgba(26,26,26,0.04);
@@ -355,12 +360,21 @@ body.race-page.race-pocantico-hills {
   box-shadow: 0 4px 10px rgba(26,26,26,0.08);
 }
 .race-pocantico-hills .dir-dino-tab.active {
-  box-shadow: 0 4px 10px rgba(26,26,26,0.12), 0 0 0 2px currentColor inset;
+  /* Filled block. currentColor is the loop color (set inline on the
+   * button). The numeral SVG uses fill="currentColor", but the active
+   * .dir-dino-icon override below flips it to cream against the now
+   * loop-colored background. */
+  background: currentColor;
+  box-shadow: 0 4px 10px rgba(26,26,26,0.16);
 }
 .race-pocantico-hills .dir-dino-icon {
   width: 100%;
   max-width: 64px;
   display: block;
+  color: currentColor; /* loop color from the parent's inline style */
+}
+.race-pocantico-hills .dir-dino-tab.active .dir-dino-icon {
+  color: var(--paper); /* numeral flips to cream against the filled chip */
 }
 .race-pocantico-hills .dir-dino-icon svg {
   width: 100%;
@@ -382,13 +396,16 @@ body.race-page.race-pocantico-hills {
   text-transform: uppercase;
 }
 .race-pocantico-hills .dir-dino-tab.active .dir-dino-name {
-  color: currentColor;
+  color: var(--paper);
 }
 .race-pocantico-hills .dir-dino-km {
   font-family: var(--font-micro);
   font-size: 11px;
   color: var(--sage-quiet);
   letter-spacing: 0.04em;
+}
+.race-pocantico-hills .dir-dino-tab.active .dir-dino-km {
+  color: rgba(247,247,247,0.85);
 }
 
 /* ─── Directions header ────────────────────────────────────────────── */

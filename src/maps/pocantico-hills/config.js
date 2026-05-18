@@ -174,8 +174,12 @@ function buildDirectionsHtml() {
   const tabsHtml = distances.map(d => {
     const active = d.id === defaultId;
     const icon = distanceNumeralSvg(d.runMiles);
-    return `<button type="button" class="dir-race-tab dir-dino-tab${active ? ' active' : ''}" data-race="${d.id}" role="tab" aria-selected="${active}" onclick="selectRace('${d.id}')">
-      <span class="dir-dino-icon" style="color:${d.color}">${icon}</span>
+    // The inline color is set on the BUTTON, not the icon span — so
+    // currentColor on the chip and all its descendants resolves to
+    // the loop color, and active-state CSS can override the visible
+    // text/icon color when the chip flips to a filled treatment.
+    return `<button type="button" class="dir-race-tab dir-dino-tab${active ? ' active' : ''}" data-race="${d.id}" role="tab" aria-selected="${active}" onclick="selectRace('${d.id}')" style="color:${d.color}">
+      <span class="dir-dino-icon">${icon}</span>
       <span class="dir-dino-meta">
         <span class="dir-dino-name">${d.shortLabel}</span>
         <span class="dir-dino-km">${d.runMiles.toFixed(1)} mi · ${d.runGainFt} ft</span>

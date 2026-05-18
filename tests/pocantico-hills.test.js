@@ -50,13 +50,17 @@ describe('pocantico-hills · theme + config', () => {
     }
   });
 
-  it('aid station spine has 8 entries with mile values increasing', () => {
+  it('aid station spine has 9 entries (8 on-course + Finish) with mile values increasing', () => {
     const theme = require(join(ROOT, 'src/themes/pocantico-hills.js'));
     const stns = theme.aidStations;
-    expect(stns.length).toBe(8);
+    expect(stns.length).toBe(9);
     for (let i = 1; i < stns.length; i++) {
       expect(stns[i].mile).toBeGreaterThan(stns[i - 1].mile);
     }
+    // Last entry is the explicit Finish at Rockwood Hall — its
+    // mile value equals the marathon's total length, and the
+    // renderer auto-collapses it onto the start GL symbol.
+    expect(stns[stns.length - 1].name).toMatch(/Finish/i);
   });
 
   it('aid stations carry both mile and kilometer for schema parity', () => {
@@ -70,12 +74,15 @@ describe('pocantico-hills · theme + config', () => {
     }
   });
 
-  it('marathon visits all 8 aid stations; half-marathon visits the 4 shared with the marathon', () => {
+  it('marathon visits all 8 aid stations + finish; half-marathon visits 4 shared stations + finish', () => {
     const theme = require(join(ROOT, 'src/themes/pocantico-hills.js'));
     const m = theme.raceFormat.distances.find(d => d.id === 'marathon');
     const h = theme.raceFormat.distances.find(d => d.id === 'half-marathon');
-    expect(m.aidStations).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
-    expect(h.aidStations).toEqual([0, 1, 6, 7]);
+    // Index 8 is the Rockwood Hall Finish (auto-collapsed onto the
+    // start by the renderer, but listed so the finish marker is
+    // routed through the same code path as gran-fondo-badlands).
+    expect(m.aidStations).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(h.aidStations).toEqual([0, 1, 6, 7, 8]);
   });
 
   it('race day is November 7, 2026 — Saturday', () => {
@@ -201,6 +208,43 @@ describe('pocantico-hills · built HTML', () => {
     expect(html).toContain('pocanticohillsmarathon.com');
     expect(html).toContain('falsesummitstudio.com');
     expect(html).toContain('Saturday, November 7, 2026');
+  });
+
+  it('LOOP_IDS reflects pocantico-hills distances — no dinosaur leftovers', () => {
+    // Regression guard: LOOP_IDS controls which loops addLoopLayers
+    // iterates over. If this leaks dinosaur slugs from gran-fondo,
+    // no course routes render at all (only the active-segment
+    // highlight works). Seen + fixed during initial review.
+    const html = readFileSync(DIST_HTML, 'utf8');
+    expect(html).toContain("var LOOP_IDS = ['marathon', 'half-marathon']");
+    expect(html).not.toMatch(/var LOOP_IDS = \['brontosaurus/);
+  });
+
+  it('active distance chip uses filled-block treatment (not just an inset ring)', () => {
+    // Regression guard: the original active state was a 2px inset
+    // ring of currentColor, which made the SVG numeral disappear
+    // when its fill matched the ring color. Now the active state
+    // is `background: currentColor` with cream label / numeral.
+    const html = readFileSync(DIST_HTML, 'utf8');
+    expect(html).toMatch(/\.dir-dino-tab\.active\s*\{\s*[^}]*background:\s*currentColor/);
+    expect(html).toContain('.dir-dino-tab.active .dir-dino-icon');
+  });
+});
+
+describe('pocantico-hills · embed build', () => {
+  const EMBED_HTML = join(ROOT, 'dist', 'embed', 'pocantico-hills', 'index.html');
+
+  it('embed builds with pocantico-hills in the editorial-races CSS allowlist', () => {
+    expect(existsSync(EMBED_HTML)).toBe(true);
+    const html = readFileSync(EMBED_HTML, 'utf8');
+    // The in-map .profile-section is hidden for editorial-format
+    // embeds so it doesn't crowd out the directions panel. Pocantico
+    // is editorial-format — embed.css now lists it.
+    expect(html).toMatch(/body\.embed-mode\.race-pocantico-hills #mapView \.profile-section/);
+    // Same allowlist hides the Map/Sim tabs row (sim is only
+    // wired for legacy maps via view-switch.js, which editorial
+    // skipSharedJs maps don't ship).
+    expect(html).toMatch(/body\.embed-mode\.race-pocantico-hills \.embed-tabs/);
   });
 });
 

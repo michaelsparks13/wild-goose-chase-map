@@ -187,7 +187,12 @@ module.exports = {
         startTime: '8:00 AM',
         startWindow: '8:00 AM (walkers 7:00 AM)',
         assembly: [{ loopId: 'marathon', direction: 'CW' }],
-        aidStations: [0, 1, 2, 3, 4, 5, 6, 7],
+        // Indices 0..7 are the eight on-course aid stations; index 8
+        // is the explicit Finish entry (Rockwood Hall), which override
+        // .js's loop-overlap detection auto-collapses with the start
+        // GL symbol so we don't double-render a flag on top of the
+        // start pennant.
+        aidStations: [0, 1, 2, 3, 4, 5, 6, 7, 8],
       },
       {
         id: 'half-marathon',
@@ -203,9 +208,9 @@ module.exports = {
         startWindow: '9:00 AM',
         assembly: [{ loopId: 'half-marathon', direction: 'CW' }],
         // The half hits the marathon's stations 1, 2, 7, 8
-        // (numbering from the host site). Indexed into the shared
-        // aidStations spine below: 0, 1, 6, 7.
-        aidStations: [0, 1, 6, 7],
+        // (numbering from the host site) plus the shared finish at
+        // Rockwood Hall. Indexed into the shared spine: 0, 1, 6, 7, 8.
+        aidStations: [0, 1, 6, 7, 8],
       },
     ],
   },
@@ -295,6 +300,18 @@ module.exports = {
       mile: 24.1,
       kilometer: 38.8,
       stocked: 'Full aid spread',
+    },
+    {
+      // Explicit Finish entry at the end of the aid spine. The mile
+      // value is the marathon's total course length; override.js
+      // auto-detects that this point is within 50 m of the start
+      // (Rockwood Hall is the start AND finish for both distances)
+      // and skips rendering an HTML marker, since the start GL
+      // symbol layer already represents both.
+      name: 'Rockwood Hall · Finish',
+      mile: 26.81,
+      kilometer: 43.2,
+      stocked: 'Race-day finish line · refreshments · gear retrieval',
     },
   ],
 

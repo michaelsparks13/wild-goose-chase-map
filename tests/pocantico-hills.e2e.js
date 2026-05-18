@@ -134,13 +134,18 @@ test.describe('Pocantico Hills Marathon — desktop (1440×900)', () => {
     expect(typeof hqVisible).toBe('boolean');
   });
 
-  test('aid-station essentials table lists all 8 stations in mile order', async ({ page }) => {
+  test('aid-station essentials table lists 8 on-course stations + the Finish in mile order', async ({ page }) => {
     const rows = page.locator('.aid-table tbody tr');
-    await expect(rows).toHaveCount(8);
+    // 8 on-course aid stations + 1 Finish entry = 9 rows
+    await expect(rows).toHaveCount(9);
     // First row mile should be 2.1 (Aid #1 at OCA bridge)
     await expect(rows.nth(0).locator('td').first()).toContainText('2.1');
-    // Last row mile should be 24.1 (Aid #8 on 13 Bridges Trail)
+    // Aid #8 (last on-course aid) at mile 24.1
     await expect(rows.nth(7).locator('td').first()).toContainText('24.1');
+    // Last row is the Rockwood Hall Finish at mile 26.8 (marathon
+    // total length).
+    await expect(rows.nth(8)).toContainText('Finish');
+    await expect(rows.nth(8).locator('td').first()).toContainText('26.8');
   });
 
   test('race-day essentials show the marathon cutoffs', async ({ page }) => {
