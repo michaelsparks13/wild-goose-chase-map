@@ -1,0 +1,218 @@
+{
+  "fetchedAt": "2026-05-18T22:39:16.900Z",
+  "raceDate": "2026-11-07",
+  "dataYears": 15,
+  "location": {
+    "lat": 41.1125,
+    "lng": -73.8657
+  },
+  "riskSummary": {
+    "heat": {
+      "level": "low",
+      "label": "Low",
+      "color": "#4CAF50",
+      "detail": "56.3°F heat stress"
+    },
+    "storm": {
+      "level": "low",
+      "label": "Low",
+      "color": "#4CAF50",
+      "detail": "33% rain chance"
+    },
+    "air": {
+      "level": "low",
+      "label": "Good",
+      "color": "#4CAF50",
+      "detail": "Avg AQI 29"
+    },
+    "wind": {
+      "level": "low",
+      "label": "Light",
+      "color": "#4CAF50",
+      "detail": "3.5 mph avg"
+    }
+  },
+  "heatStress": {
+    "estimated": 56.3,
+    "risk": "low",
+    "riskColor": "#4CAF50",
+    "riskLabel": "Low"
+  },
+  "dailyAverages": [
+    {
+      "date": "2026-11-04",
+      "dayLabel": "Wed",
+      "isRaceDay": false,
+      "temperature": {
+        "avgHighF": 57,
+        "avgLowF": 38
+      },
+      "humidity": {
+        "avgPct": 75
+      },
+      "wind": {
+        "avgMph": 2.9
+      },
+      "precipProbPct": 0,
+      "aqi": {
+        "avgAQI": 34
+      },
+      "heatStress": {
+        "estimated": 54.8,
+        "risk": "low",
+        "riskColor": "#4CAF50",
+        "riskLabel": "Low"
+      }
+    },
+    {
+      "date": "2026-11-05",
+      "dayLabel": "Thu",
+      "isRaceDay": false,
+      "temperature": {
+        "avgHighF": 59,
+        "avgLowF": 42
+      },
+      "humidity": {
+        "avgPct": 82
+      },
+      "wind": {
+        "avgMph": 3.1
+      },
+      "precipProbPct": 7,
+      "aqi": {
+        "avgAQI": 29
+      },
+      "heatStress": {
+        "estimated": 57.7,
+        "risk": "low",
+        "riskColor": "#4CAF50",
+        "riskLabel": "Low"
+      }
+    },
+    {
+      "date": "2026-11-06",
+      "dayLabel": "Fri",
+      "isRaceDay": false,
+      "temperature": {
+        "avgHighF": 59,
+        "avgLowF": 43
+      },
+      "humidity": {
+        "avgPct": 82
+      },
+      "wind": {
+        "avgMph": 3.1
+      },
+      "precipProbPct": 20,
+      "aqi": {
+        "avgAQI": 32
+      },
+      "heatStress": {
+        "estimated": 57.7,
+        "risk": "low",
+        "riskColor": "#4CAF50",
+        "riskLabel": "Low"
+      }
+    },
+    {
+      "date": "2026-11-07",
+      "dayLabel": "Sat",
+      "isRaceDay": true,
+      "temperature": {
+        "avgHighF": 58,
+        "avgLowF": 40
+      },
+      "humidity": {
+        "avgPct": 79
+      },
+      "wind": {
+        "avgMph": 3.5
+      },
+      "precipProbPct": 33,
+      "aqi": {
+        "avgAQI": 29
+      },
+      "heatStress": {
+        "estimated": 56.3,
+        "risk": "low",
+        "riskColor": "#4CAF50",
+        "riskLabel": "Low"
+      }
+    },
+    {
+      "date": "2026-11-08",
+      "dayLabel": "Sun",
+      "isRaceDay": false,
+      "temperature": {
+        "avgHighF": 56,
+        "avgLowF": 37
+      },
+      "humidity": {
+        "avgPct": 73
+      },
+      "wind": {
+        "avgMph": 3.3
+      },
+      "precipProbPct": 13,
+      "aqi": {
+        "avgAQI": 30
+      },
+      "heatStress": {
+        "estimated": 53.5,
+        "risk": "low",
+        "riskColor": "#4CAF50",
+        "riskLabel": "Low"
+      }
+    },
+    {
+      "date": "2026-11-09",
+      "dayLabel": "Mon",
+      "isRaceDay": false,
+      "temperature": {
+        "avgHighF": 56,
+        "avgLowF": 38
+      },
+      "humidity": {
+        "avgPct": 78
+      },
+      "wind": {
+        "avgMph": 2.7
+      },
+      "precipProbPct": 7,
+      "aqi": {
+        "avgAQI": 41
+      },
+      "heatStress": {
+        "estimated": 54.2,
+        "risk": "low",
+        "riskColor": "#4CAF50",
+        "riskLabel": "Low"
+      }
+    },
+    {
+      "date": "2026-11-10",
+      "dayLabel": "Tue",
+      "isRaceDay": false,
+      "temperature": {
+        "avgHighF": 57,
+        "avgLowF": 37
+      },
+      "humidity": {
+        "avgPct": 79
+      },
+      "wind": {
+        "avgMph": 3.6
+      },
+      "precipProbPct": 7,
+      "aqi": {
+        "avgAQI": 48
+      },
+      "heatStress": {
+        "estimated": 55.3,
+        "risk": "low",
+        "riskColor": "#4CAF50",
+        "riskLabel": "Low"
+      }
+    }
+  ]
+}

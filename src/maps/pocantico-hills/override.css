@@ -1,0 +1,1002 @@
+/* gran-fondo-badlands · override.css
+ *
+ * Trail-party voice on a warm-ivory substrate, hoodoo-rust accent.
+ * Race wordmark + countdown ride the rust brand color against the
+ * dark editorial top bar. Loop cue rows + chips + aid table all
+ * inherit per-distance color from the active dinosaur.
+ *
+ * Loaded after editorial.css so it can specialize the page chrome
+ * the editorial system stages.
+ */
+
+/* ─── Body baseline ────────────────────────────────────────────────── */
+
+body.race-page.race-pocantico-hills {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  /* editorial.css recomputes --text-muted via color-mix(ink, paper)
+   * which lands at ~#85827e — fails WCAG AA 4.5:1 on cream surfaces.
+   * Override here (loads after editorial.css) to the sageQuiet token
+   * from our theme, which is hand-tuned for cross-surface contrast. */
+  --text-muted: var(--sage-quiet);
+}
+.race-pocantico-hills h1,
+.race-pocantico-hills h2,
+.race-pocantico-hills h3,
+.race-pocantico-hills h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* Header-accent for wordmark + countdown — distinct from the rust
+ * REGISTER button on the host site so the two don't collapse into a
+ * single color in the eye. The editorial chrome puts a rust pill
+ * background on #raceCountdown by default; we strip it so the golden
+ * text reads against the dark top bar instead of mimicking the
+ * host-site rust CTA button. */
+.race-pocantico-hills .race-mark__name,
+.race-pocantico-hills #raceCountdown {
+  color: var(--header-accent);
+}
+.race-pocantico-hills #raceCountdown {
+  background: transparent;
+  padding: 0;
+  font-weight: 600;
+}
+
+.race-pocantico-hills main > section.essentials,
+.race-pocantico-hills .page-footer {
+  max-width: 720px;
+  margin-inline: auto;
+}
+
+/* The editorial race-shell template hardcodes a `.map-toggles` row of
+ * Aid Stations · Street View · 3D buttons above the map. Those are
+ * Tinman-pattern toggles; this race uses the Layers popover inside the
+ * map for the same job, so the strip is suppressed. */
+.race-pocantico-hills .map-controls,
+.race-pocantico-hills .map-toggles { display: none !important; }
+
+/* ─── Map column ───────────────────────────────────────────────────── */
+
+.race-pocantico-hills .map-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+}
+.race-pocantico-hills #map {
+  position: absolute; inset: 0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.race-pocantico-hills .hq-marker {
+  width: 36px; height: 36px;
+  cursor: pointer;
+}
+.race-pocantico-hills .hq-marker svg {
+  width: 100%; height: 100%; display: block;
+  filter: drop-shadow(0 2px 4px rgba(26,26,26,0.35));
+}
+/* Marker color via CSS — SVG fills use currentColor since CSS var() in
+ * fill="..." attributes is not reliably supported. Aid stations get
+ * ochre, finish gets the brand rust. (The start pennant moved to a GL
+ * symbol layer so it can sit beneath Liberty's place labels — see
+ * makeStartIconImage / addHqStartLayer in override.js.) */
+.race-pocantico-hills .aid-marker {
+  width: 28px; height: 28px;
+  cursor: pointer;
+  color: var(--aid-color);
+}
+.race-pocantico-hills .aid-marker--finish {
+  width: 32px; height: 32px;
+  color: var(--race-brand);
+}
+.race-pocantico-hills .hq-marker { color: var(--race-brand); }
+.race-pocantico-hills .aid-marker svg {
+  width: 100%; height: 100%; display: block;
+  filter: drop-shadow(0 1.5px 3px rgba(26,26,26,0.28));
+}
+
+/* hq-badge — moved from top-left (where it visually obscured the BCF
+ * marker at default fitBounds; axe-core flagged the marker's
+ * target-size as 36x2 because of the overlap) to bottom-left, where
+ * it sits clear of the marker. The Layers popover stays top-right,
+ * the badge stays bottom-left, and the BCF marker has its full 32x32
+ * tap target. Memory: race-map-3d-terrain-marker-occlusion. */
+.race-pocantico-hills .hq-badge {
+  position: absolute; bottom: 32px; left: 12px; z-index: 10;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 11px;
+  background: var(--paper);
+  border: 1px solid #d8cdb6;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(31,29,24,0.08);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--race-brand);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.race-pocantico-hills .hq-badge .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--race-brand);
+}
+
+/* ─── Layers popover ───────────────────────────────────────────────── */
+
+.race-pocantico-hills .map-layers {
+  position: absolute; top: 12px; right: 12px; z-index: 11;
+}
+.race-pocantico-hills .map-layers__trigger {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 11px 7px 9px;
+  background: var(--paper);
+  border: 1px solid #d8cdb6;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(31,29,24,0.08);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 120ms;
+}
+.race-pocantico-hills .map-layers__trigger:hover {
+  background: var(--surface-warm);
+}
+.race-pocantico-hills .map-layers__icon { width: 14px; height: 14px; }
+.race-pocantico-hills .map-layers__chev { width: 10px; height: 10px; transition: transform 180ms; }
+.race-pocantico-hills .map-layers[data-state="open"] .map-layers__chev { transform: rotate(180deg); }
+.race-pocantico-hills .map-layers__count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 16px; height: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--race-brand);
+  color: #fff;
+  font-family: var(--font-micro);
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 2px;
+}
+.race-pocantico-hills .map-layers__panel {
+  display: none;
+  position: absolute; top: calc(100% + 6px); right: 0;
+  min-width: 200px;
+  background: var(--paper);
+  border: 1px solid #d8cdb6;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(26,26,26,0.12);
+  padding: 6px 4px;
+}
+.race-pocantico-hills .map-layers[data-state="open"] .map-layers__panel { display: block; }
+.race-pocantico-hills .map-layers__row {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 3px;
+}
+.race-pocantico-hills .map-layers__row:hover { background: var(--surface-warm); }
+.race-pocantico-hills .map-layers__row input { accent-color: var(--race-brand); }
+
+/* ─── Aid station popups ───────────────────────────────────────────── */
+
+.race-pocantico-hills .maplibregl-popup-content {
+  background: var(--paper-card);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(26,26,26,0.18);
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink);
+}
+.race-pocantico-hills .aid-popup__name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.race-pocantico-hills .aid-popup__km {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  color: var(--sage-quiet);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.race-pocantico-hills .aid-popup__stocked {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+/* ─── Street View POI markers + popup ─────────────────────────────── */
+
+.race-pocantico-hills .streetview-marker {
+  width: 28px; height: 28px;
+  cursor: pointer;
+  color: var(--race-brand);
+}
+.race-pocantico-hills .streetview-marker svg {
+  width: 100%; height: 100%; display: block;
+  filter: drop-shadow(0 1.5px 3px rgba(26,26,26,0.32));
+}
+
+.race-pocantico-hills .streetview-popup .maplibregl-popup-content {
+  padding: 0 !important;
+  background: var(--paper) !important;
+  border: none !important;
+  border-radius: var(--radius) !important;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(26,26,26,0.22) !important;
+}
+.race-pocantico-hills .streetview-popup .maplibregl-popup-tip {
+  border-top-color: var(--paper);
+  border-bottom-color: var(--paper);
+}
+.race-pocantico-hills .streetview-popup .maplibregl-popup-close-button {
+  right: 6px !important;
+  top: 6px !important;
+  width: 26px !important;
+  height: 26px !important;
+  background: rgba(26,26,26,0.55) !important;
+  color: #fff !important;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px !important;
+  line-height: 1 !important;
+}
+
+.race-pocantico-hills .streetview-popup-inner {
+  width: 360px;
+  max-width: calc(100vw - 32px);
+}
+
+.race-pocantico-hills .streetview-title {
+  padding: 12px 14px 2px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.race-pocantico-hills .streetview-meta {
+  padding: 0 14px 8px;
+  font-family: var(--font-micro);
+  font-weight: 500;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--race-brand);
+}
+
+.race-pocantico-hills .streetview-photo-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #1a1a1a;
+  overflow: hidden;
+}
+.race-pocantico-hills .streetview-photo {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.race-pocantico-hills .streetview-caption {
+  padding: 10px 14px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.race-pocantico-hills .streetview-link {
+  display: block;
+  padding: 10px 14px 12px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--race-brand);
+  text-decoration: none;
+  border-top: 1px solid rgba(26, 26, 26, 0.08);
+  transition: background-color 120ms ease;
+}
+.race-pocantico-hills .streetview-link:hover,
+.race-pocantico-hills .streetview-link:focus-visible {
+  background: rgba(26, 26, 26, 0.05);
+  text-decoration: underline;
+}
+
+/* ─── Distance picker (dinosaur chips) ─────────────────────────────── */
+
+.race-pocantico-hills .dir-race-tabs--dino {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 0;
+  margin: 0 0 16px 0;
+  border-bottom: none;
+}
+/* Distance picker chips — borderless. The default tan/cream border
+ * read as four separate outlined boxes; rest state is now a flat
+ * paper-card surface with a tiny lift shadow, active state is an
+ * inner ring in the loop color (currentColor on the chip). */
+.race-pocantico-hills .dir-dino-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px 10px 8px;
+  background: var(--paper-card);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 160ms, box-shadow 160ms;
+  text-align: center;
+  font-family: var(--font-body);
+  box-shadow: 0 1px 2px rgba(26,26,26,0.04);
+}
+.race-pocantico-hills .dir-dino-tab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(26,26,26,0.08);
+}
+.race-pocantico-hills .dir-dino-tab.active {
+  box-shadow: 0 4px 10px rgba(26,26,26,0.12), 0 0 0 2px currentColor inset;
+}
+.race-pocantico-hills .dir-dino-icon {
+  width: 100%;
+  max-width: 64px;
+  display: block;
+}
+.race-pocantico-hills .dir-dino-icon svg {
+  width: 100%;
+  height: 40px;
+  display: block;
+}
+.race-pocantico-hills .dir-dino-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.race-pocantico-hills .dir-dino-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.race-pocantico-hills .dir-dino-tab.active .dir-dino-name {
+  color: currentColor;
+}
+.race-pocantico-hills .dir-dino-km {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  color: var(--sage-quiet);
+  letter-spacing: 0.04em;
+}
+
+/* ─── Directions header ────────────────────────────────────────────── */
+
+.race-pocantico-hills .directions-header {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0d6bf;
+}
+.race-pocantico-hills .directions-titles {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.race-pocantico-hills .directions-eyebrow {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--sage-quiet);
+  margin: 0;
+}
+.race-pocantico-hills .directions-race {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.race-pocantico-hills .dir-zoom-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-left: auto;
+  font-family: var(--font-micro);
+  font-size: 11px;
+  color: var(--sage-quiet);
+  cursor: pointer;
+}
+.race-pocantico-hills .dir-zoom-toggle input { accent-color: var(--race-brand); }
+.race-pocantico-hills .dir-cutoff-pill {
+  display: inline-flex; align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--font-micro);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: var(--bone);
+  color: var(--ink);
+}
+.race-pocantico-hills .assembly-now {
+  display: inline-flex; align-items: baseline; gap: 8px;
+  margin: 6px 0 14px 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink);
+}
+.race-pocantico-hills .assembly-now__eyebrow {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--sage-quiet);
+}
+.race-pocantico-hills .assembly-now__label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* ─── Loop cue list ─────────────────────────────────────────────────── */
+
+.race-pocantico-hills .loop-cue-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex; flex-direction: column;
+  gap: 0;
+  border-top: 1px solid #ece2cc;
+  background: var(--paper-card);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.race-pocantico-hills .loop-cue {
+  display: grid;
+  grid-template-columns: 64px 28px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #ece2cc;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink);
+  cursor: default;
+  transition: background 120ms;
+}
+.race-pocantico-hills .loop-cue--turn,
+.race-pocantico-hills .loop-cue--hazard,
+.race-pocantico-hills .loop-cue--water,
+.race-pocantico-hills .loop-cue--landmark,
+.race-pocantico-hills .loop-cue--surface,
+.race-pocantico-hills .loop-cue--note { cursor: pointer; }
+/* Active cue row — uses the same highlighter yellow as the map
+ * segment highlight so the cross-eye link is unmistakable. */
+.race-pocantico-hills .loop-cue--active {
+  background: #FFF7C2;
+  box-shadow: inset 4px 0 0 #E5B800;
+}
+.race-pocantico-hills .loop-cue--active .loop-cue__mile { color: #B57E00; }
+.race-pocantico-hills .loop-cue--turn:hover { background: var(--surface-warm); }
+.race-pocantico-hills .loop-cue:last-child { border-bottom: none; }
+.race-pocantico-hills .loop-cue__mile {
+  font-family: var(--font-micro);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--race-brand);
+  text-align: right;
+}
+.race-pocantico-hills .loop-cue__mile small {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--sage-quiet);
+  margin-left: 2px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.race-pocantico-hills .loop-cue__icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  color: var(--ink);
+}
+.race-pocantico-hills .loop-cue__icon svg { width: 100%; height: 100%; }
+.race-pocantico-hills .loop-cue__body strong {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-right: 4px;
+}
+.race-pocantico-hills .loop-cue__target {
+  color: var(--race-brand);
+  font-weight: 500;
+}
+.race-pocantico-hills .loop-cue--hazard .loop-cue__icon { color: var(--hazard-color); }
+.race-pocantico-hills .loop-cue--water  .loop-cue__icon { color: #2A6FB0; }
+.race-pocantico-hills .loop-cue--landmark .loop-cue__icon { color: var(--accent); }
+.race-pocantico-hills .loop-cue--surface .loop-cue__icon { color: var(--sage-quiet); }
+.race-pocantico-hills .loop-cue--turn .loop-cue__icon { color: var(--race-brand); }
+.race-pocantico-hills .loop-cue--empty {
+  grid-template-columns: 1fr;
+  padding: 18px 16px;
+  color: var(--sage-quiet);
+  font-style: italic;
+  text-align: center;
+}
+
+/* ─── Profile section ──────────────────────────────────────────────── */
+
+.race-pocantico-hills .profile-section {
+  margin-top: 16px;
+  padding: 12px 14px 14px 14px;
+  background: var(--paper-card);
+  border: 1px solid #ece2cc;
+  border-radius: 6px;
+}
+.race-pocantico-hills .profile-header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.race-pocantico-hills .profile-header h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.race-pocantico-hills .profile-stats {
+  display: inline-flex; gap: 14px;
+  font-family: var(--font-micro);
+  font-size: 11.5px;
+  color: var(--sage-quiet);
+}
+.race-pocantico-hills .profile-stats strong {
+  color: var(--ink);
+  font-weight: 600;
+  margin-right: 1px;
+}
+.race-pocantico-hills #profileCanvas {
+  width: 100%;
+  display: block;
+}
+
+/* ─── Aid stations table ───────────────────────────────────────────── */
+
+.race-pocantico-hills .aid-table-card {
+  background: var(--paper-card);
+  border: 1px solid #ece2cc;
+  border-radius: 6px;
+  padding: 16px 18px;
+  margin: 0 0 16px 0;
+}
+.race-pocantico-hills .aid-table-card__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.005em;
+  margin: 0 0 4px 0;
+}
+.race-pocantico-hills .aid-table-card__sub {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 14px 0;
+  line-height: 1.5;
+}
+.race-pocantico-hills .aid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+.race-pocantico-hills .aid-table th {
+  text-align: left;
+  font-family: var(--font-micro);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--sage-quiet);
+  padding: 8px 8px;
+  border-bottom: 2px solid var(--race-brand);
+}
+.race-pocantico-hills .aid-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid #ece2cc;
+  vertical-align: top;
+  line-height: 1.45;
+}
+.race-pocantico-hills .aid-col-km {
+  font-family: var(--font-micro);
+  font-weight: 600;
+  color: var(--race-brand);
+  width: 60px;
+  white-space: nowrap;
+}
+.race-pocantico-hills .aid-col-name {
+  font-weight: 600;
+  color: var(--ink);
+  width: 30%;
+}
+.race-pocantico-hills .aid-col-stocked {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+.race-pocantico-hills .aid-row--skipped { opacity: 0.4; }
+.race-pocantico-hills .aid-row--skipped .aid-col-km { color: var(--sage-quiet); }
+.race-pocantico-hills .aid-skipped-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--surface-warm);
+  font-family: var(--font-micro);
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sage-quiet);
+}
+
+/* Weather panel was originally designed to live as a 340-380px wide
+ * sticky sidebar beside the map. Our override.js's relocateWeatherPanel()
+ * lifts it into a full-width .essentials section instead. The shared
+ * weather.css width rules at >=1024px / >=1440px stick the panel at
+ * 340/380px even after relocation, leaving a huge empty gap on the
+ * right. Reset to fill the parent. */
+.race-pocantico-hills section.essentials .weather-panel {
+  width: 100%;
+  max-width: none;
+  background: var(--paper-card);
+  flex-shrink: initial;
+}
+.race-pocantico-hills section.essentials .weather-panel .weather-toggle-btn {
+  display: none;
+}
+
+/* ─── Course simulator (relocated into essentials) ─────────────────── */
+
+/* Bust the .essentials 720px reading-width cap for the sim section — at
+ * 720px the 2-column grid forces the panel column to 285px and its
+ * children (scrubber row, speed buttons, 3-col stats) overflow into
+ * the visual column. The course-simulator earns the wider canvas.
+ * Selector matches the 720px rule's specificity so it wins. */
+.race-pocantico-hills main > section.essentials.sim-essentials {
+  max-width: 1080px;
+}
+.race-pocantico-hills .sim-essentials .sim-container {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  /* 36px gap so the 1x/2x/4x speed buttons on the panel side don't
+   * crash into the course canvas on the visual side. Same regression
+   * we fixed on Wild Goose. */
+  gap: 36px;
+}
+.race-pocantico-hills .sim-panel {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.race-pocantico-hills .sim-races {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.race-pocantico-hills .sim-race-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px;
+  background: var(--paper-card);
+  border: 1.5px solid #e2d7c2;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 12px;
+  text-align: left;
+  transition: border-color 140ms, transform 140ms;
+}
+.race-pocantico-hills .sim-race-chip:hover { border-color: var(--chip-color); transform: translateY(-1px); }
+.race-pocantico-hills .sim-race-chip.active {
+  border-color: var(--chip-color);
+  box-shadow: 0 0 0 1px var(--chip-color) inset;
+}
+.race-pocantico-hills .sim-race-chip__icon {
+  width: 32px; height: 22px;
+  color: var(--chip-color);
+  flex-shrink: 0;
+}
+.race-pocantico-hills .sim-race-chip__icon svg { width: 100%; height: 100%; }
+.race-pocantico-hills .sim-race-chip__label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  flex: 1;
+}
+.race-pocantico-hills .sim-race-chip__km {
+  font-family: var(--font-micro);
+  font-size: 10.5px;
+  color: var(--sage-quiet);
+}
+.race-pocantico-hills .goal-time-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface-warm);
+  border-radius: 6px;
+}
+.race-pocantico-hills .goal-label {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sage-quiet);
+}
+.race-pocantico-hills .goal-inputs {
+  display: inline-flex; align-items: center; gap: 2px;
+}
+.race-pocantico-hills .goal-input {
+  width: 44px;
+  padding: 4px 6px;
+  border: 1px solid #d8cdb6;
+  border-radius: 3px;
+  background: var(--paper-card);
+  font-family: var(--font-micro);
+  font-size: 13px;
+  text-align: center;
+  color: var(--ink);
+}
+.race-pocantico-hills .goal-colon { font-family: var(--font-micro); color: var(--ink); }
+.race-pocantico-hills .goal-pace {
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.race-pocantico-hills .scrubber { padding: 4px 0; }
+.race-pocantico-hills .scrub-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.race-pocantico-hills .play-btn {
+  width: 36px; height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: var(--race-brand);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.race-pocantico-hills .play-btn:hover { background: var(--primary-dark); }
+.race-pocantico-hills .scrub-track {
+  position: relative;
+  flex: 1;
+  height: 32px;
+  cursor: pointer;
+}
+.race-pocantico-hills .scrub-bg {
+  position: absolute; left: 0; right: 0; top: 50%;
+  transform: translateY(-50%);
+  height: 6px;
+  background: var(--surface-warm);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.race-pocantico-hills .scrub-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--race-brand);
+  transition: width 80ms;
+}
+.race-pocantico-hills .scrub-handle {
+  position: absolute; top: 50%; left: 0%;
+  transform: translate(-50%, -50%);
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--paper-card);
+  border: 2px solid var(--race-brand);
+  pointer-events: none;
+}
+.race-pocantico-hills .speed-btns {
+  display: inline-flex; gap: 2px;
+}
+.race-pocantico-hills .speed-btn {
+  padding: 5px 8px;
+  background: var(--paper-card);
+  border: 1px solid #d8cdb6;
+  border-radius: 3px;
+  font-family: var(--font-micro);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sage-quiet);
+  cursor: pointer;
+}
+.race-pocantico-hills .speed-btn.active {
+  background: var(--race-brand);
+  color: #fff;
+  border-color: var(--race-brand);
+}
+.race-pocantico-hills .sim-clock {
+  padding: 10px 12px;
+  background: var(--paper-card);
+  border: 1px solid #ece2cc;
+  border-radius: 6px;
+}
+.race-pocantico-hills .clock-time {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.race-pocantico-hills .clock-label {
+  font-family: var(--font-micro);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sage-quiet);
+}
+.race-pocantico-hills .clock-finish {
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.race-pocantico-hills .sim-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.race-pocantico-hills .sim-stat {
+  background: var(--paper-card);
+  border: 1px solid #ece2cc;
+  border-radius: 6px;
+  padding: 8px 10px;
+  text-align: center;
+}
+.race-pocantico-hills .sim-stat .val {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--race-brand);
+  line-height: 1.1;
+}
+.race-pocantico-hills .sim-stat .label {
+  font-family: var(--font-micro);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sage-quiet);
+  margin-top: 2px;
+}
+.race-pocantico-hills .sim-visual {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.race-pocantico-hills .course-map-wrap {
+  position: relative;
+  background: #1c1310;
+  border-radius: 6px;
+  overflow: hidden;
+  height: 320px;
+}
+.race-pocantico-hills #courseMapCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.race-pocantico-hills .terrain-wrap {
+  height: 160px;
+  background: #1c1310;
+  padding: 0;
+  border: none;
+}
+.race-pocantico-hills #simTerrain { width: 100%; height: 100%; display: block; }
+.race-pocantico-hills .runner-info {
+  position: absolute;
+  top: 10px; left: 12px;
+  color: var(--paper);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+.race-pocantico-hills .runner-ele {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.race-pocantico-hills .runner-meta {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  color: rgba(248,242,234,0.75);
+  letter-spacing: 0.04em;
+  margin-top: 1px;
+}
+.race-pocantico-hills .loop-pill {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-family: var(--font-micro);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.race-pocantico-hills .terrain-wrap {
+  background: var(--paper-card);
+  border: 1px solid #ece2cc;
+  border-radius: 6px;
+  padding: 8px;
+}
+.race-pocantico-hills #simTerrain { width: 100%; display: block; }
+
+@media (max-width: 1023px) {
+  .race-pocantico-hills .sim-essentials .sim-container {
+    grid-template-columns: 1fr;
+  }
+  .race-pocantico-hills .sim-races {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .race-pocantico-hills .sim-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ─── Mobile chrome shrink (≤ 1023px) ──────────────────────────────── */
+
+@media (max-width: 1023px) {
+  .race-pocantico-hills .map-wrap { min-height: 380px; }
+  .race-pocantico-hills .dir-race-tabs--dino {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  .race-pocantico-hills .dir-dino-tab { padding: 10px 6px 8px 6px; }
+  .race-pocantico-hills .dir-dino-icon svg { height: 36px; }
+  .race-pocantico-hills .dir-dino-name { font-size: 13px; }
+  .race-pocantico-hills .loop-cue {
+    grid-template-columns: 56px 22px 1fr;
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+  .race-pocantico-hills .aid-table-card { padding: 14px 14px; }
+  .race-pocantico-hills .aid-col-km { width: 50px; }
+  .race-pocantico-hills .aid-col-name { width: 38%; }
+  /* Push Layers trigger below the BCF badge so they don't collide on
+   * a 390x844 viewport. Memory: feedback_mobile_map_btn_hq_overlap */
+  .race-pocantico-hills .map-layers { top: 52px; }
+}
+
+@media (max-width: 600px) {
+  .race-pocantico-hills .dir-dino-tab .dir-dino-name { font-size: 12px; }
+  .race-pocantico-hills .dir-dino-icon svg { height: 32px; }
+  .race-pocantico-hills .aid-table-card__title { font-size: 17px; }
+  .race-pocantico-hills .loop-cue {
+    grid-template-columns: 50px 20px 1fr;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+}
