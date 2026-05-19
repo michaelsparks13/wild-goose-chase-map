@@ -217,9 +217,12 @@ module.exports = {
 
   geography: {
     region: 'Sleepy Hollow, NY · Rockefeller State Park Preserve',
-    // Rockwood Hall start/finish. From host GPX trkpt[0].
-    startLat: 41.1125,
-    startLng: -73.8657,
+    // Rockwood Hall start/finish — the race-day start arch at the
+    // mansion foundation site, not the GPX trkpt[0] (which is at
+    // the parking-lot apron ~70 m south). Coords confirmed against
+    // the host's race-day photos.
+    startLat: 41.11305669614291,
+    startLng: -73.86591434370322,
     elevationStory:
       'Rolling carriage roads through Rockefeller State Park Preserve. The marathon climbs and rolls past historic stone walls, charming bridges, grazing livestock, sparkling rivers, lush forests, and lakes — no pavement, no cars. Start and finish at Rockwood Hall with sweeping views of the Hudson River and the Palisades.',
     surface: ['groomed carriage roads (gravel + crushed stone)'],

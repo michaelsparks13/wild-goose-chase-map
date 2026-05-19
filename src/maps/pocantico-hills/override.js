@@ -249,7 +249,11 @@ function addLoopLayers() {
       layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
       paint: {
         'line-color': '#1A1A1A',
-        'line-width': ['interpolate', ['linear'], ['zoom'], 9, 4, 14, 9, 18, 14],
+        // Trimmed ~25% from the gran-fondo cycling widths — the
+        // carriage-road grid here is denser than the Drumheller
+        // highway loops, so a leaner line keeps the route reading
+        // without smothering the trail names beneath.
+        'line-width': ['interpolate', ['linear'], ['zoom'], 9, 3, 14, 6.5, 18, 10.5],
         'line-opacity': 0.9,
       },
     }, beforeSymbol);
@@ -261,7 +265,7 @@ function addLoopLayers() {
       layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
       paint: {
         'line-color': loop.color,
-        'line-width': ['interpolate', ['linear'], ['zoom'], 9, 2.5, 14, 5.5, 18, 9],
+        'line-width': ['interpolate', ['linear'], ['zoom'], 9, 1.9, 14, 4, 18, 6.8],
       },
     }, beforeSymbol);
   });
@@ -426,36 +430,31 @@ function addHqStartLayer() {
 function updateHqStartLayer(race) {
   if (!map || !map.getLayer || !map.getLayer('hq-start')) return;
   map.setLayoutProperty('hq-start', 'visibility', aidOn ? 'visible' : 'none');
-  var stn = null;
-  var coord = null;
-  if (race) {
-    var idxs = race.aidIdx || [];
-    if (idxs.length) {
-      stn = AID_STATIONS_ALL[idxs[0]];
-      if (stn) {
-        var raceMile = (stn.mile != null) ? stn.mile : (stn.kilometer != null ? stn.kilometer / KM_PER_MI : 0);
-        var loopLenMi = LOOPS[currentRaceId].miles;
-        if (raceMile > loopLenMi) raceMile = loopLenMi;
-        coord = getCoordAtMile(currentRaceId, raceMile);
-      }
-    }
-  }
+  // The start GL symbol is pinned to the configured HQ constant
+  // (Rockwood Hall race-day arch coords from the theme), not to the
+  // first aid station's mile. For Pocantico Hills the first aid is
+  // 2.1 mi up the course — using getCoordAtMile(_, idxs[0].mile)
+  // would land the start marker on Aid #1, not Rockwood Hall.
+  // Gran-fondo-badlands' aidStations[0] was already the BCF/Start,
+  // so its forked logic happened to work there; here we anchor
+  // explicitly so the marker lands on the start arch regardless of
+  // the aid spine's first entry.
   var src = map.getSource('hq-start-src');
-  if (stn && coord) {
-    hqStartPopupHtml =
-      '<div class="aid-popup">' +
-        '<div class="aid-popup__name">' + escapeHtml(stn.name) + '</div>' +
-        '<div class="aid-popup__km">Mile ' + (stn.mile != null ? stn.mile.toFixed(1) : '—') + '</div>' +
-        '<div class="aid-popup__stocked">' + escapeHtml(stn.stocked) + '</div>' +
-      '</div>';
-    src.setData({
-      type: 'FeatureCollection',
-      features: [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: coord } }],
-    });
-  } else {
+  if (!race || typeof HQ === 'undefined' || !HQ) {
     hqStartPopupHtml = '';
     src.setData({ type: 'FeatureCollection', features: [] });
+    return;
   }
+  hqStartPopupHtml =
+    '<div class="aid-popup">' +
+      '<div class="aid-popup__name">Rockwood Hall · Start / Finish</div>' +
+      '<div class="aid-popup__km">Mile 0 · ' + race.miles.toFixed(1) + ' mi loop</div>' +
+      '<div class="aid-popup__stocked">Race-morning packet pickup from 6:00 AM under the tent at the mansion foundation site.</div>' +
+    '</div>';
+  src.setData({
+    type: 'FeatureCollection',
+    features: [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: HQ } }],
+  });
 }
 
 // ─── Aid station markers ─────────────────────────────────────────────
