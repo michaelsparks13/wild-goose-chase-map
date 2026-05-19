@@ -173,7 +173,15 @@ test.describe('Wild Goose Trail Festival — editorial chrome', () => {
   });
 
   test('toggleStreetview shows the numbered turn markers (7 of them)', async ({ page }) => {
-    await page.waitForLoadState('networkidle');
+    // addTurnMarkers() runs inside map.on('load'), which can fire AFTER
+    // Playwright's networkidle at the 1440-wide viewport (more tiles =
+    // later load event). Wait for the full forEach to complete and all
+    // 7 markers to be in the turnMarkers[] array before we toggle.
+    await page.waitForFunction(
+      () => typeof turnMarkers !== 'undefined' && turnMarkers.length === 7,
+      null,
+      { timeout: 10000 }
+    );
     // Initially hidden (display:none) — toggle exposes them
     const beforeVisible = await page.locator('.turn-marker:visible').count();
     expect(beforeVisible).toBe(0);
