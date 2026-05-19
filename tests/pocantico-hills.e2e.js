@@ -49,13 +49,13 @@ test.describe('Pocantico Hills Marathon — desktop (1440×900)', () => {
     await expect(page.locator('.map-btns')).toBeHidden();
   });
 
-  test('Layers popover opens with three toggles', async ({ page }) => {
+  test('Layers popover opens with two toggles', async ({ page }) => {
     await page.locator('#mapLayersBtn').click();
     const panel = page.locator('#mapLayersPanel');
     await expect(panel).toBeVisible();
     await expect(panel.locator('#layerAid')).toBeChecked();
-    await expect(panel.locator('#layerStreetview')).not.toBeChecked();
     await expect(panel.locator('#layer3D')).not.toBeChecked();
+    await expect(panel.locator('#layerStreetview')).toHaveCount(0);
   });
 
   test('two distance chips render — marathon active by default, half inactive', async ({ page }) => {

@@ -29,12 +29,6 @@ const halfProfile     = loadJSON('data/half-marathon-profile.json');
 const weatherData = fs.existsSync(path.join(__dirname, 'data/weather.json'))
   ? loadJSON('data/weather.json') : null;
 
-// Street View POIs are optional and currently empty for this race.
-// When added, schema matches Gran Fondo Badlands' streetview.json:
-// [{ name, mile, coords, pano, yaw, pitch }, ...]
-const streetviewTurns = fs.existsSync(path.join(__dirname, 'data/streetview.json'))
-  ? loadJSON('data/streetview.json') : [];
-
 // Per-loop turn-by-turn — produced by the FSS TBT pipeline against each
 // distance's GPX (scripts/fetch-pocantico-hills-turns.py). Each loop's
 // turns sit in data/<id>-turns.geojson. If the file is missing, the
@@ -108,8 +102,6 @@ var LOOP_TURNS = {
 var DINO_SVGS = {};
 
 var AID_STATIONS_ALL = ${aidStationsJs};
-
-var STREETVIEW_TURNS = ${JSON.stringify(streetviewTurns)};
 
 var HQ = [${theme.geography.startLng}, ${theme.geography.startLat}];
 
@@ -249,10 +241,6 @@ const mapViewHtml = `<div id="mapView" class="view active">
         <span class="map-layers__row-text">Aid Stations</span>
       </label>
       <label class="map-layers__row">
-        <input type="checkbox" id="layerStreetview" onchange="toggleStreetview()">
-        <span class="map-layers__row-text">Street Views</span>
-      </label>
-      <label class="map-layers__row">
         <input type="checkbox" id="layer3D" onchange="toggle3D()">
         <span class="map-layers__row-text">3D terrain</span>
       </label>
@@ -260,7 +248,6 @@ const mapViewHtml = `<div id="mapView" class="view active">
   </div>
   <div class="map-btns" hidden aria-hidden="true">
     <button class="trail-btn" id="aidBtnInline" onclick="toggleAid()">Aid Stations</button>
-    <button class="trail-btn" id="streetviewBtnInline" onclick="toggleStreetview()">Street Views</button>
     <button class="trail-btn" id="terrainBtnInline" onclick="toggle3D()">3D</button>
   </div>
 </div>

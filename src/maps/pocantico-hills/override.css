@@ -54,9 +54,9 @@ body.race-page.race-pocantico-hills {
 }
 
 /* The editorial race-shell template hardcodes a `.map-toggles` row of
- * Aid Stations · Street View · 3D buttons above the map. Those are
- * Tinman-pattern toggles; this race uses the Layers popover inside the
- * map for the same job, so the strip is suppressed. */
+ * Aid Stations · 3D buttons above the map. Those are Tinman-pattern
+ * toggles; this race uses the Layers popover inside the map for the
+ * same job, so the strip is suppressed. */
 .race-pocantico-hills .map-controls,
 .race-pocantico-hills .map-toggles { display: none !important; }
 
@@ -218,106 +218,6 @@ body.race-page.race-pocantico-hills {
   font-size: 12.5px;
   color: var(--text-secondary);
   line-height: 1.45;
-}
-
-/* ─── Street View POI markers + popup ─────────────────────────────── */
-
-.race-pocantico-hills .streetview-marker {
-  width: 28px; height: 28px;
-  cursor: pointer;
-  color: var(--race-brand);
-}
-.race-pocantico-hills .streetview-marker svg {
-  width: 100%; height: 100%; display: block;
-  filter: drop-shadow(0 1.5px 3px rgba(26,26,26,0.32));
-}
-
-.race-pocantico-hills .streetview-popup .maplibregl-popup-content {
-  padding: 0 !important;
-  background: var(--paper) !important;
-  border: none !important;
-  border-radius: var(--radius) !important;
-  overflow: hidden;
-  box-shadow: 0 8px 28px rgba(26,26,26,0.22) !important;
-}
-.race-pocantico-hills .streetview-popup .maplibregl-popup-tip {
-  border-top-color: var(--paper);
-  border-bottom-color: var(--paper);
-}
-.race-pocantico-hills .streetview-popup .maplibregl-popup-close-button {
-  right: 6px !important;
-  top: 6px !important;
-  width: 26px !important;
-  height: 26px !important;
-  background: rgba(26,26,26,0.55) !important;
-  color: #fff !important;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px !important;
-  line-height: 1 !important;
-}
-
-.race-pocantico-hills .streetview-popup-inner {
-  width: 360px;
-  max-width: calc(100vw - 32px);
-}
-
-.race-pocantico-hills .streetview-title {
-  padding: 12px 14px 2px;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: 0.01em;
-  color: var(--ink);
-  line-height: 1.2;
-}
-.race-pocantico-hills .streetview-meta {
-  padding: 0 14px 8px;
-  font-family: var(--font-micro);
-  font-weight: 500;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  color: var(--race-brand);
-}
-
-.race-pocantico-hills .streetview-photo-wrap {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  background: #1a1a1a;
-  overflow: hidden;
-}
-.race-pocantico-hills .streetview-photo {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.race-pocantico-hills .streetview-caption {
-  padding: 10px 14px;
-  font-family: var(--font-body);
-  font-size: 0.8rem;
-  line-height: 1.45;
-  color: var(--text-secondary);
-}
-
-.race-pocantico-hills .streetview-link {
-  display: block;
-  padding: 10px 14px 12px;
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 0.8rem;
-  color: var(--race-brand);
-  text-decoration: none;
-  border-top: 1px solid rgba(26, 26, 26, 0.08);
-  transition: background-color 120ms ease;
-}
-.race-pocantico-hills .streetview-link:hover,
-.race-pocantico-hills .streetview-link:focus-visible {
-  background: rgba(26, 26, 26, 0.05);
-  text-decoration: underline;
 }
 
 /* ─── Distance picker (dinosaur chips) ─────────────────────────────── */
