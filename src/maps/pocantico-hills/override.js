@@ -430,21 +430,23 @@ function addHqStartLayer() {
 function updateHqStartLayer(race) {
   if (!map || !map.getLayer || !map.getLayer('hq-start')) return;
   map.setLayoutProperty('hq-start', 'visibility', aidOn ? 'visible' : 'none');
-  // The start GL symbol is pinned to the configured HQ constant
-  // (Rockwood Hall race-day arch coords from the theme), not to the
-  // first aid station's mile. For Pocantico Hills the first aid is
-  // 2.1 mi up the course — using getCoordAtMile(_, idxs[0].mile)
-  // would land the start marker on Aid #1, not Rockwood Hall.
-  // Gran-fondo-badlands' aidStations[0] was already the BCF/Start,
-  // so its forked logic happened to work there; here we anchor
-  // explicitly so the marker lands on the start arch regardless of
-  // the aid spine's first entry.
+  // The start GL symbol is pinned to the active route's first
+  // coordinate (the GPX trkpt[0]). The theme's geography.startLat/Lng
+  // tracks the published race-day arch location for editorial copy,
+  // but visually the marker has to sit on top of the rendered route
+  // so there's no gap between the start pennant and the line that
+  // leaves it. For Pocantico Hills the trkpt[0] is at the parking-lot
+  // apron under the tent, ~70 m south of the arch — close enough that
+  // the marker reads as "at Rockwood Hall" at any reasonable zoom.
   var src = map.getSource('hq-start-src');
-  if (!race || typeof HQ === 'undefined' || !HQ) {
+  var loop = race && LOOPS[currentRaceId];
+  if (!loop || !loop.geojson) {
     hqStartPopupHtml = '';
     src.setData({ type: 'FeatureCollection', features: [] });
     return;
   }
+  var routeCoords = loop.geojson.geometry.coordinates;
+  var startCoord = routeCoords[0];
   hqStartPopupHtml =
     '<div class="aid-popup">' +
       '<div class="aid-popup__name">Rockwood Hall · Start / Finish</div>' +
@@ -453,7 +455,7 @@ function updateHqStartLayer(race) {
     '</div>';
   src.setData({
     type: 'FeatureCollection',
-    features: [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: HQ } }],
+    features: [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: startCoord } }],
   });
 }
 
