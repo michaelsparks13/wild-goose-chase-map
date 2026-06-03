@@ -66,11 +66,13 @@ module.exports = {
     // olive top bar without competing with the ochre primary CTA.
     headerAccent: '#e8c976',
 
-    // Per-distance loop colors. The marathon (the flagship) carries
-    // the deep olive route ink; the half marathon carries the brand
-    // ochre. Both work on the cream substrate, both work in print.
-    loopMarathon:     '#34421e', // deep olive — flagship
-    loopHalfMarathon: '#c19434', // brand ochre — half
+    // Per-distance loop colors — matched to the host's printed static
+    // course map (Marathon-Route cloth draft): the marathon route is
+    // red, the half-marathon route is yellow. Tuned from the static
+    // map's pure #ff0000 / #ffff00 to hold contrast on the cream
+    // substrate, the light elevation profile, and chip labels.
+    loopMarathon:     '#E4151B', // route red — marathon
+    loopHalfMarathon: '#F5C400', // golden yellow — half marathon
   },
 
   type: {
@@ -136,7 +138,7 @@ module.exports = {
         // steeper than the host site's "wide, groomed" copy suggests.
         elevationGain: 2969,
         elevationGainM: 905,
-        color: '#34421e',
+        color: '#E4151B', // route red — matches the host's static course map
         defaultDirection: 'CW',
         cues: [
           { mile: 0.0,  kind: 'landmark', text: 'Roll out from Rockwood Hall — the William Rockefeller mansion foundation sits behind the start arch with sweeping views of the Hudson and Palisades.' },
@@ -157,7 +159,7 @@ module.exports = {
         miles: 13.30,
         elevationGain: 1477,
         elevationGainM: 450,
-        color: '#c19434',
+        color: '#F5C400', // golden yellow — matches the host's static course map
         defaultDirection: 'CW',
         cues: [
           { mile: 0.0,  kind: 'landmark', text: 'Roll out from Rockwood Hall at 9:00 AM — the half shares the marathon course out to Old Sleepy Hollow Rd before peeling off back toward the Hudson.' },
@@ -182,7 +184,7 @@ module.exports = {
         runMiles: 26.81,
         runGainFt: 2969,
         runGainM: 905,
-        color: '#34421e',
+        color: '#E4151B', // route red — matches the host's static course map
         cutoff: '9h',
         startTime: '8:00 AM',
         startWindow: '8:00 AM (walkers 7:00 AM)',
@@ -202,7 +204,7 @@ module.exports = {
         runMiles: 13.30,
         runGainFt: 1477,
         runGainM: 450,
-        color: '#c19434',
+        color: '#F5C400', // golden yellow — matches the host's static course map
         cutoff: null,
         startTime: '9:00 AM',
         startWindow: '9:00 AM',

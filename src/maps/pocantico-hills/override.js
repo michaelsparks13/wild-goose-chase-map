@@ -271,19 +271,21 @@ function addLoopLayers() {
   // Active-segment overlay — drawn ON TOP of all course layers so the
   // highlight reads above the route. Source starts empty.
   //
-  // Color logic: the course backbone is dark (#1A1A1A casing) + rust
-  // brand line on top. A magenta or rust highlight (like our earlier
-  // accent token) doesn't pop against either of those — it muddies
-  // into the route. The classic highlighter-yellow contrast wins:
+  // Color logic: the course backbone is dark (#1A1A1A casing) + the
+  // route line on top — red for the marathon, yellow for the half.
+  // The halo must pop against BOTH warm route colors as well as the
+  // dark casing, so a warm highlighter-yellow won't do (it would
+  // vanish into the yellow half-marathon line). Bright cyan is the
+  // cool complement that stays fluorescent everywhere:
   //
-  //   - Outer halo: bright yellow (#FFE74C), 14 px wide, blur 1.5 —
-  //     reads as fluorescent against dark base AND against rust route.
+  //   - Outer halo: bright cyan (#00E5FF), 14 px wide, blur 1.5 —
+  //     reads as fluorescent against the dark base AND against both
+  //     the red and yellow route lines.
   //   - Inner line: pure white (#FFFFFF), 4 px — punches through the
   //     dark casing so the active segment isn't lost in the backbone.
   //
-  // High contrast in both directions: dark course → light halo;
-  // light areas of the route → dark inner line is still visible
-  // through the yellow.
+  // High contrast in both directions: dark course → bright halo;
+  // light areas of the route → white inner line stays visible.
   map.addSource('dir-active-segment', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
   map.addLayer({
     id: 'dir-active-segment-halo',
@@ -291,7 +293,7 @@ function addLoopLayers() {
     source: 'dir-active-segment',
     layout: { 'line-cap': 'round', 'line-join': 'round' },
     paint: {
-      'line-color': '#FFE74C',
+      'line-color': '#00E5FF',
       'line-width': 14,
       'line-opacity': 0.92,
       'line-blur': 1.5,
