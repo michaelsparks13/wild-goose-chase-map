@@ -401,7 +401,8 @@ module.exports = {
     '--heading-family': theme.type.displayStack,
 
     // Loop colors as CSS vars (for chip strips, popups, profile fill).
-    // Marathon carries deep olive ink; Half carries the brand ochre.
+    // Marathon carries route red; Half carries golden yellow — matched
+    // to the host's printed static course map.
     '--loop-marathon':      theme.palette.loopMarathon,
     '--loop-half-marathon': theme.palette.loopHalfMarathon,
 
