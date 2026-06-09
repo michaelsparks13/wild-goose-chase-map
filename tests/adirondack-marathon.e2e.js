@@ -108,15 +108,21 @@ test.describe('Adirondack Marathon — desktop (1440×900)', () => {
     expect(errors).toEqual([]);
   });
 
-  test('the Schroon Lake water label renders by default', async ({ page }) => {
-    // Poll until the symbol places (full-suite runs render slower than a
-    // fixed wait allows); text-ignore-placement keeps it on once placed.
-    await expect.poll(async () => page.evaluate(() => {
-      try {
-        return (window.map && window.map.loaded())
-          ? window.map.queryRenderedFeatures({ layers: ['lake-label'] }).length : 0;
-      } catch (e) { return 0; }
-    }), { timeout: 10000 }).toBeGreaterThanOrEqual(1);
+  test('the Schroon Lake water label renders above the aid markers, click-through', async ({ page }) => {
+    const label = page.locator('.lake-label-marker');
+    await expect(label).toBeVisible();
+    await expect(label).toContainText('Schroon Lake');
+    // Click-through: pointer-events none so aid-station clicks pass through.
+    const pe = await label.evaluate(el => getComputedStyle(el).pointerEvents);
+    expect(pe).toBe('none');
+    // Above the aid markers (the whole point of using an HTML marker).
+    const zStack = await page.evaluate(() => {
+      const lbl = document.querySelector('.lake-label-marker');
+      const aid = document.querySelector('.aid-marker');
+      const zi = el => parseInt(getComputedStyle(el).zIndex, 10) || 0;
+      return aid ? { label: zi(lbl), aid: zi(aid) } : { label: zi(lbl), aid: 0 };
+    });
+    expect(zStack.label).toBeGreaterThan(zStack.aid);
   });
 
   test('clicking a TURN highlights the route segment and does NOT zoom by default', async ({ page }) => {

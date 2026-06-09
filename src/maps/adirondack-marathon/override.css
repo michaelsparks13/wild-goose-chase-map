@@ -102,6 +102,29 @@ body.race-page.race-adirondack-marathon {
   filter: drop-shadow(0 1.5px 3px rgba(26,26,26,0.28));
 }
 
+/* "Schroon Lake" water label — an HTML marker so it paints ABOVE the HTML
+ * aid-station markers (a GL symbol is stuck under the marker pane). It's a
+ * vertical spine label down the lake with doubled letter-tracking;
+ * pointer-events:none keeps aid-station clicks working through it. */
+.race-adirondack-marathon .lake-label-marker {
+  pointer-events: none;
+  z-index: 4 !important;   /* above the aid markers */
+}
+.race-adirondack-marathon .lake-label-marker__text {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(16deg);   /* match the lake's NNE–SSW tilt */
+  transform-origin: center;
+  font-family: 'Mulish', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.44em;     /* doubled tracking */
+  white-space: nowrap;
+  color: #26566e;
+  opacity: 0.92;
+  text-shadow: 0 0 4px #eef1f2, 0 0 4px #eef1f2, 0 1px 3px rgba(38,86,110,0.25);
+}
+
 /* hq-badge — top-left, 25% smaller than the gran-fondo cycling badge
  * so it sits cleanly above the village start GL symbol without crowding
  * the lake-road network beneath. The Layers popover
