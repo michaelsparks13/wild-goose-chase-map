@@ -513,14 +513,26 @@ function renderAidMarkers() {
       var dy = (coord[1] - startCoord[1]) * 111000;
       if (Math.hypot(dx, dy) < 50) return; // overlap; skip
     }
+    var isRelay = !isFinish && stn.relay;
     var el = document.createElement('div');
-    el.className = isFinish ? 'aid-marker aid-marker--finish' : 'aid-marker';
+    el.className = isFinish ? 'aid-marker aid-marker--finish'
+      : (isRelay ? 'aid-marker aid-marker--relay' : 'aid-marker');
 
     // SVGs use currentColor for fills; the wrapper sets color via CSS
-    // (.aid-marker / --finish), since CSS var() in fill="..." attributes
-    // is not reliably supported across browsers.
+    // (.aid-marker / --finish / --relay), since CSS var() in fill="..."
+    // attributes is not reliably supported across browsers.
     var svgInner;
-    if (isFinish) {
+    if (isRelay) {
+      // Relay exchange — amber disc with a handoff (⇄) glyph
+      svgInner =
+        '<svg viewBox="0 0 28 28" aria-hidden="true">' +
+          '<circle cx="14" cy="14" r="11" fill="currentColor" stroke="#fff" stroke-width="2"/>' +
+          '<g fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M8 11 H17 M14.2 8.6 L17 11 L14.2 13.4"/>' +
+            '<path d="M20 17 H11 M13.8 14.6 L11 17 L13.8 19.4"/>' +
+          '</g>' +
+        '</svg>';
+    } else if (isFinish) {
       // Finish flag — checkered pennant on a pole, brand-color disc
       svgInner =
         '<svg viewBox="0 0 32 32" aria-hidden="true">' +

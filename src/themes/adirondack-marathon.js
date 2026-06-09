@@ -97,7 +97,7 @@ module.exports = {
 
   editorialCopy: {
     profileSub: 'Full marathon loop around Schroon Lake · the half marathon is the back half (the marathon’s mile 13.1 to the finish)',
-    aidSub:     'Fifteen water + sports-drink stations ring the lake — roughly every two miles to mile 20, then every mile from 20 to 25. The half marathon shares the marathon’s back-half stations. Full spread at the finish: water, sports drink, fresh fruit, yogurt, ice cream, and fresh-baked goods.',
+    aidSub:     'Water, sports drink, and GU at every aid station around the lake — roughly every two miles to mile 20, then every mile from 20 to 25. The 4-person marathon relay hands off at three exchanges (miles 4.8, 13.1, and 18.0); the legs run 4.8, 8.3, 5.1, and 8.2 miles. The half marathon shares the marathon’s back-half stations. Full spread at the beach finish: fresh fruit, yogurt, ice cream, and fresh-baked goods.',
     daySub:     'Marathon rolls out at 8:00 AM from Main Street (Route 9) in the village; the half marathon starts at 9:00 AM at the Hamlet of Adirondack. On-course services close at 2:30 PM and all roads reopen to traffic by 3:30 PM.',
   },
 
@@ -173,10 +173,10 @@ module.exports = {
         startWindow: '8:00 AM',
         assembly: [{ loopId: 'marathon', direction: 'CW' }],
         // Indices into the shared aid spine (see aidStations below). The
-        // marathon visits the village start (0), all fifteen water
-        // stations, and the beach finish — but NOT the half-marathon
-        // start entry (index 7), which is a landmark, not a marathon aid.
-        aidStations: [0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+        // marathon visits the village start (0), every water station, all
+        // three relay exchanges (incl. the Hamlet at idx 8), and the beach
+        // finish — i.e. every entry.
+        aidStations: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
       },
       {
         id: 'half-marathon',
@@ -191,10 +191,11 @@ module.exports = {
         startTime: '9:00 AM',
         startWindow: '9:00 AM',
         assembly: [{ loopId: 'half-marathon', direction: 'CW' }],
-        // The half starts at the Hamlet of Adirondack (index 7 — its
+        // The half starts at the Hamlet of Adirondack (index 8 — its
         // aidIdx[0], rendered as the start pennant), then visits the
-        // back-half water stations (miles 14-25) and the shared finish.
-        aidStations: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+        // back-half stations (incl. Relay Exchange 3 at idx 11) and the
+        // shared finish.
+        aidStations: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
       },
     ],
   },
@@ -229,30 +230,33 @@ module.exports = {
   },
 
   // Aid-station spine in course order along the marathon. Index 0 is the
-  // village start; index 7 is the Hamlet of Adirondack (the half-marathon
-  // start); index 17 is the beach finish. The other fifteen entries are
-  // the water + sports-drink stations. Aid placement is APPROXIMATE — the
-  // host publishes spacing ("roughly every two miles to 20, then every
-  // mile 20-25"), not surveyed coordinates, so stations are positioned by
-  // mile along the course and named by the road segment they sit on.
+  // village start; index 18 is the beach finish. Every on-course station
+  // carries water + sports drink + GU. Three are also 4-person marathon
+  // relay exchanges (relay: true): Exchange 1 at mile 4.8, Exchange 2 at
+  // the Hamlet of Adirondack (mile 13.1, also the half-marathon start), and
+  // Exchange 3 on Route 9 at Pottersville (mile 18.0). Relay legs run 4.8,
+  // 8.3, 5.1, and 8.2 miles. Aid placement is APPROXIMATE — the host
+  // publishes spacing, not surveyed coordinates, so stations sit by mile
+  // along the course and are named by the road segment they're on.
   aidStations: [
     { name: 'Start · Main Street (Route 9), Schroon Lake village', mile: 0.0,  kilometer: 0.0,  stocked: 'Marathon start · 8:00 AM' },
-    { name: 'Mile 2 · US-9 north toward Alder Meadow Rd',          mile: 2.0,  kilometer: 3.2,  stocked: 'Water + sports drink' },
-    { name: 'Mile 4 · Adirondack Rd, east shore',                 mile: 4.0,  kilometer: 6.4,  stocked: 'Water + sports drink' },
-    { name: 'Mile 6 · Adirondack Rd, east shore',                 mile: 6.0,  kilometer: 9.7,  stocked: 'Water + sports drink' },
-    { name: 'Mile 8 · Adirondack Rd, east shore',                 mile: 8.0,  kilometer: 12.9, stocked: 'Water + sports drink' },
-    { name: 'Mile 10 · Adirondack Rd, east shore',                mile: 10.0, kilometer: 16.1, stocked: 'Water + sports drink' },
-    { name: 'Mile 12 · Adirondack Rd, east shore',                mile: 12.0, kilometer: 19.3, stocked: 'Water + sports drink' },
-    { name: 'Hamlet of Adirondack · Half Marathon start',         mile: 13.1, kilometer: 21.1, stocked: 'Half marathon start · 9:00 AM' },
-    { name: 'Mile 14 · East Shore Dr',                            mile: 14.0, kilometer: 22.5, stocked: 'Water + sports drink' },
-    { name: 'Mile 16 · East Shore Dr',                            mile: 16.0, kilometer: 25.7, stocked: 'Water + sports drink' },
-    { name: 'Mile 18 · Route 9, Pottersville',                    mile: 18.0, kilometer: 29.0, stocked: 'Water + sports drink' },
-    { name: 'Mile 20 · Route 9 north',                            mile: 20.0, kilometer: 32.2, stocked: 'Water + sports drink' },
-    { name: 'Mile 21 · Route 9 north',                            mile: 21.0, kilometer: 33.8, stocked: 'Water + sports drink' },
-    { name: 'Mile 22 · Route 9 north',                            mile: 22.0, kilometer: 35.4, stocked: 'Water + sports drink' },
-    { name: 'Mile 23 · Route 9 north',                            mile: 23.0, kilometer: 37.0, stocked: 'Water + sports drink' },
-    { name: 'Mile 24 · Route 9 north',                            mile: 24.0, kilometer: 38.6, stocked: 'Water + sports drink' },
-    { name: 'Mile 25 · Route 9 north',                            mile: 25.0, kilometer: 40.2, stocked: 'Water + sports drink' },
+    { name: 'Mile 2 · US-9 north toward Alder Meadow Rd',          mile: 2.0,  kilometer: 3.2,  stocked: 'Water + sports drink + GU' },
+    { name: 'Mile 4 · Adirondack Rd, east shore',                 mile: 4.0,  kilometer: 6.4,  stocked: 'Water + sports drink + GU' },
+    { name: 'Relay Exchange 1 · Adirondack Rd (Mile 4.8)',        mile: 4.8,  kilometer: 7.7,  stocked: 'Water + sports drink + GU · 4-person relay: Leg 1 ends (4.8 mi) → Leg 2 (8.3 mi)', relay: true },
+    { name: 'Mile 6 · Adirondack Rd, east shore',                 mile: 6.0,  kilometer: 9.7,  stocked: 'Water + sports drink + GU' },
+    { name: 'Mile 8 · Adirondack Rd, east shore',                 mile: 8.0,  kilometer: 12.9, stocked: 'Water + sports drink + GU' },
+    { name: 'Mile 10 · Adirondack Rd, east shore',                mile: 10.0, kilometer: 16.1, stocked: 'Water + sports drink + GU' },
+    { name: 'Mile 12 · Adirondack Rd, east shore',                mile: 12.0, kilometer: 19.3, stocked: 'Water + sports drink + GU' },
+    { name: 'Relay Exchange 2 · Hamlet of Adirondack (Mile 13.1) · Half Marathon start', mile: 13.1, kilometer: 21.1, stocked: 'Water + sports drink + GU · Half marathon start (9:00 AM) · 4-person relay: Leg 2 ends (8.3 mi) → Leg 3 (5.1 mi)', relay: true },
+    { name: 'Mile 14 · East Shore Dr',                            mile: 14.0, kilometer: 22.5, stocked: 'Water + sports drink + GU' },
+    { name: 'Mile 16 · East Shore Dr',                            mile: 16.0, kilometer: 25.7, stocked: 'Water + sports drink + GU' },
+    { name: 'Relay Exchange 3 · Route 9, Pottersville (Mile 18.0)', mile: 18.0, kilometer: 29.0, stocked: 'Water + sports drink + GU · 4-person relay: Leg 3 ends (5.1 mi) → Leg 4, final (8.2 mi)', relay: true },
+    { name: 'Mile 20 · Route 9 north',                            mile: 20.0, kilometer: 32.2, stocked: 'Water + sports drink + GU' },
+    { name: 'Mile 21 · Route 9 north',                            mile: 21.0, kilometer: 33.8, stocked: 'Water + sports drink + GU' },
+    { name: 'Mile 22 · Route 9 north',                            mile: 22.0, kilometer: 35.4, stocked: 'Water + sports drink + GU' },
+    { name: 'Mile 23 · Route 9 north',                            mile: 23.0, kilometer: 37.0, stocked: 'Water + sports drink + GU' },
+    { name: 'Mile 24 · Route 9 north',                            mile: 24.0, kilometer: 38.6, stocked: 'Water + sports drink + GU' },
+    { name: 'Mile 25 · Route 9 north',                            mile: 25.0, kilometer: 40.2, stocked: 'Water + sports drink + GU' },
     { name: 'Finish · Schroon Public Beach',                      mile: 26.2, kilometer: 42.16, stocked: 'Finish · fruit, yogurt, ice cream, fresh-baked goods' },
   ],
 

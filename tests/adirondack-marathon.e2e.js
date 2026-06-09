@@ -198,6 +198,20 @@ test.describe('Adirondack Marathon — desktop (1440×900)', () => {
     expect(typeof hqVisible).toBe('boolean');
   });
 
+  test('three relay exchanges render as distinct markers on the marathon', async ({ page }) => {
+    await page.waitForSelector('#map .aid-marker', { timeout: 8000 });
+    // 4-person marathon relay: exchanges at miles 4.8, 13.1, 18.0.
+    await expect(page.locator('#map .aid-marker--relay')).toHaveCount(3);
+  });
+
+  test('map legend explains the marker icons (incl. relay exchange)', async ({ page }) => {
+    const legend = page.locator('.map-legend');
+    await expect(legend).toBeVisible();
+    await expect(legend).toContainText('Aid station');
+    await expect(legend).toContainText('Relay exchange');
+    await expect(legend).toContainText('Mile marker');
+  });
+
   test('aid-station essentials table lists the spine in mile order, ending at the beach Finish', async ({ page }) => {
     const rows = page.locator('.aid-table tbody tr');
     expect(await rows.count()).toBeGreaterThanOrEqual(16);

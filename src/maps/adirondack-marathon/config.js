@@ -280,6 +280,24 @@ const mapViewHtml = `<div id="mapView" class="view active">
     <button class="trail-btn" id="aidBtnInline" onclick="toggleAid()">Aid Stations</button>
     <button class="trail-btn" id="terrainBtnInline" onclick="toggle3D()">3D</button>
   </div>
+  <div class="map-legend" aria-label="Map legend">
+    <div class="map-legend__row">
+      <span class="map-legend__swatch map-legend__swatch--aid">
+        <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="11" fill="currentColor" stroke="#fff" stroke-width="2"/><path d="M14 7 C 10.5 11.5, 9 13.5, 9 15.8 a5 5 0 0 0 10 0 C 19 13.5, 17.5 11.5, 14 7 Z" fill="#fff"/></svg>
+      </span>
+      <span>Aid station</span>
+    </div>
+    <div class="map-legend__row">
+      <span class="map-legend__swatch map-legend__swatch--relay">
+        <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="11" fill="currentColor" stroke="#fff" stroke-width="2"/><g fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11 H17 M14.2 8.6 L17 11 L14.2 13.4"/><path d="M20 17 H11 M13.8 14.6 L11 17 L13.8 19.4"/></g></svg>
+      </span>
+      <span>Relay exchange</span>
+    </div>
+    <div class="map-legend__row">
+      <span class="map-legend__swatch map-legend__swatch--mile">5</span>
+      <span>Mile marker</span>
+    </div>
+  </div>
 </div>
 
 ${buildDirectionsHtml()}
