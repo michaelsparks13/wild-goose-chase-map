@@ -125,6 +125,42 @@ test.describe('Adirondack Marathon — desktop (1440×900)', () => {
     expect(zStack.label).toBeGreaterThan(zStack.aid);
   });
 
+  test('custom village + wilderness labels render; the default basemap Schroon Lake is hidden', async ({ page }) => {
+    // Wait for the load handler to build the custom label layers.
+    await page.waitForFunction(
+      () => window.map && window.map.getSource && window.map.getSource('village-labels-src'),
+      null, { timeout: 8000 });
+    const r = await page.evaluate(() => {
+      const m = window.map;
+      const src = m.getSource('village-labels-src');
+      const data = src ? src.serialize().data : { features: [] };
+      return {
+        villages: data.features.map(f => f.properties.name).sort(),
+        wildernessLayer: !!m.getLayer('wilderness-label'),
+        basemapSchroon: m.getLayer('places_locality')
+          ? m.getLayoutProperty('places_locality', 'visibility') : 'gone',
+      };
+    });
+    expect(r.villages).toEqual(['Adirondack', 'Pottersville', 'Schroon Lake Village']);
+    expect(r.wildernessLayer).toBe(true);
+    expect(r.basemapSchroon).toBe('none'); // default "Schroon Lake" locality hidden
+  });
+
+  test('mile markers render every 5 miles, above the aid markers', async ({ page }) => {
+    await page.waitForSelector('.mile-marker', { timeout: 8000 });
+    const r = await page.evaluate(() => {
+      const marks = [...document.querySelectorAll('.mile-marker')];
+      const zi = el => parseInt(getComputedStyle(el).zIndex, 10) || 0;
+      const aid = document.querySelector('.aid-marker');
+      return {
+        labels: marks.map(el => el.textContent).sort((a, b) => +a - +b),
+        aboveAid: aid ? zi(marks[0]) > zi(aid) : true,
+      };
+    });
+    expect(r.labels).toEqual(['5', '10', '15', '20', '25']);
+    expect(r.aboveAid).toBe(true);
+  });
+
   test('clicking a TURN highlights the route segment and does NOT zoom by default', async ({ page }) => {
     const turn = page.locator('#loopCueList .loop-cue--turn').first();
     await expect(turn).toBeVisible();

@@ -565,70 +565,39 @@ function renderAidMarkers() {
 // Built as a MapLibre symbol layer so they scale with zoom rather than
 // HTML markers (numerous markers tank perf on Bronto's 16-marker count).
 
-var kmMarkerSourceId = 'km-markers';
+// Mile markers are HTML markers (not GL) so they paint ABOVE the HTML
+// aid-station markers — otherwise the mile circles at 10/20/25 sit UNDER
+// the aid markers that share those miles and disappear. Each is nudged
+// outward from the lake centroid so the number reads beside the route,
+// clear of the on-route aid markers.
+var mileMarkers = [];
 function rebuildKmMarkers() {
-  if (!map || !map.isStyleLoaded()) return;
+  if (!map) return;
   var race = RACES[currentRaceId];
   if (!race) return;
+  clearKmMarkers();
   var totalMi = race.miles;
-  // Marathon: every 5 mi (5/10/15/20/25). Half: every 2.5 mi
-  // (2.5/5/7.5/10/12.5). Tight enough to read distance at a glance,
-  // sparse enough to keep the cream substrate clean.
+  // Marathon: every 5 mi (5/10/15/20/25). Half: every 2.5 mi. The -0.5
+  // buffer drops a marker right at the finish but keeps the last round one.
   var stride = (totalMi > 20) ? 5 : 2.5;
-  var features = [];
-  for (var k = stride; k < totalMi - stride / 2 + 0.001; k += stride) {
+  var centroid = map.project([-73.7760, 43.7870]); // lake center, for outward offset
+  for (var k = stride; k < totalMi - 0.5; k += stride) {
     var coord = getCoordAtMile(currentRaceId, k);
-    features.push({
-      type: 'Feature',
-      properties: { km: k, label: (k % 1 === 0) ? String(k) : k.toFixed(1), priority: (k % 10 === 0) ? 1 : 2 },
-      geometry: { type: 'Point', coordinates: coord },
-    });
-  }
-  var fc = { type: 'FeatureCollection', features: features };
-  if (map.getSource(kmMarkerSourceId)) {
-    map.getSource(kmMarkerSourceId).setData(fc);
-  } else {
-    map.addSource(kmMarkerSourceId, { type: 'geojson', data: fc });
-    map.addLayer({
-      id: 'km-markers-circle',
-      type: 'circle',
-      source: kmMarkerSourceId,
-      paint: {
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, 7, 14, 11, 17, 14],
-        'circle-color': '#1f1d18',
-        'circle-stroke-color': 'var-fallback', // overridden runtime below
-        'circle-stroke-width': 2,
-      },
-    });
-    // Brand-color stroke (read at runtime since CSS vars don't apply in WebGL)
-    var brand = '#c19434';
-    try {
-      var v = getComputedStyle(document.documentElement).getPropertyValue('--race-brand').trim();
-      if (v) brand = v;
-    } catch (e) { /* noop */ }
-    map.setPaintProperty('km-markers-circle', 'circle-stroke-color', brand);
-    map.addLayer({
-      id: 'km-markers-label',
-      type: 'symbol',
-      source: kmMarkerSourceId,
-      layout: {
-        'text-field': ['get', 'label'],
-        'text-font': ['Noto Sans Medium'],
-        'text-size': ['interpolate', ['linear'], ['zoom'], 9, 9, 14, 12, 17, 15],
-        'text-allow-overlap': true,
-        'text-ignore-placement': true,
-      },
-      paint: {
-        'text-color': '#ffffff',
-      },
-    });
+    var el = document.createElement('div');
+    el.className = 'mile-marker';
+    el.textContent = (k % 1 === 0) ? String(k) : k.toFixed(1);
+    var pm = map.project(coord);
+    var vx = pm.x - centroid.x, vy = pm.y - centroid.y;
+    var vlen = Math.sqrt(vx * vx + vy * vy) || 1;
+    var mk = new maplibregl.Marker({
+      element: el, anchor: 'center', offset: [(vx / vlen) * 26, (vy / vlen) * 26],
+    }).setLngLat(coord).addTo(map);
+    mileMarkers.push(mk);
   }
 }
 function clearKmMarkers() {
-  ['km-markers-label', 'km-markers-circle'].forEach(function(id) {
-    if (map.getLayer(id)) map.removeLayer(id);
-  });
-  if (map.getSource(kmMarkerSourceId)) map.removeSource(kmMarkerSourceId);
+  mileMarkers.forEach(function(m) { m.remove(); });
+  mileMarkers = [];
 }
 
 
@@ -1587,36 +1556,153 @@ function toggleWeatherPanel() {
 // ─── Init ────────────────────────────────────────────────────────────
 
 // Custom "Schroon Lake" water label. The aid-station markers are HTML
-// elements, which always paint above the GL canvas — so a GL symbol label
-// would sit UNDER them. We render the label as an HTML marker instead:
-// pointer-events:none so it never blocks an aid-station click, a high
-// z-index so it reads ABOVE the aid markers, vertical down the lake center
-// with doubled letter-tracking. Centered on the lake centroid (from the
-// OSM Schroon Lake polygon).
+// elements, which always paint above the GL canvas, so a GL symbol label
+// would sit UNDER them; and a GL symbol can't be italic (the basemap
+// glyphs have no italic face). So we render the name as an SVG <textPath>
+// marker (italic, above the aid markers, click-through). The path is the
+// real OSM lake centerline, projected to screen on every move, so the
+// label SWOOPS through the open water and follows the lake's contours.
 var lakeLabelMarker = null;
+// Lake centerline (lng,lat), north -> south, mean longitude per latitude
+// band of the OSM Schroon Lake polygon.
+var LAKE_CENTERLINE = [
+  [-73.74888, 43.84139],
+  [-73.75824, 43.82783],
+  [-73.75892, 43.81427],
+  [-73.77433, 43.80071],
+  [-73.78025, 43.78715],
+  [-73.77253, 43.77359],
+  [-73.77527, 43.76003],
+  [-73.79195, 43.74647],
+  [-73.80447, 43.73290],
+];
+var LAKE_SVG_W = 520, LAKE_SVG_H = 860; // generous; clipped by the map frame
+
 function addLakeLabel() {
   if (!map || lakeLabelMarker) return;
   var el = document.createElement('div');
   el.className = 'lake-label-marker';
-  var span = document.createElement('span');
-  span.className = 'lake-label-marker__text';
-  span.textContent = 'Schroon Lake';
-  el.appendChild(span);
+  setHtml(el,
+    '<svg class="lake-label-svg" viewBox="0 0 ' + LAKE_SVG_W + ' ' + LAKE_SVG_H + '" ' +
+        'width="' + LAKE_SVG_W + '" height="' + LAKE_SVG_H + '" aria-hidden="true">' +
+      '<path id="adkLakeArc" fill="none"/>' +
+      '<text class="lake-label-svg__text">' +
+        '<textPath href="#adkLakeArc" startOffset="50%">Schroon Lake</textPath>' +
+      '</text>' +
+    '</svg>');
+  // Anchor at the centerline's mid point; the path is rebuilt in SVG units
+  // relative to this anchor so the text tracks the water as the map moves.
   lakeLabelMarker = new maplibregl.Marker({ element: el, anchor: 'center' })
-    .setLngLat([-73.7760, 43.7870])
+    .setLngLat(LAKE_CENTERLINE[Math.floor(LAKE_CENTERLINE.length / 2)])
     .addTo(map);
-  sizeLakeLabel();
-  map.on('zoom', sizeLakeLabel);
+  updateLakeLabelPath();
+  map.on('move', updateLakeLabelPath);
 }
 
-// HTML markers don't scale with zoom, so nudge the font-size so the label
-// reads like a map symbol across zoom levels.
-function sizeLakeLabel() {
+// Project the lake centerline to screen and write it (smoothed) into the
+// SVG path the label text follows, relative to the marker's anchor.
+function updateLakeLabelPath() {
   if (!lakeLabelMarker) return;
-  var span = lakeLabelMarker.getElement().querySelector('.lake-label-marker__text');
-  if (!span) return;
-  var size = Math.max(15, Math.min(40, 15 + (map.getZoom() - 9) * 4.5));
-  span.style.fontSize = size.toFixed(1) + 'px';
+  var pathEl = lakeLabelMarker.getElement().querySelector('#adkLakeArc');
+  if (!pathEl) return;
+  var anchor = map.project(lakeLabelMarker.getLngLat());
+  var pts = LAKE_CENTERLINE.map(function(c) {
+    var p = map.project(c);
+    return [p.x - anchor.x + LAKE_SVG_W / 2, p.y - anchor.y + LAKE_SVG_H / 2];
+  });
+  // Smooth the polyline with quadratic segments through the vertices.
+  var d = 'M ' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
+  for (var i = 1; i < pts.length - 1; i++) {
+    var mx = (pts[i][0] + pts[i + 1][0]) / 2;
+    var my = (pts[i][1] + pts[i + 1][1]) / 2;
+    d += ' Q ' + pts[i][0].toFixed(1) + ' ' + pts[i][1].toFixed(1) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1);
+  }
+  var last = pts[pts.length - 1];
+  d += ' L ' + last[0].toFixed(1) + ' ' + last[1].toFixed(1);
+  pathEl.setAttribute('d', d);
+}
+
+// Hide the basemap's own "Schroon Lake" locality + lake labels so they
+// don't duplicate our custom lake label; we supply our own village labels.
+function hideBasemapPlaceLabels() {
+  ['places_locality', 'water_label_lakes'].forEach(function(id) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
+  });
+}
+
+// Village labels around the lake — west (Schroon Lake village), east
+// (Adirondack), south (Pottersville). Small dot + name, GL symbols (they
+// sit on land, off the route, so being under the aid markers is fine).
+function addVillageLabels() {
+  if (!map || map.getLayer('village-labels')) return;
+  map.addSource('village-labels-src', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [
+      // Per-feature anchor + offset: "Schroon Lake Village" reads NW of its
+      // dot (anchor bottom-right); the others sit below their dots.
+      { type: 'Feature', properties: { name: 'Schroon Lake Village', anchor: 'bottom-right', offset: [-0.45, -0.4] }, geometry: { type: 'Point', coordinates: [-73.7660, 43.8395] } },
+      { type: 'Feature', properties: { name: 'Adirondack',   anchor: 'top', offset: [0, 0.85] }, geometry: { type: 'Point', coordinates: [-73.7490, 43.7650] } },
+      { type: 'Feature', properties: { name: 'Pottersville', anchor: 'top', offset: [0, 0.85] }, geometry: { type: 'Point', coordinates: [-73.8220, 43.7250] } },
+    ] },
+  });
+  map.addLayer({
+    id: 'village-dots',
+    type: 'circle',
+    source: 'village-labels-src',
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, 2, 13, 3.5],
+      'circle-color': '#0E2438',
+      'circle-stroke-color': '#eef1f2',
+      'circle-stroke-width': 1.2,
+    },
+  });
+  map.addLayer({
+    id: 'village-labels',
+    type: 'symbol',
+    source: 'village-labels-src',
+    layout: {
+      'text-field': ['get', 'name'],
+      'text-font': ['Noto Sans Medium'],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 9, 10, 11, 12.5, 14, 16],
+      'text-offset': ['get', 'offset'],
+      'text-anchor': ['get', 'anchor'],
+      'text-letter-spacing': 0.04,
+    },
+    paint: {
+      'text-color': '#0E2438',
+      'text-halo-color': '#eef1f2',
+      'text-halo-width': 1.7,
+    },
+  });
+}
+
+// Pharaoh Lake Wilderness — the protected forest east of Schroon Lake.
+// A spread, muted-green region label in the eastern green area.
+function addWildernessLabel() {
+  if (!map || map.getLayer('wilderness-label')) return;
+  map.addSource('wilderness-label-src', {
+    type: 'geojson',
+    data: { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [-73.7010, 43.7920] } },
+  });
+  map.addLayer({
+    id: 'wilderness-label',
+    type: 'symbol',
+    source: 'wilderness-label-src',
+    layout: {
+      'text-field': 'Pharaoh Lake Wilderness',
+      'text-font': ['Noto Sans Medium'],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 9, 11, 11, 14, 14, 18],
+      'text-max-width': 9,
+      'text-letter-spacing': 0.12,
+      'text-line-height': 1.3,
+    },
+    paint: {
+      'text-color': '#4f6340',          // muted forest green
+      'text-halo-color': '#eef1f2',
+      'text-halo-width': 1.6,
+      'text-opacity': 0.92,
+    },
+  });
 }
 
 function initMap() {
@@ -1671,6 +1757,9 @@ function initMap() {
       },
     }, firstSymbolId);
 
+    hideBasemapPlaceLabels();
+    addVillageLabels();
+    addWildernessLabel();
     addLoopLayers();
     addLakeLabel();
     addHqStartLayer();

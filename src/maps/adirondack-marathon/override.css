@@ -102,27 +102,53 @@ body.race-page.race-adirondack-marathon {
   filter: drop-shadow(0 1.5px 3px rgba(26,26,26,0.28));
 }
 
-/* "Schroon Lake" water label — an HTML marker so it paints ABOVE the HTML
- * aid-station markers (a GL symbol is stuck under the marker pane). It's a
- * vertical spine label down the lake with doubled letter-tracking;
- * pointer-events:none keeps aid-station clicks working through it. */
+/* "Schroon Lake" water label — an SVG textPath marker so it paints ABOVE
+ * the HTML aid-station markers (a GL symbol is stuck under the marker pane),
+ * follows a gentle arc down the lake, and renders italic. pointer-events:none
+ * keeps aid-station clicks working through it. */
 .race-adirondack-marathon .lake-label-marker {
   pointer-events: none;
   z-index: 4 !important;   /* above the aid markers */
 }
-.race-adirondack-marathon .lake-label-marker__text {
-  display: inline-block;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  transform: rotate(16deg);   /* match the lake's NNE–SSW tilt */
-  transform-origin: center;
-  font-family: 'Mulish', -apple-system, 'Helvetica Neue', Arial, sans-serif;
-  font-weight: 600;
-  letter-spacing: 0.44em;     /* doubled tracking */
-  white-space: nowrap;
-  color: #26566e;
+.race-adirondack-marathon .lake-label-svg {
+  display: block;
+  overflow: visible;
   opacity: 0.92;
-  text-shadow: 0 0 4px #eef1f2, 0 0 4px #eef1f2, 0 1px 3px rgba(38,86,110,0.25);
+}
+.race-adirondack-marathon .lake-label-svg__text {
+  font-family: 'Mulish', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 19px;            /* viewBox units; scaled via the SVG size */
+  letter-spacing: 8px;        /* doubled tracking */
+  text-anchor: middle;        /* center the name on the path */
+  fill: #26566e;              /* deep lake-blue */
+  stroke: #eef1f2;            /* halo */
+  stroke-width: 3.4px;
+  stroke-linejoin: round;
+  paint-order: stroke fill;   /* halo behind the fill */
+}
+
+/* Mile markers — HTML markers so they paint ABOVE the HTML aid markers
+ * (a GL circle is stuck under the marker pane and vanishes wherever an aid
+ * station shares the mile). Navy disc, brand-blue ring, white number. */
+.race-adirondack-marathon .mile-marker {
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: #0E2438;
+  border: 2px solid var(--race-brand);
+  color: #fff;
+  font-family: var(--font-micro, 'JetBrains Mono', monospace);
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(14, 36, 56, 0.45);
+  pointer-events: none;       /* clicks fall through to aid markers */
+  z-index: 5 !important;      /* above the aid markers */
 }
 
 /* hq-badge — top-left, 25% smaller than the gran-fondo cycling badge
