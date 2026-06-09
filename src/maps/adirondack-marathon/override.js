@@ -1586,60 +1586,37 @@ function toggleWeatherPanel() {
 
 // ─── Init ────────────────────────────────────────────────────────────
 
-// Custom "Schroon Lake" water label. The basemap only labels the lake at
-// high zoom; the race frames the whole lake, so we draw our own label down
-// the lake's centerline (a line-placed symbol) so the name reads the length
-// of the lake, vertically, at the default zoom.
+// Custom "Schroon Lake" water label. The aid-station markers are HTML
+// elements, which always paint above the GL canvas — so a GL symbol label
+// would sit UNDER them. We render the label as an HTML marker instead:
+// pointer-events:none so it never blocks an aid-station click, a high
+// z-index so it reads ABOVE the aid markers, vertical down the lake center
+// with doubled letter-tracking. Centered on the lake centroid (from the
+// OSM Schroon Lake polygon).
+var lakeLabelMarker = null;
 function addLakeLabel() {
-  if (!map || map.getLayer('lake-label')) return;
-  if (!map.getSource('lake-label-src')) {
-    map.addSource('lake-label-src', {
-      type: 'geojson',
-      data: {
-        type: 'Feature',
-        properties: { name: 'Schroon Lake' },
-        // Centerline down the open water, north -> south, derived from the
-        // OSM Schroon Lake polygon (mean longitude per latitude band). The
-        // lake shifts notably west toward its southern end near Pottersville.
-        geometry: {
-          type: 'LineString',
-          coordinates: [
-            [-73.7495, 43.8410],
-            [-73.7585, 43.8240],
-            [-73.7660, 43.8050],
-            [-73.7740, 43.7870],
-            [-73.7800, 43.7700],
-            [-73.7910, 43.7500],
-            [-73.8030, 43.7340],
-          ],
-        },
-      },
-    });
-  }
-  map.addLayer({
-    id: 'lake-label',
-    type: 'symbol',
-    source: 'lake-label-src',
-    layout: {
-      // line-center places exactly one label, oriented along the line, so
-      // "Schroon Lake" reads vertically down the middle of the lake.
-      'symbol-placement': 'line-center',
-      'text-field': 'Schroon Lake',
-      'text-font': ['Noto Sans Medium'],
-      'text-size': ['interpolate', ['linear'], ['zoom'], 9, 13, 11, 19, 14, 28],
-      'text-letter-spacing': 0.22,
-      'text-max-angle': 80,
-      'text-keep-upright': true,
-      'text-allow-overlap': true,
-      'text-ignore-placement': true,
-    },
-    paint: {
-      'text-color': '#26566e',       // deep lake-blue
-      'text-halo-color': '#e3edf2',
-      'text-halo-width': 1.6,
-      'text-halo-blur': 0.4,
-    },
-  });
+  if (!map || lakeLabelMarker) return;
+  var el = document.createElement('div');
+  el.className = 'lake-label-marker';
+  var span = document.createElement('span');
+  span.className = 'lake-label-marker__text';
+  span.textContent = 'Schroon Lake';
+  el.appendChild(span);
+  lakeLabelMarker = new maplibregl.Marker({ element: el, anchor: 'center' })
+    .setLngLat([-73.7760, 43.7870])
+    .addTo(map);
+  sizeLakeLabel();
+  map.on('zoom', sizeLakeLabel);
+}
+
+// HTML markers don't scale with zoom, so nudge the font-size so the label
+// reads like a map symbol across zoom levels.
+function sizeLakeLabel() {
+  if (!lakeLabelMarker) return;
+  var span = lakeLabelMarker.getElement().querySelector('.lake-label-marker__text');
+  if (!span) return;
+  var size = Math.max(15, Math.min(40, 15 + (map.getZoom() - 9) * 4.5));
+  span.style.fontSize = size.toFixed(1) + 'px';
 }
 
 function initMap() {
