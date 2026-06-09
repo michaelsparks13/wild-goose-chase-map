@@ -1,0 +1,918 @@
+/* gran-fondo-badlands · override.css
+ *
+ * Trail-party voice on a warm-ivory substrate, hoodoo-rust accent.
+ * Race wordmark + countdown ride the rust brand color against the
+ * dark editorial top bar. Loop cue rows + chips + aid table all
+ * inherit per-distance color from the active dinosaur.
+ *
+ * Loaded after editorial.css so it can specialize the page chrome
+ * the editorial system stages.
+ */
+
+/* ─── Body baseline ────────────────────────────────────────────────── */
+
+body.race-page.race-adirondack-marathon {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  /* editorial.css recomputes --text-muted via color-mix(ink, paper)
+   * which lands at ~#85827e — fails WCAG AA 4.5:1 on cream surfaces.
+   * Override here (loads after editorial.css) to the sageQuiet token
+   * from our theme, which is hand-tuned for cross-surface contrast. */
+  --text-muted: var(--sage-quiet);
+}
+.race-adirondack-marathon h1,
+.race-adirondack-marathon h2,
+.race-adirondack-marathon h3,
+.race-adirondack-marathon h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* Header-accent for wordmark + countdown — distinct from the rust
+ * REGISTER button on the host site so the two don't collapse into a
+ * single color in the eye. The editorial chrome puts a rust pill
+ * background on #raceCountdown by default; we strip it so the golden
+ * text reads against the dark top bar instead of mimicking the
+ * host-site rust CTA button. */
+.race-adirondack-marathon .race-mark__name,
+.race-adirondack-marathon #raceCountdown {
+  color: var(--header-accent);
+}
+.race-adirondack-marathon #raceCountdown {
+  background: transparent;
+  padding: 0;
+  font-weight: 600;
+}
+
+.race-adirondack-marathon main > section.essentials,
+.race-adirondack-marathon .page-footer {
+  max-width: 720px;
+  margin-inline: auto;
+}
+
+/* The editorial race-shell template hardcodes a `.map-toggles` row of
+ * Aid Stations · 3D buttons above the map. Those are Tinman-pattern
+ * toggles; this race uses the Layers popover inside the map for the
+ * same job, so the strip is suppressed. */
+.race-adirondack-marathon .map-controls,
+.race-adirondack-marathon .map-toggles { display: none !important; }
+
+/* ─── Map column ───────────────────────────────────────────────────── */
+
+.race-adirondack-marathon .map-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+}
+.race-adirondack-marathon #map {
+  position: absolute; inset: 0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.race-adirondack-marathon .hq-marker {
+  width: 36px; height: 36px;
+  cursor: pointer;
+}
+.race-adirondack-marathon .hq-marker svg {
+  width: 100%; height: 100%; display: block;
+  filter: drop-shadow(0 2px 4px rgba(26,26,26,0.35));
+}
+/* Marker color via CSS — SVG fills use currentColor since CSS var() in
+ * fill="..." attributes is not reliably supported. Aid stations get
+ * pine green, finish gets the brand blue. (The start pennant moved to a
+ * GL symbol layer so it can sit beneath place labels — see
+ * makeStartIconImage / addHqStartLayer in override.js.) */
+.race-adirondack-marathon .aid-marker {
+  width: 28px; height: 28px;
+  cursor: pointer;
+  color: var(--aid-color);
+}
+.race-adirondack-marathon .aid-marker--finish {
+  width: 32px; height: 32px;
+  color: var(--race-brand);
+}
+.race-adirondack-marathon .hq-marker { color: var(--race-brand); }
+.race-adirondack-marathon .aid-marker svg {
+  width: 100%; height: 100%; display: block;
+  filter: drop-shadow(0 1.5px 3px rgba(26,26,26,0.28));
+}
+
+/* hq-badge — top-left, 25% smaller than the gran-fondo cycling badge
+ * so it sits cleanly above the village start GL symbol without crowding
+ * the lake-road network beneath. The Layers popover
+ * stays top-right; the badge stays top-left. `pointer-events: none`
+ * lets clicks pass through to the GL symbol's popup. */
+.race-adirondack-marathon .hq-badge {
+  position: absolute; top: 12px; left: 12px; z-index: 10;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 8px;
+  background: var(--paper);
+  border: 1px solid #d8cdb6;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(31,29,24,0.08);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--race-brand);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.race-adirondack-marathon .hq-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--race-brand);
+}
+
+/* ─── Layers popover ───────────────────────────────────────────────── */
+
+.race-adirondack-marathon .map-layers {
+  position: absolute; top: 12px; right: 12px; z-index: 11;
+}
+.race-adirondack-marathon .map-layers__trigger {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 11px 7px 9px;
+  background: var(--paper);
+  border: 1px solid #d8cdb6;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(31,29,24,0.08);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 120ms;
+}
+.race-adirondack-marathon .map-layers__trigger:hover {
+  background: var(--surface-warm);
+}
+.race-adirondack-marathon .map-layers__icon { width: 14px; height: 14px; }
+.race-adirondack-marathon .map-layers__chev { width: 10px; height: 10px; transition: transform 180ms; }
+.race-adirondack-marathon .map-layers[data-state="open"] .map-layers__chev { transform: rotate(180deg); }
+.race-adirondack-marathon .map-layers__count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 16px; height: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--race-brand);
+  color: #fff;
+  font-family: var(--font-micro);
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 2px;
+}
+.race-adirondack-marathon .map-layers__panel {
+  display: none;
+  position: absolute; top: calc(100% + 6px); right: 0;
+  min-width: 200px;
+  background: var(--paper);
+  border: 1px solid #d8cdb6;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(26,26,26,0.12);
+  padding: 6px 4px;
+}
+.race-adirondack-marathon .map-layers[data-state="open"] .map-layers__panel { display: block; }
+.race-adirondack-marathon .map-layers__row {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 3px;
+}
+.race-adirondack-marathon .map-layers__row:hover { background: var(--surface-warm); }
+.race-adirondack-marathon .map-layers__row input { accent-color: var(--race-brand); }
+
+/* ─── Aid station popups ───────────────────────────────────────────── */
+
+.race-adirondack-marathon .maplibregl-popup-content {
+  background: var(--paper-card);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(26,26,26,0.18);
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink);
+}
+.race-adirondack-marathon .aid-popup__name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.race-adirondack-marathon .aid-popup__km {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  color: var(--sage-quiet);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.race-adirondack-marathon .aid-popup__stocked {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+/* ─── Distance picker (dinosaur chips) ─────────────────────────────── */
+
+.race-adirondack-marathon .dir-race-tabs--dino {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 0;
+  margin: 0 0 16px 0;
+  border-bottom: none;
+}
+/* Distance picker chips — borderless. The default tan/cream border
+ * read as four separate outlined boxes; rest state is now a flat
+ * paper-card surface with a tiny lift shadow, active state is an
+ * inner ring in the loop color (currentColor on the chip). */
+/* Inactive chip: cream substrate with loop-colored numeral + label.
+ * Active chip: inverts to a filled block of the loop color with cream
+ * numeral + label — strong "selected" affordance that doesn't rely on
+ * a thin ring inset (which made the numeral disappear when its fill
+ * matched the ring color, the original bug). */
+.race-adirondack-marathon .dir-dino-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px 10px 8px;
+  background: var(--paper-card);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 180ms, transform 160ms, box-shadow 160ms;
+  text-align: center;
+  font-family: var(--font-body);
+  box-shadow: 0 1px 2px rgba(26,26,26,0.04);
+}
+.race-adirondack-marathon .dir-dino-tab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(26,26,26,0.08);
+}
+.race-adirondack-marathon .dir-dino-tab.active {
+  /* Filled block. currentColor is the loop color (set inline on the
+   * button). The numeral SVG uses fill="currentColor", but the active
+   * .dir-dino-icon override below flips it to cream against the now
+   * loop-colored background. */
+  background: currentColor;
+  box-shadow: 0 4px 10px rgba(26,26,26,0.16);
+}
+.race-adirondack-marathon .dir-dino-icon {
+  width: 100%;
+  max-width: 64px;
+  display: block;
+  color: currentColor; /* loop color from the parent's inline style */
+}
+.race-adirondack-marathon .dir-dino-tab.active .dir-dino-icon {
+  color: var(--paper); /* numeral flips to cream against the filled chip */
+}
+.race-adirondack-marathon .dir-dino-icon svg {
+  width: 100%;
+  height: 40px;
+  display: block;
+}
+.race-adirondack-marathon .dir-dino-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.race-adirondack-marathon .dir-dino-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.race-adirondack-marathon .dir-dino-tab.active .dir-dino-name {
+  color: var(--paper);
+}
+.race-adirondack-marathon .dir-dino-km {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  color: var(--sage-quiet);
+  letter-spacing: 0.04em;
+}
+.race-adirondack-marathon .dir-dino-tab.active .dir-dino-km {
+  color: rgba(247,247,247,0.85);
+}
+
+/* ─── Directions header ────────────────────────────────────────────── */
+
+.race-adirondack-marathon .directions-header {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0d6bf;
+}
+.race-adirondack-marathon .directions-titles {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.race-adirondack-marathon .directions-eyebrow {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--sage-quiet);
+  margin: 0;
+}
+.race-adirondack-marathon .directions-race {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.race-adirondack-marathon .dir-zoom-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-left: auto;
+  font-family: var(--font-micro);
+  font-size: 11px;
+  color: var(--sage-quiet);
+  cursor: pointer;
+}
+.race-adirondack-marathon .dir-zoom-toggle input { accent-color: var(--race-brand); }
+.race-adirondack-marathon .dir-cutoff-pill {
+  display: inline-flex; align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--font-micro);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: var(--bone);
+  color: var(--ink);
+}
+.race-adirondack-marathon .assembly-now {
+  display: inline-flex; align-items: baseline; gap: 8px;
+  margin: 6px 0 14px 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink);
+}
+.race-adirondack-marathon .assembly-now__eyebrow {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--sage-quiet);
+}
+.race-adirondack-marathon .assembly-now__label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* ─── Loop cue list ─────────────────────────────────────────────────── */
+
+.race-adirondack-marathon .loop-cue-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex; flex-direction: column;
+  gap: 0;
+  border-top: 1px solid #ece2cc;
+  background: var(--paper-card);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.race-adirondack-marathon .loop-cue {
+  display: grid;
+  grid-template-columns: 64px 28px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #ece2cc;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink);
+  cursor: default;
+  transition: background 120ms;
+}
+.race-adirondack-marathon .loop-cue--turn,
+.race-adirondack-marathon .loop-cue--hazard,
+.race-adirondack-marathon .loop-cue--water,
+.race-adirondack-marathon .loop-cue--landmark,
+.race-adirondack-marathon .loop-cue--surface,
+.race-adirondack-marathon .loop-cue--note { cursor: pointer; }
+/* Active cue row — uses the same highlighter yellow as the map
+ * segment highlight so the cross-eye link is unmistakable. */
+.race-adirondack-marathon .loop-cue--active {
+  background: #FFF7C2;
+  box-shadow: inset 4px 0 0 #E5B800;
+}
+.race-adirondack-marathon .loop-cue--active .loop-cue__mile { color: #B57E00; }
+.race-adirondack-marathon .loop-cue--turn:hover { background: var(--surface-warm); }
+.race-adirondack-marathon .loop-cue:last-child { border-bottom: none; }
+.race-adirondack-marathon .loop-cue__mile {
+  font-family: var(--font-micro);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--race-brand);
+  text-align: right;
+}
+.race-adirondack-marathon .loop-cue__mile small {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--sage-quiet);
+  margin-left: 2px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.race-adirondack-marathon .loop-cue__icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  color: var(--ink);
+}
+.race-adirondack-marathon .loop-cue__icon svg { width: 100%; height: 100%; }
+.race-adirondack-marathon .loop-cue__body strong {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-right: 4px;
+}
+.race-adirondack-marathon .loop-cue__target {
+  color: var(--race-brand);
+  font-weight: 500;
+}
+.race-adirondack-marathon .loop-cue--hazard .loop-cue__icon { color: var(--hazard-color); }
+.race-adirondack-marathon .loop-cue--water  .loop-cue__icon { color: #2A6FB0; }
+.race-adirondack-marathon .loop-cue--landmark .loop-cue__icon { color: var(--accent); }
+.race-adirondack-marathon .loop-cue--surface .loop-cue__icon { color: var(--sage-quiet); }
+.race-adirondack-marathon .loop-cue--turn .loop-cue__icon { color: var(--race-brand); }
+.race-adirondack-marathon .loop-cue--empty {
+  grid-template-columns: 1fr;
+  padding: 18px 16px;
+  color: var(--sage-quiet);
+  font-style: italic;
+  text-align: center;
+}
+
+/* ─── Profile section ──────────────────────────────────────────────── */
+
+.race-adirondack-marathon .profile-section {
+  margin-top: 16px;
+  padding: 12px 14px 14px 14px;
+  background: var(--paper-card);
+  border: 1px solid #ece2cc;
+  border-radius: 6px;
+}
+.race-adirondack-marathon .profile-header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.race-adirondack-marathon .profile-header h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.race-adirondack-marathon .profile-stats {
+  display: inline-flex; gap: 14px;
+  font-family: var(--font-micro);
+  font-size: 11.5px;
+  color: var(--sage-quiet);
+}
+.race-adirondack-marathon .profile-stats strong {
+  color: var(--ink);
+  font-weight: 600;
+  margin-right: 1px;
+}
+.race-adirondack-marathon #profileCanvas {
+  width: 100%;
+  display: block;
+}
+
+/* ─── Aid stations table ───────────────────────────────────────────── */
+
+.race-adirondack-marathon .aid-table-card {
+  background: var(--paper-card);
+  border: 1px solid #ece2cc;
+  border-radius: 6px;
+  padding: 16px 18px;
+  margin: 0 0 16px 0;
+}
+.race-adirondack-marathon .aid-table-card__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.005em;
+  margin: 0 0 4px 0;
+}
+.race-adirondack-marathon .aid-table-card__sub {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 14px 0;
+  line-height: 1.5;
+}
+.race-adirondack-marathon .aid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+.race-adirondack-marathon .aid-table th {
+  text-align: left;
+  font-family: var(--font-micro);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--sage-quiet);
+  padding: 8px 8px;
+  border-bottom: 2px solid var(--race-brand);
+}
+.race-adirondack-marathon .aid-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid #ece2cc;
+  vertical-align: top;
+  line-height: 1.45;
+}
+.race-adirondack-marathon .aid-col-km {
+  font-family: var(--font-micro);
+  font-weight: 600;
+  color: var(--race-brand);
+  width: 60px;
+  white-space: nowrap;
+}
+.race-adirondack-marathon .aid-col-name {
+  font-weight: 600;
+  color: var(--ink);
+  width: 30%;
+}
+.race-adirondack-marathon .aid-col-stocked {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+.race-adirondack-marathon .aid-row--skipped { opacity: 0.4; }
+.race-adirondack-marathon .aid-row--skipped .aid-col-km { color: var(--sage-quiet); }
+.race-adirondack-marathon .aid-skipped-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--surface-warm);
+  font-family: var(--font-micro);
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sage-quiet);
+}
+
+/* Weather panel was originally designed to live as a 340-380px wide
+ * sticky sidebar beside the map. Our override.js's relocateWeatherPanel()
+ * lifts it into a full-width .essentials section instead. The shared
+ * weather.css width rules at >=1024px / >=1440px stick the panel at
+ * 340/380px even after relocation, leaving a huge empty gap on the
+ * right. Reset to fill the parent. */
+.race-adirondack-marathon section.essentials .weather-panel {
+  width: 100%;
+  max-width: none;
+  background: var(--paper-card);
+  flex-shrink: initial;
+}
+.race-adirondack-marathon section.essentials .weather-panel .weather-toggle-btn {
+  display: none;
+}
+
+/* ─── Course simulator (relocated into essentials) ─────────────────── */
+
+/* Bust the .essentials 720px reading-width cap for the sim section — at
+ * 720px the 2-column grid forces the panel column to 285px and its
+ * children (scrubber row, speed buttons, 3-col stats) overflow into
+ * the visual column. The course-simulator earns the wider canvas.
+ * Selector matches the 720px rule's specificity so it wins. */
+.race-adirondack-marathon main > section.essentials.sim-essentials {
+  max-width: 1080px;
+}
+.race-adirondack-marathon .sim-essentials .sim-container {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  /* 36px gap so the 1x/2x/4x speed buttons on the panel side don't
+   * crash into the course canvas on the visual side. Same regression
+   * we fixed on Wild Goose. */
+  gap: 36px;
+}
+.race-adirondack-marathon .sim-panel {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.race-adirondack-marathon .sim-races {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.race-adirondack-marathon .sim-race-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px;
+  background: var(--paper-card);
+  border: 1.5px solid #e2d7c2;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 12px;
+  text-align: left;
+  transition: border-color 140ms, transform 140ms;
+}
+.race-adirondack-marathon .sim-race-chip:hover { border-color: var(--chip-color); transform: translateY(-1px); }
+.race-adirondack-marathon .sim-race-chip.active {
+  border-color: var(--chip-color);
+  box-shadow: 0 0 0 1px var(--chip-color) inset;
+}
+.race-adirondack-marathon .sim-race-chip__icon {
+  width: 32px; height: 22px;
+  color: var(--chip-color);
+  flex-shrink: 0;
+}
+.race-adirondack-marathon .sim-race-chip__icon svg { width: 100%; height: 100%; }
+.race-adirondack-marathon .sim-race-chip__label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  flex: 1;
+}
+.race-adirondack-marathon .sim-race-chip__km {
+  font-family: var(--font-micro);
+  font-size: 10.5px;
+  color: var(--sage-quiet);
+}
+.race-adirondack-marathon .goal-time-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface-warm);
+  border-radius: 6px;
+}
+.race-adirondack-marathon .goal-label {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sage-quiet);
+}
+.race-adirondack-marathon .goal-inputs {
+  display: inline-flex; align-items: center; gap: 2px;
+}
+.race-adirondack-marathon .goal-input {
+  width: 44px;
+  padding: 4px 6px;
+  border: 1px solid #d8cdb6;
+  border-radius: 3px;
+  background: var(--paper-card);
+  font-family: var(--font-micro);
+  font-size: 13px;
+  text-align: center;
+  color: var(--ink);
+}
+.race-adirondack-marathon .goal-colon { font-family: var(--font-micro); color: var(--ink); }
+.race-adirondack-marathon .goal-pace {
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.race-adirondack-marathon .scrubber { padding: 4px 0; }
+.race-adirondack-marathon .scrub-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.race-adirondack-marathon .play-btn {
+  width: 36px; height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: var(--race-brand);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.race-adirondack-marathon .play-btn:hover { background: var(--primary-dark); }
+.race-adirondack-marathon .scrub-track {
+  position: relative;
+  flex: 1;
+  height: 32px;
+  cursor: pointer;
+}
+.race-adirondack-marathon .scrub-bg {
+  position: absolute; left: 0; right: 0; top: 50%;
+  transform: translateY(-50%);
+  height: 6px;
+  background: var(--surface-warm);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.race-adirondack-marathon .scrub-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--race-brand);
+  transition: width 80ms;
+}
+.race-adirondack-marathon .scrub-handle {
+  position: absolute; top: 50%; left: 0%;
+  transform: translate(-50%, -50%);
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--paper-card);
+  border: 2px solid var(--race-brand);
+  pointer-events: none;
+}
+.race-adirondack-marathon .speed-btns {
+  display: inline-flex; gap: 2px;
+}
+.race-adirondack-marathon .speed-btn {
+  padding: 5px 8px;
+  background: var(--paper-card);
+  border: 1px solid #d8cdb6;
+  border-radius: 3px;
+  font-family: var(--font-micro);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sage-quiet);
+  cursor: pointer;
+}
+.race-adirondack-marathon .speed-btn.active {
+  background: var(--race-brand);
+  color: #fff;
+  border-color: var(--race-brand);
+}
+.race-adirondack-marathon .sim-clock {
+  padding: 10px 12px;
+  background: var(--paper-card);
+  border: 1px solid #ece2cc;
+  border-radius: 6px;
+}
+.race-adirondack-marathon .clock-time {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.race-adirondack-marathon .clock-label {
+  font-family: var(--font-micro);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sage-quiet);
+}
+.race-adirondack-marathon .clock-finish {
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.race-adirondack-marathon .sim-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.race-adirondack-marathon .sim-stat {
+  background: var(--paper-card);
+  border: 1px solid #ece2cc;
+  border-radius: 6px;
+  padding: 8px 10px;
+  text-align: center;
+}
+.race-adirondack-marathon .sim-stat .val {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--race-brand);
+  line-height: 1.1;
+}
+.race-adirondack-marathon .sim-stat .label {
+  font-family: var(--font-micro);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sage-quiet);
+  margin-top: 2px;
+}
+.race-adirondack-marathon .sim-visual {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.race-adirondack-marathon .course-map-wrap {
+  position: relative;
+  background: #1c1310;
+  border-radius: 6px;
+  overflow: hidden;
+  height: 320px;
+}
+.race-adirondack-marathon #courseMapCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.race-adirondack-marathon .terrain-wrap {
+  height: 160px;
+  background: #1c1310;
+  padding: 0;
+  border: none;
+}
+.race-adirondack-marathon #simTerrain { width: 100%; height: 100%; display: block; }
+.race-adirondack-marathon .runner-info {
+  position: absolute;
+  top: 10px; left: 12px;
+  color: var(--paper);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+.race-adirondack-marathon .runner-ele {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.race-adirondack-marathon .runner-meta {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  color: rgba(248,242,234,0.75);
+  letter-spacing: 0.04em;
+  margin-top: 1px;
+}
+.race-adirondack-marathon .loop-pill {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-family: var(--font-micro);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.race-adirondack-marathon .terrain-wrap {
+  background: var(--paper-card);
+  border: 1px solid #ece2cc;
+  border-radius: 6px;
+  padding: 8px;
+}
+.race-adirondack-marathon #simTerrain { width: 100%; display: block; }
+
+@media (max-width: 1023px) {
+  .race-adirondack-marathon .sim-essentials .sim-container {
+    grid-template-columns: 1fr;
+  }
+  .race-adirondack-marathon .sim-races {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .race-adirondack-marathon .sim-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ─── Mobile chrome shrink (≤ 1023px) ──────────────────────────────── */
+
+@media (max-width: 1023px) {
+  .race-adirondack-marathon .map-wrap { min-height: 380px; }
+  .race-adirondack-marathon .dir-race-tabs--dino {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  .race-adirondack-marathon .dir-dino-tab { padding: 10px 6px 8px 6px; }
+  .race-adirondack-marathon .dir-dino-icon svg { height: 36px; }
+  .race-adirondack-marathon .dir-dino-name { font-size: 13px; }
+  .race-adirondack-marathon .loop-cue {
+    grid-template-columns: 56px 22px 1fr;
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+  .race-adirondack-marathon .aid-table-card { padding: 14px 14px; }
+  .race-adirondack-marathon .aid-col-km { width: 50px; }
+  .race-adirondack-marathon .aid-col-name { width: 38%; }
+  /* Push Layers trigger below the BCF badge so they don't collide on
+   * a 390x844 viewport. Memory: feedback_mobile_map_btn_hq_overlap */
+  .race-adirondack-marathon .map-layers { top: 52px; }
+}
+
+@media (max-width: 600px) {
+  .race-adirondack-marathon .dir-dino-tab .dir-dino-name { font-size: 12px; }
+  .race-adirondack-marathon .dir-dino-icon svg { height: 32px; }
+  .race-adirondack-marathon .aid-table-card__title { font-size: 17px; }
+  .race-adirondack-marathon .loop-cue {
+    grid-template-columns: 50px 20px 1fr;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+}
