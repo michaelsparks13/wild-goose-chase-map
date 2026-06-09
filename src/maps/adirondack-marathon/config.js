@@ -99,14 +99,23 @@ const racesJsLines = theme.raceFormat.distances.map(d => {
 // `mileByLoop[currentRaceId]` so each station lands at the right place and
 // reads the right mile on whichever distance is selected.
 const HALF_OFFSET = +(themeLoops[0].miles - themeLoops[1].miles).toFixed(2);
+// Actual half-marathon start = the half course's first coordinate (the
+// Hamlet of Adirondack). The certified mile-13.1 point on the marathon
+// geometry lands ~0.7 mi south of it (measured-vs-certified rescaling), so
+// pin Relay Exchange 2 here instead.
+const halfStartCoord = halfGeo.features[0].geometry.coordinates[0]; // first point [lng,lat,ele]
 const aidStationsWithLoopMiles = theme.aidStations.map(s => {
   const halfMi = +(s.mile - HALF_OFFSET).toFixed(2);
-  return Object.assign({}, s, {
+  const entry = Object.assign({}, s, {
     mileByLoop: {
       'marathon': s.mile,
       'half-marathon': halfMi >= 0 ? halfMi : null,
     },
   });
+  // The half-marathon start (Relay Exchange 2, mile 13.1) is pinned to the
+  // hamlet so the marathon marker lands on the real half start.
+  if (s.mile === 13.1) entry.coord = [halfStartCoord[0], halfStartCoord[1]];
+  return entry;
 });
 const aidStationsJs = JSON.stringify(aidStationsWithLoopMiles);
 
