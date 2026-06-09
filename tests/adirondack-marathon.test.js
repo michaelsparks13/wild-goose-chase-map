@@ -71,15 +71,21 @@ describe('adirondack-marathon · theme + config', () => {
     }
   });
 
-  it('aid spine has 18 entries (start + 15 water + hamlet + finish) with increasing miles', () => {
+  it('aid spine has 19 entries (start + water + 3 relay exchanges + finish) with increasing miles', () => {
     const theme = require(join(ROOT, 'src/themes/adirondack-marathon.js'));
     const stns = theme.aidStations;
-    expect(stns.length).toBe(18);
+    expect(stns.length).toBe(19);
     for (let i = 1; i < stns.length; i++) {
       expect(stns[i].mile).toBeGreaterThan(stns[i - 1].mile);
     }
     expect(stns[0].name).toMatch(/Start/i);
     expect(stns[stns.length - 1].name).toMatch(/Finish/i);
+    // Every on-course station carries GU; three are relay exchanges.
+    const water = stns.filter(s => /Water/.test(s.stocked));
+    expect(water.length).toBeGreaterThanOrEqual(15);
+    expect(water.every(s => /GU/.test(s.stocked))).toBe(true);
+    const relay = stns.filter(s => s.relay);
+    expect(relay.map(s => s.mile)).toEqual([4.8, 13.1, 18.0]);
   });
 
   it('aid stations carry both mile and kilometer for schema parity', () => {
@@ -92,16 +98,14 @@ describe('adirondack-marathon · theme + config', () => {
     }
   });
 
-  it('marathon skips the half-start landmark (idx 7); half runs the back half', () => {
+  it('marathon visits every entry; half runs the back half from the hamlet (idx 8)', () => {
     const theme = require(join(ROOT, 'src/themes/adirondack-marathon.js'));
     const m = theme.raceFormat.distances.find(d => d.id === 'marathon');
     const h = theme.raceFormat.distances.find(d => d.id === 'half-marathon');
-    // Index 7 is the Hamlet of Adirondack (half start) — a landmark, not
-    // a marathon aid; the marathon visits every other entry.
-    expect(m.aidStations).toEqual([0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]);
-    // The half starts at index 7 (its aidIdx[0], drawn as the pennant)
-    // and visits the back-half water stations + the shared finish.
-    expect(h.aidStations).toEqual([7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]);
+    expect(m.aidStations).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
+    // The half starts at the Hamlet of Adirondack (idx 8, its aidIdx[0],
+    // drawn as the pennant) and visits the back-half stations + finish.
+    expect(h.aidStations).toEqual([8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
   });
 
   it('race day is September 27, 2026 — Sunday', () => {

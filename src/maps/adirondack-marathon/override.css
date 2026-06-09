@@ -96,6 +96,10 @@ body.race-page.race-adirondack-marathon {
   width: 32px; height: 32px;
   color: var(--race-brand);
 }
+.race-adirondack-marathon .aid-marker--relay {
+  width: 31px; height: 31px;        /* a touch larger to stand out */
+  color: #d9a21b;                   /* amber — 4-person relay exchange */
+}
 .race-adirondack-marathon .hq-marker { color: var(--race-brand); }
 .race-adirondack-marathon .aid-marker svg {
   width: 100%; height: 100%; display: block;
@@ -238,6 +242,13 @@ body.race-page.race-adirondack-marathon {
 
 /* ─── Aid station popups ───────────────────────────────────────────── */
 
+/* An open popup must sit above every map marker — the mile markers
+ * (z-index 5), lake label (4), relay/aid markers, etc. otherwise run over
+ * it. MapLibre markers and popups are siblings in the canvas container, so
+ * a higher z-index here wins. */
+.race-adirondack-marathon .maplibregl-popup {
+  z-index: 12 !important;
+}
 .race-adirondack-marathon .maplibregl-popup-content {
   background: var(--paper-card);
   border-radius: 6px;
@@ -964,4 +975,56 @@ body.race-page.race-adirondack-marathon {
     padding: 8px 10px;
     gap: 8px;
   }
+}
+
+/* ─── Map legend ───────────────────────────────────────────────────────
+ * Compact key so users know what the marker icons mean — especially the
+ * amber relay-exchange handoff icon. Bottom-right (scale bar is bottom-left). */
+.race-adirondack-marathon .map-legend {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.93);
+  border-radius: 6px;
+  box-shadow: 0 1px 5px rgba(14, 36, 56, 0.22);
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--ink);
+  pointer-events: none;
+}
+.race-adirondack-marathon .map-legend__row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.race-adirondack-marathon .map-legend__swatch {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.race-adirondack-marathon .map-legend__swatch svg { width: 100%; height: 100%; display: block; }
+.race-adirondack-marathon .map-legend__swatch--aid { color: var(--aid-color); }
+.race-adirondack-marathon .map-legend__swatch--relay { color: #d9a21b; }
+.race-adirondack-marathon .map-legend__swatch--mile {
+  border-radius: 50%;
+  background: #0E2438;
+  border: 1.5px solid var(--race-brand);
+  color: #fff;
+  font-family: var(--font-micro, monospace);
+  font-weight: 700;
+  font-size: 9px;
+}
+@media (max-width: 600px) {
+  .race-adirondack-marathon .map-legend { font-size: 10px; padding: 6px 8px; gap: 4px; }
+  .race-adirondack-marathon .map-legend__swatch { width: 16px; height: 16px; flex-basis: 16px; }
 }
