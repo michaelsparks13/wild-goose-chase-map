@@ -35,6 +35,7 @@ const RACE_DATES = {
   'tinman': { month: 6, day: 27 },
   'gran-fondo-badlands': { month: 7, day: 4 },
   'pocantico-hills': { month: 11, day: 7 },
+  'adirondack-marathon': { month: 9, day: 27 },
 };
 const raceDate = RACE_DATES[slug] || { month: 9, day: 1 };
 
