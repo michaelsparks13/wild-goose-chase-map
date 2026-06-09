@@ -499,7 +499,9 @@ function renderAidMarkers() {
     if (raceMile == null) raceMile = 0;
     var loopLenMi = LOOPS[currentRaceId].miles;
     if (raceMile > loopLenMi) raceMile = loopLenMi;
-    var coord = getCoordAtMile(currentRaceId, raceMile);
+    // A station may pin an explicit coord (e.g. Relay Exchange 2 at the real
+    // half-marathon start); otherwise place it by mile along the active loop.
+    var coord = stn.coord || getCoordAtMile(currentRaceId, raceMile);
 
     var isFinish = (n === idxs.length - 1);
     // For loop courses (start coord === finish coord, within ~50m) the
