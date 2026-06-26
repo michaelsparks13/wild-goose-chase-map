@@ -160,6 +160,22 @@ function courseDownloadFiles(theme, mapDir) {
     if (!ext) continue;
     out.push({ id: d.id, ext, name: cleanDistanceName(d.label) });
   }
+  // Loop-assembly races (e.g. Wild Goose) compose every distance from a
+  // handful of named loops; runners often want the individual loop tracks
+  // too. Append one card per loop that ships its own GPX. Gated strictly on
+  // a <loopId>.gpx existing — NO geojson fallback — so loop-based maps that
+  // only inline loop geojson for rendering (the original /wild-goose) get
+  // no new cards; only maps that publish loop GPX (this Ringwood build) do.
+  // Skip any loop whose id already shipped as a distance: the single-loop-
+  // per-distance pattern (gran-fondo-badlands) reuses one id for both the
+  // loop and its distance, and we must not emit a duplicate card.
+  const distanceIds = new Set(out.map(o => o.id));
+  const loops = (theme.raceFormat && theme.raceFormat.loops) || [];
+  for (const l of loops) {
+    if (distanceIds.has(l.id)) continue;
+    if (!fs.existsSync(path.join(dataDir, l.id + '.gpx'))) continue;
+    out.push({ id: l.id, ext: 'gpx', name: (l.displayName || l.id) + ' Loop' });
+  }
   return out;
 }
 

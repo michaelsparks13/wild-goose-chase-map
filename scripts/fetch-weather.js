@@ -28,6 +28,7 @@ console.log(`Fetching weather for ${config.raceName} at [${lat}, ${lng}]`);
 // --- Race date config (per-map overrides) ---
 const RACE_DATES = {
   'wild-goose': { month: 9, day: 19 },
+  'wild-goose-ringwood': { month: 9, day: 19 },
   'escarpment': { month: 7, day: 26 },
   'sleeping-giant': { month: 10, day: 12 },
   'golden-leaf': { month: 9, day: 27 },
