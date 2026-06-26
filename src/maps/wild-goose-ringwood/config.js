@@ -345,7 +345,7 @@ const aidCardHtml = `<aside class="hq-aid-card" aria-labelledby="hqAidTitle">
     <div><dt>Stocked</dt><dd>Water · Skratch · hot food (vegan + GF) · snacks</dd></div>
     <div><dt>Medical</dt><dd>EMT 7am–7pm · ambulance overnight · AED · first-aid kit (incl. menstrual products + wipes)</dd></div>
     <div><dt>Crew</dt><dd>Yes · Squatch HQ only</dd></div>
-    <div><dt>Pacers</dt><dd>Allowed after sunset · pre-registration required</dd></div>
+    <div><dt>Pacers</dt><dd>100M/100K/50M after sunset (6:50 PM) · pre-register · 60+/AWD anytime</dd></div>
     <div><dt>The Jackalope Tent</dt><dd>Quiet / sensory decompression · breastfeeding-friendly</dd></div>
   </dl>
 </aside>
@@ -397,7 +397,7 @@ module.exports = {
   raceName: 'WILD GOOSE TRAIL FESTIVAL',
   themeColor: theme.palette.paper,
   fontFamily: theme.type.bodyStack,
-  subtitle: 'September 18–20, 2026 · <a href="' + theme.identity.hostUrl + '" target="_blank">sassquadtrailrunning.com</a>',
+  subtitle: 'September 18–20, 2026 · Ringwood State Park, NJ · <a href="' + theme.identity.hostUrl + '" target="_blank">sassquadtrailrunning.com</a>',
 
   // Editorial chrome consumes --paper / --ink / --race-brand / --font-*
   // from the theme directly (build.js merges them in). The variables

@@ -422,15 +422,16 @@ function addHqMarker() {
 }
 
 function addTurnMarkers() {
-  var TURNS = [
-    { name: 'Turn onto Warwick Turnpike', coords: [-74.39210797569987, 41.19636530290526], pano: 'Nr-Rvka4ohEaY8AjwC0gsQ', heading: 317, pitch: 17 },
-    { name: 'Auxillary Gate',             coords: [-74.43182534018032, 41.19216403412413], pano: 'FtAEp2_NGkJHYUXXBSwuNg', heading: 85,  pitch: 15 },
-    { name: 'Turn onto Wawayanda Road',   coords: [-74.4288102608505,  41.192782095039625], pano: 'XZQCZiPY8CU0xLnQ7vDMSg', heading: 52,  pitch: 7 },
-    { name: 'Parking Lot & Squatch HQ',   coords: [-74.42913536110542, 41.19011668988375], pano: 'xCf0GcVhiksIRm7dhE1pdg', heading: 160, pitch: 0 },
-    { name: 'The Iron Furnace',           coords: [-74.42144128042324, 41.18550102782616], pano: 'IYBYofrjAaiSWokYyvJPDg', heading: 216, pitch: 12 },
-    { name: 'Turn onto Campsite Road',    coords: [-74.41643440559857, 41.19219802627929], pano: 'Y9aP4Whq-jNi7guY5sDQlQ', heading: 158, pitch: 3 },
-    { name: 'Trail Junction',             coords: [-74.40938333820336, 41.195586314503146], pano: 'gn7_WCu3J2MYargxxvBV2w', heading: 63,  pitch: 6 }
-  ];
+  // Google Street View photo markers. The original Wawayanda set sat on
+  // public roads (Warwick Turnpike, Wawayanda Road) where the Street View
+  // car had driven. The 2026 Ringwood course runs entirely on park hiking
+  // trails inside Ringwood State Park, which Google Street View does not
+  // cover — there are no on-course panoramas to place. This array is
+  // intentionally empty (stale Wawayanda markers removed); the layer toggle
+  // stays wired and renders nothing until road-accessible pano IDs are
+  // collected. On-course turn-by-turn maneuvers are a separate feature,
+  // driven by LOOP_TURNS.
+  var TURNS = [];
 
   TURNS.forEach(function(turn, i) {
     var markerEl = document.createElement('div');

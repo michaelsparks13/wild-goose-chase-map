@@ -1,5 +1,7 @@
-// wild-goose.js — RaceTheme for the Wild Goose Trail Festival, the
-// Sassquad-produced trail-party at Wawayanda State Park, NJ. Sept 18-20, 2026.
+// wild-goose-ringwood.js — RaceTheme for the 2026 Wild Goose Trail Festival,
+// the Sassquad-produced trail-party relocated to Ringwood State Park (Shepherd
+// Lake), Ringwood, NJ. Sept 18-20, 2026. The original /wild-goose theme
+// (Wawayanda venue) is preserved unchanged; this is a separate venue build.
 //
 // Mirrors RaceTheme in ./race-theme.ts with the loop-based extensions:
 // `raceFormat.loops` declares the three named loops (Checkered, Blue,
@@ -15,7 +17,7 @@
 // Mono) appear on the forbidden list.
 
 module.exports = {
-  slug: 'wild-goose',
+  slug: 'wild-goose-ringwood',
 
   identity: {
     name: 'Wild Goose Trail Festival',
@@ -98,7 +100,13 @@ module.exports = {
         color: '#1f1d18',
         pattern: 'checkered',
         defaultDirection: 'CW',
-        cues: [],
+        cues: [
+          { mile: 0.0, kind: 'landmark', text: 'Leave Squatch HQ — the first ¼ mile shares the Pink/Blue corridor before branching off.' },
+          { mile: 0.5, kind: 'surface',  text: '100% singletrack from here — the shortest and spiciest loop of the festival.' },
+          { mile: 1.8, kind: 'hazard',   text: 'A couple of sustained climbs over 100 ft of vert — the steepest grade per mile on the course.' },
+          { mile: 3.6, kind: 'surface',  text: 'Technical singletrack eases; the final ½ mile rejoins the Pink/Blue corridor.' },
+          { mile: 4.8, kind: 'water',    text: 'Finish chute back into Squatch HQ aid.' },
+        ],
       },
       {
         id: 'blue',
@@ -107,7 +115,13 @@ module.exports = {
         elevationGain: 500,
         color: '#1E66D0',
         defaultDirection: 'CW',
-        cues: [],
+        cues: [
+          { mile: 0.0, kind: 'landmark', text: 'Start at Squatch HQ on Shepherd Lake — the first ~2 miles share the Pink corridor.' },
+          { mile: 1.2, kind: 'surface',  text: 'Gentle rolling wide woods roads — the most runnable loop of the festival; settle into cruise control.' },
+          { mile: 2.8, kind: 'landmark', text: 'Pass quiet ponds and the backside of the NJ Botanical Gardens through deep green canopy.' },
+          { mile: 4.5, kind: 'surface',  text: 'Final mile drops onto singletrack rejoining the Pink corridor toward HQ.' },
+          { mile: 5.4, kind: 'water',    text: 'Into Squatch HQ — the only aid; refill before the next loop.' },
+        ],
       },
       {
         id: 'pink',
@@ -116,7 +130,14 @@ module.exports = {
         elevationGain: 700,
         color: '#E7338C',
         defaultDirection: 'CW',
-        cues: [],
+        cues: [
+          { mile: 0.0, kind: 'landmark', text: 'Climb out of Squatch HQ; the first ~2 miles co-align with the Blue loop.' },
+          { mile: 2.2, kind: 'surface',  text: 'Wide woods roads open up — settle into a rhythm for the scenic tour of Ringwood.' },
+          { mile: 3.6, kind: 'landmark', text: 'Cruise past quiet ponds and historic estate ruins dating back to 1922.' },
+          { mile: 5.2, kind: 'landmark', text: 'Skirt the backside of the NJ Botanical Gardens — views of the manicured grounds and stone statues.' },
+          { mile: 6.6, kind: 'surface',  text: 'Final ~2 miles rejoin the Blue corridor; the last mile is sweet singletrack into HQ.' },
+          { mile: 7.7, kind: 'water',    text: 'Back into Squatch HQ aid.' },
+        ],
       },
     ],
 
@@ -136,7 +157,7 @@ module.exports = {
         runMiles: 5.49,
         runGainFt: 500,
         color: '#5D8AA8',
-        cutoff: '',
+        cutoff: '10h',
         assembly: [
           { loopId: 'blue', direction: 'CW' },
         ],
@@ -147,7 +168,7 @@ module.exports = {
         runMiles: 13.30,
         runGainFt: 1200,
         color: '#3A6B3F',
-        cutoff: '',
+        cutoff: '10h',
         assembly: [
           { loopId: 'blue', direction: 'CW' },
           { loopId: 'pink', direction: 'CW' },
@@ -159,7 +180,7 @@ module.exports = {
         runMiles: 18.28,
         runGainFt: 1870,
         color: '#7E8A3F',
-        cutoff: '',
+        cutoff: '10h',
         assembly: [
           { loopId: 'pink',      direction: 'CW' },
           { loopId: 'checkered', direction: 'CW' },
@@ -172,7 +193,7 @@ module.exports = {
         runMiles: 31.04,
         runGainFt: 3240,
         color: '#D9952F',
-        cutoff: '',
+        cutoff: '12h',
         assembly: [
           { loopId: 'pink',      direction: 'CW' },
           { loopId: 'checkered', direction: 'CW' },
@@ -187,7 +208,7 @@ module.exports = {
         runMiles: 49.87,
         runGainFt: 4940,
         color: '#B45A1F',
-        cutoff: '',
+        cutoff: '36h',
         assembly: [
           { loopId: 'pink',      direction: 'CW' },
           { loopId: 'checkered', direction: 'CW' },
@@ -205,7 +226,7 @@ module.exports = {
         runMiles: 62.64,
         runGainFt: 6310,
         color: '#A03060',
-        cutoff: '',
+        cutoff: '36h',
         assembly: [
           { loopId: 'pink',      direction: 'CW' },
           { loopId: 'checkered', direction: 'CW' },
@@ -225,7 +246,7 @@ module.exports = {
         runMiles: 104.70,
         runGainFt: 10550,
         color: '#3A3A40',
-        cutoff: '',
+        cutoff: '36h',
         assembly: [
           { loopId: 'pink',      direction: 'CW' },
           { loopId: 'checkered', direction: 'CW' },
@@ -254,58 +275,63 @@ module.exports = {
     startLat: 41.13799,
     startLng: -74.23171,
     elevationStory:
-      'Loop course out of Squatch HQ at Shepherd Lake in Ringwood State Park — three named laps over Ramapo Mountain terrain. Pink (7.8 mi) carries the longest climb and the rockiest, most technical footing; Checkered (4.9 mi) is the steepest per mile; Blue (5.5 mi) is the most runnable. Every loop returns to HQ.',
-    surface: ['forest doubletrack', 'rooty singletrack', 'rocky ridge climbs', 'lake-side trail'],
+      'Three loops out of Squatch HQ at Shepherd Lake, Ringwood State Park — 18 miles of Ramapo Highlands trail. Blue (5.5 mi) and Pink (7.8 mi) run wide woods roads past quiet ponds, historic estate ruins, and the backside of the NJ Botanical Gardens; Checkered (4.9 mi) is short, spicy, and 100% singletrack with a couple of sustained climbs over 100 ft. No water crossings, no swamps — the Ringwood difference is the sustained climbing. Every loop returns to HQ.',
+    surface: ['wide woods roads (Blue + Pink)', 'singletrack (Checkered)', 'sustained climbs over 100 ft', 'lakeside trail at HQ'],
     waterFeature: 'Shepherd Lake',
     weatherStation: 'KFWN', // Greenwood Lake Airport — closest reporting station to Ringwood
   },
 
   raceDay: {
     date: '2026-09-19',
-    displayDate: 'Fri-Sun, Sep 18-20, 2026',
+    displayDate: 'Fri–Sun, Sep 18–20, 2026',
     gunTime: '7:00 AM Sat',
-    sunrise: '6:36 AM',
-    sunset:  '7:00 PM',
+    sunrise: '6:39 AM',
+    sunset:  '6:50 PM',
+    // Ultras gun Saturday 7 AM with a single 36-hour final-loop cutoff;
+    // the Sunday races stagger off 7 AM (50K) and 9 AM (30K/Half/5.5M).
+    // The one hard rule for everyone: off the course by 7 PM Sunday.
     startTimes: [
       { distance: '100m', time: 'Sat 7:00 AM · 36h cutoff' },
       { distance: '100k', time: 'Sat 7:00 AM · 36h cutoff' },
       { distance: '50m',  time: 'Sat 7:00 AM · 36h cutoff' },
       { distance: '50k',  time: 'Sun 7:00 AM · 12h cutoff' },
-      { distance: 'half', time: 'Sun 8:00 AM · 10h cutoff' },
-      { distance: '10k',  time: 'Sun 8:30 AM · 10h cutoff' },
+      { distance: '30k',  time: 'Sun 9:00 AM · 10h cutoff' },
+      { distance: 'half', time: 'Sun 9:00 AM · 10h cutoff' },
+      { distance: '5_5m', time: 'Sun 9:00 AM · 10h cutoff' },
     ],
     cutoffs: [
-      { mile: 50,  time: '36h',  label: '100-mile pace check at HQ' },
-      { mile: 31,  time: '12h',  label: '50K final cutoff at HQ' },
+      { mile: 103, time: '36h', label: '100M final-loop cutoff — 7 PM Sun' },
+      { mile: 31,  time: '12h', label: '50K final cutoff — 7 PM Sun' },
+      { mile: 18,  time: '10h', label: '30K / Half / 5.5M — 7 PM Sun' },
     ],
   },
 
-  // Wild Goose has ONE aid station — Squatch HQ — that's open 36 hours
-  // continuously. The race-shell aid table renders this single row; the
-  // override.css promotes that row visually so the scale is obvious. A
-  // separate "No aid on course" strip is rendered next to it.
+  // Wild Goose has ONE aid station — Squatch HQ — open continuously from
+  // 7 AM Saturday to 7 PM Sunday. The race-shell aid table renders this
+  // single row; override.css promotes it visually so the scale is obvious.
+  // A separate "No aid on course" strip is rendered next to it.
   aidStations: [
     {
       name: 'Squatch HQ',
       mile: 0,
-      stocked: 'Water · Skratch · hot food (vegan + GF available) · EMT 7am-7pm · ambulance overnight · AED · first aid · Jackalope Tent quiet space',
+      stocked: 'Water · Skratch · Coke · coffee · hot food (burgers, vegan pierogies, GF + vegan options) · on-site pizza for ultra finishers · EMT 7am–7pm · ambulance overnight · AED · first aid (incl. menstrual products) · Jackalope Tent quiet space',
     },
   ],
 
   logistics: {
     parking:
-      '$5 cash per vehicle at the park entrance gate — bring exact change. Athlete parking at the Wawayanda Lake beach lot; overflow lots open Saturday before sunrise.',
+      '$5 cash parking pass per vehicle — bring exact change; keep the hangtag visible and it covers the whole weekend. 500+ spots by Shepherd Lake. Enter on Sloatsburg Road and follow signs to Shepherd Lake (about 5 minutes in).',
     packetPickup:
-      'Friday 4:00–8:00 PM at Squatch HQ. Saturday race-morning pickup from 5:30–6:45 AM. Sunday race-morning pickup from 6:30–7:45 AM.',
+      'Friday 6:00–7:00 PM check-in, bib & swag pickup at Squatch HQ (5:00 PM pre-race meeting; film screening 7:15–8:30 PM). Race-morning check-in at HQ before each wave.',
     shuttle:
-      'No shuttle. Camping is free at the festival; pop-up tents allowed in designated areas around HQ.',
+      'No shuttle. Free camping on the grass field by the lake Friday and Saturday nights (not Sunday) — tents, vans, and RVs welcome, no hookups, no showers. No power outlets in the park; bring battery packs.',
     spectatorTips:
-      'Squatch HQ is the only place to see runners — every loop returns here. Pacers are allowed after sunset Saturday for 50M+, pre-registration required via Sassquad.',
+      'Squatch HQ at Shepherd Lake is the only place to see runners — every loop returns here. Restrooms, playground, boat rentals, and lawn games on site. Pacers join 100M/100K/50M runners after sunset (6:50 PM Sat); no pacers for the Sunday races unless 60+ or AWD. Crew helps at HQ only.',
     hostGuideUrl: 'https://www.sassquadtrailrunning.com/wildgoose',
   },
 
   cartographerNotes:
-    'The festival runs three loops out of Squatch HQ at Wawayanda Lake. Checkered (4.75 mi) is the most runnable — doublewide forest road with rolling micro-climbs. Blue (6 mi) has one awkward wooden bridge with a step-down on the far side, especially treacherous when wet. Pink (7.75 mi) carries the technical sections — rocky stretches, exposed roots, and the narrow wood-plank boardwalks that are single-file and not wheelchair-accessible; trekking poles need to fold for these. NYC and Long Island runners will find Pink technical, Hudson Highlands locals will find it runnable — walk what you would otherwise risk turning an ankle for. Black bears and timber rattlesnakes use these trails too; defer to NJ DEP guidance on encounters. For 50M and longer, pace loop-by-loop, not section-by-section: each loop returns you to Squatch HQ, the only place to refill water, eat real food, and decide whether to keep going. The Kids 1M runs Sunday morning on a separate non-loop course around the lake beach — not mapped here.',
+    'The 2026 festival relocates to Ringwood State Park, running three loops out of Squatch HQ at Shepherd Lake — 18 miles of Ramapo Highlands trail, all returning to HQ. Blue (5.5 mi) is the most runnable: wide woods roads, gentle rolling climbs, quiet ponds, and the backside of the NJ Botanical Gardens. Pink (7.8 mi) is the scenic tour — more wide woods roads past historic estate ruins, with its first and last ~2 miles sharing the Blue corridor and a final mile of sweet singletrack into HQ. Checkered (4.9 mi) is the short, spicy one: 100% singletrack with a couple of sustained climbs over 100 ft of vert. The Ringwood difference from the old Wawayanda course is sustained climbing — there are no water crossings and no swamps here. Squatch HQ and the lakeside get genuinely wet on Saturday and Sunday mornings, so seal anything that needs to stay dry. Black bears, snakes, and ticks share these trails; the park stays open to the public, so expect other hikers and the occasional off-leash dog, and note that hunting is permitted on Saturdays. For 50M and longer, pace loop-by-loop, not section-by-section: each loop returns you to Squatch HQ — the only place to refill, eat real food, and decide whether to keep going. The Kids 1M runs Sunday morning out-and-back on the Blue/Pink trail by the lake — not mapped here.',
 
   crossLinks: [
     { slug: 'tupper-lake-tinman',  name: 'Tupper Lake Tinman 13.1M',   region: 'Tupper Lake · NY' },
