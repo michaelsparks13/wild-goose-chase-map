@@ -63,8 +63,8 @@ body.race-page.race-wild-goose {
 
 /* MapLibre Marker elements get the className we pass when constructed.
  * The SVGs inside use viewBox-only sizing, so the wrapper div MUST set
- * explicit dimensions or the marker collapses to 0x0. Tinman uses 21px,
- * Javelina uses 28px — we go a touch larger (32px) so the HQ marker is
+ * explicit dimensions or the marker collapses to 0x0. Comparable FSS
+ * maps use 21–28px — we go a touch larger (32px) so the HQ marker is
  * legible on the green basemap, and turn markers stay at 24px to read as
  * secondary. */
 .race-wild-goose .hq-marker {
@@ -77,17 +77,6 @@ body.race-page.race-wild-goose {
   height: 100%;
   display: block;
   filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));
-}
-.race-wild-goose .turn-marker {
-  width: 24px;
-  height: 24px;
-  cursor: pointer;
-}
-.race-wild-goose .turn-marker svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
 }
 .race-wild-goose .hq-badge {
   position: absolute; top: 12px; left: 12px; z-index: 10;
@@ -431,7 +420,7 @@ body.race-page.race-wild-goose {
   border: 1px solid rgba(181,53,40,0.32);
 }
 
-/* Zoom-to-step toggle — matches Tinman's pattern. Checked by default;
+/* Zoom-to-step toggle — standard FSS cue-list pattern. Checked by default;
  * unchecking lets the user scan the cue list without the map auto-
  * panning to each clicked chip. */
 .race-wild-goose .dir-zoom-toggle {
@@ -686,29 +675,6 @@ body.race-page.race-wild-goose {
   border-top-color: var(--paper) !important;
   border-bottom-color: var(--paper) !important;
 }
-
-.race-wild-goose .streetview-popup .maplibregl-popup-content {
-  padding: 0;
-  overflow: hidden;
-  max-width: 320px;
-}
-.race-wild-goose .streetview-img { display: block; width: 100%; height: auto; }
-.race-wild-goose .streetview-caption {
-  padding: 10px 12px;
-  font-size: 0.82rem;
-}
-.race-wild-goose .streetview-caption strong {
-  display: block;
-  font-family: var(--font-display);
-  font-size: 0.92rem;
-  margin-bottom: 3px;
-}
-.race-wild-goose .streetview-caption a {
-  color: var(--race-brand);
-  text-decoration: none;
-  font-weight: 600;
-}
-.race-wild-goose .streetview-caption a:hover { text-decoration: underline; }
 
 /* ─── Simulator (relocated into essentialsSimulator) ──────────────── */
 

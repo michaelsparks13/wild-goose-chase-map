@@ -229,10 +229,6 @@ const mapViewHtml = `<div id="mapView" class="view active">
         <span class="map-layers__row-text">Aid Stations</span>
       </label>
       <label class="map-layers__row">
-        <input type="checkbox" id="layerStreetview" onchange="toggleStreetview()">
-        <span class="map-layers__row-text">Street View turns</span>
-      </label>
-      <label class="map-layers__row">
         <input type="checkbox" id="layerTrails" onchange="toggleTrails()">
         <span class="map-layers__row-text">Park Trails</span>
       </label>
@@ -244,7 +240,6 @@ const mapViewHtml = `<div id="mapView" class="view active">
   </div>
   <div class="map-btns" hidden aria-hidden="true">
     <button class="trail-btn" id="aidBtnInline" onclick="toggleAid()">Aid Stations</button>
-    <button class="trail-btn" id="streetviewBtnInline" onclick="toggleStreetview()">Street View</button>
     <button class="trail-btn" id="trailBtnInline" onclick="toggleTrails()">Park Trails</button>
     <button class="trail-btn" id="terrainBtnInline" onclick="toggle3D()">3D</button>
   </div>

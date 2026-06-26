@@ -73,10 +73,8 @@ var BASEMAP_STYLE = {
 
 var map;
 var trailsOn = false;
-var streetviewOn = false;       // formerly "turnsOn"; renamed for clarity
 var aidOn = true;               // HQ marker visible by default (it IS the start/finish)
 var terrain3D = false;
-var turnMarkers = [];
 var hqMarker = null;             // expose for toggleAid()
 var currentRaceId = (typeof DEFAULT_DISTANCE_ID === 'string') ? DEFAULT_DISTANCE_ID : '50k';
 var currentAssemblyStepIdx = 0;
@@ -150,7 +148,7 @@ var SNAPPED_TURN_COORDS = {};
     var cursorMile = 0;
     var EPS_BACKTRACK = 1 / 5280;   // 1 ft tolerance at intersections
     // Trail GPS bends are noisier than road OSRM steps, so use a wider
-    // good-match window (~250 ft) than Tinman. Acceptable because the
+    // good-match window (~250 ft) than a road-snapped course. Acceptable because the
     // candidate-turn detector already de-duped co-located turns at 80 m.
     var GOOD_MATCH_DEG = 250 / 364000;
     var GOOD_MATCH_DEG2 = GOOD_MATCH_DEG * GOOD_MATCH_DEG;
@@ -348,7 +346,6 @@ function initMap() {
     });
 
     addHqMarker();
-    addTurnMarkers();
 
     // Active-turn segment highlight. One geojson source per page;
     // setActiveTurn() swaps its data to the polyline running from the
@@ -421,40 +418,10 @@ function addHqMarker() {
     .addTo(map);
 }
 
-function addTurnMarkers() {
-  // Google Street View photo markers. The original Wawayanda set sat on
-  // public roads (Warwick Turnpike, Wawayanda Road) where the Street View
-  // car had driven. The 2026 Ringwood course runs entirely on park hiking
-  // trails inside Ringwood State Park, which Google Street View does not
-  // cover — there are no on-course panoramas to place. This array is
-  // intentionally empty (stale Wawayanda markers removed); the layer toggle
-  // stays wired and renders nothing until road-accessible pano IDs are
-  // collected. On-course turn-by-turn maneuvers are a separate feature,
-  // driven by LOOP_TURNS.
-  var TURNS = [];
-
-  TURNS.forEach(function(turn, i) {
-    var markerEl = document.createElement('div');
-    markerEl.className = 'turn-marker';
-    markerEl.style.display = 'none';
-    setHtml(markerEl,
-      '<svg viewBox="0 0 24 24">' +
-      '<circle cx="12" cy="12" r="10" fill="var(--aid-color, #E07A1F)" stroke="#fff" stroke-width="2"/>' +
-      '<text x="12" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="#1f1d18">' + (i + 1) + '</text>' +
-      '</svg>'
-    );
-
-    var sv = 'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=' + turn.pano + '&cb_client=maps_sv.tactile&w=640&h=360&yaw=' + turn.heading + '&pitch=' + turn.pitch;
-    var maps = 'https://www.google.com/maps/@?api=1&map_action=pano&pano=' + turn.pano + '&heading=' + turn.heading + '&pitch=' + turn.pitch;
-    var popupHtml = '<img class="streetview-img" src="' + sv + '" alt="Street View"><div class="streetview-caption"><strong>' + turn.name + '</strong><a href="' + maps + '" target="_blank">Open in Google Maps →</a></div>';
-
-    var marker = new maplibregl.Marker({ element: markerEl })
-      .setLngLat(turn.coords)
-      .setPopup(new maplibregl.Popup({ offset: 15, className: 'streetview-popup', maxWidth: '320px' }).setHTML(popupHtml))
-      .addTo(map);
-    turnMarkers.push({ marker: marker, element: markerEl });
-  });
-}
+// Street View turn markers were removed for the Ringwood venue: the course
+// runs entirely on park hiking trails with no Google Street View coverage,
+// so the layer (and its toggle) is omitted from this map. On-course turn-by-
+// turn maneuvers are a separate feature, driven by LOOP_TURNS.
 
 // ─── Race / loop UI ─────────────────────────────────────────────────
 
@@ -789,30 +756,22 @@ function toggleAid() {
   else hqMarker.remove();
 }
 
-// Street View toggle — shows numbered turn markers along the course.
-// Clicking a marker opens a maplibre Popup with a Google Street View
-// thumbnail of that turn. Previously called toggleTurns(); renamed for
-// the more athlete-facing label. The old name stays as an alias for
-// any external embed code that called it.
-function toggleStreetview() {
-  streetviewOn = !streetviewOn;
-  syncToggleButtons('streetview', streetviewOn);
-  turnMarkers.forEach(function(t) {
-    t.element.style.display = streetviewOn ? 'block' : 'none';
-  });
-}
-// Back-compat alias for any embed snippet still calling the old name.
-function toggleTurns() { toggleStreetview(); }
+// No-op shim. The shared race-shell.html template hardcodes a "Street View"
+// button (#streetviewBtn) wired to toggleStreetview(); it is hidden for all
+// wild-goose maps via override.css (.course__map > .map-controls). The
+// Ringwood course has no Google Street View coverage, so the layer is
+// omitted — but the hidden button still references this name, so we keep a
+// safe no-op to honor the template contract and avoid any ReferenceError.
+function toggleStreetview() { /* Street View layer intentionally absent at Ringwood */ }
 
 // The editorial template (race-shell.html) renders a top-of-map button
-// row with ids aidBtn / streetviewBtn / terrainBtn. We also render an
-// inline button row inside .map-wrap with ids aidBtnInline / streetview
-// BtnInline / trailBtn / terrainBtn. Both sets call the same toggle
-// functions; keep their .active classes in sync so neither set lies.
+// row with ids aidBtn / terrainBtn. We also render an inline button row
+// inside .map-wrap with ids aidBtnInline / trailBtn / terrainBtn. Both
+// sets call the same toggle functions; keep their .active classes in sync
+// so neither set lies. (The Ringwood map has no Street View layer.)
 function syncToggleButtons(key, on) {
   var ids = {
     aid:        ['aidBtn', 'aidBtnInline'],
-    streetview: ['streetviewBtn', 'streetviewBtnInline'],
     trails:     ['trailBtn', 'trailBtnInline'],
     terrain:    ['terrainBtn', 'terrainBtnInline'],
   }[key] || [];
@@ -824,7 +783,7 @@ function syncToggleButtons(key, on) {
   // hidden inline buttons (.map-btns) are kept for back-compat with
   // older e2e scripts, but the checkboxes are now the primary UI.
   var checkboxId = {
-    aid: 'layerAid', streetview: 'layerStreetview',
+    aid: 'layerAid',
     trails: 'layerTrails', terrain: 'layer3D'
   }[key];
   if (checkboxId) {
@@ -852,7 +811,7 @@ function toggleLayersPopover(force) {
 function updateLayersCount() {
   var trigger = document.getElementById('mapLayersBtn');
   if (!trigger) return;
-  var ids = ['layerAid', 'layerStreetview', 'layerTrails', 'layer3D'];
+  var ids = ['layerAid', 'layerTrails', 'layer3D'];
   var on = 0;
   for (var i = 0; i < ids.length; i++) {
     var b = document.getElementById(ids[i]);
@@ -1557,8 +1516,8 @@ function renderSimTerrain(currentDist, currentEle, currentLoopId) {
 //  - initMap kicks off the map view (selectRace fires from map.on load).
 //  - relocateSimulator pulls #simView out of the editorial template's
 //    hidden wrapper and inserts it into a visible essentials section so
-//    the simulator is first-class on this page (Tinman deliberately
-//    buries the sim; Wild Goose's spec asks for it to be surfaced).
+//    the simulator is first-class on this page (some FSS maps bury the
+//    sim; Wild Goose's spec asks for it to be surfaced).
 
 window.addEventListener('resize', function() {
   drawCombined(RACES[currentRaceId].loops, RACES[currentRaceId].name);

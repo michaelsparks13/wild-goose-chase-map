@@ -333,6 +333,16 @@ module.exports = {
   cartographerNotes:
     'The 2026 festival relocates to Ringwood State Park, running three loops out of Squatch HQ at Shepherd Lake — 18 miles of Ramapo Highlands trail, all returning to HQ. Blue (5.5 mi) is the most runnable: wide woods roads, gentle rolling climbs, quiet ponds, and the backside of the NJ Botanical Gardens. Pink (7.8 mi) is the scenic tour — more wide woods roads past historic estate ruins, with its first and last ~2 miles sharing the Blue corridor and a final mile of sweet singletrack into HQ. Checkered (4.9 mi) is the short, spicy one: 100% singletrack with a couple of sustained climbs over 100 ft of vert. The Ringwood difference from the old Wawayanda course is sustained climbing — there are no water crossings and no swamps here. Squatch HQ and the lakeside get genuinely wet on Saturday and Sunday mornings, so seal anything that needs to stay dry. Black bears, snakes, and ticks share these trails; the park stays open to the public, so expect other hikers and the occasional off-leash dog, and note that hunting is permitted on Saturdays. For 50M and longer, pace loop-by-loop, not section-by-section: each loop returns you to Squatch HQ — the only place to refill, eat real food, and decide whether to keep going. The Kids 1M runs Sunday morning out-and-back on the Blue/Pink trail by the lake — not mapped here.',
 
+  // Editorial section subtitles for the three .essentials sections. Without
+  // these, build.js falls back to Tinman triathlon copy ("Run leg only",
+  // "Tinman half — Sprint and Olympic", swim/bike timing) — wrong for a loop
+  // trail festival. These keep the subs on-brand for Wild Goose at Ringwood.
+  editorialCopy: {
+    profileSub: 'One continuous profile across your selected loop assembly — every loop returns to Squatch HQ.',
+    aidSub:     'One aid station: Squatch HQ at Shepherd Lake. No aid on course — carry water and nutrition between loops.',
+    daySub:     'Start times and cutoffs for all seven distances. Everyone must be off the course by 7 PM Sunday.',
+  },
+
   crossLinks: [
     { slug: 'tupper-lake-tinman',  name: 'Tupper Lake Tinman 13.1M',   region: 'Tupper Lake · NY' },
     { slug: 'manitous-revenge',    name: "Manitou's Revenge 54M",       region: 'Catskill Devil’s Path · NY' },
