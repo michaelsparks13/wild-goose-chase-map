@@ -231,6 +231,43 @@ describe('pocantico-hills · built HTML', () => {
   });
 });
 
+describe('pocantico-hills · course-file downloads', () => {
+  const DIST_DATA = join(ROOT, 'dist', 'maps', 'pocantico-hills', 'data');
+
+  it('publishes both per-distance GPX files into dist/.../data', () => {
+    for (const id of ['marathon', 'half-marathon']) {
+      const published = join(DIST_DATA, id + '.gpx');
+      expect(existsSync(published)).toBe(true);
+      // The published file is the real GPX, byte-for-byte the source.
+      const src = readFileSync(join(DATA_DIR, id + '.gpx'), 'utf8');
+      expect(readFileSync(published, 'utf8')).toBe(src);
+    }
+  });
+
+  it('does NOT publish internal artifacts (turns, profiles, weather, tbt)', () => {
+    for (const name of [
+      'marathon-turns.geojson', 'marathon-profile.json',
+      'half-marathon-turns.geojson', 'weather.json', 'marathon-tbt.md',
+    ]) {
+      expect(existsSync(join(DIST_DATA, name))).toBe(false);
+    }
+  });
+
+  it('renders one download card per distance, each linking the real GPX', () => {
+    const html = readFileSync(DIST_HTML, 'utf8');
+    // One working GPX anchor per distance, with the watch-friendly
+    // download filename namespaced by slug.
+    expect(html).toContain('href="data/marathon.gpx" download="pocantico-hills-marathon.gpx"');
+    expect(html).toContain('href="data/half-marathon.gpx" download="pocantico-hills-half-marathon.gpx"');
+    // Each card is labelled by its distance + format.
+    expect(html).toContain('Marathon GPX');
+    expect(html).toContain('Half Marathon GPX');
+    // The old single broken geojson link must be gone.
+    expect(html).not.toContain('href="data/marathon.geojson"');
+    expect(html).not.toContain('{{DOWNLOAD_CARDS}}');
+  });
+});
+
 describe('pocantico-hills · embed build', () => {
   const EMBED_HTML = join(ROOT, 'dist', 'embed', 'pocantico-hills', 'index.html');
 

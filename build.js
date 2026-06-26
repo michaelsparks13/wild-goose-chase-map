@@ -143,6 +143,50 @@ function aidTableDistHeader(theme) {
   return theme.displayUnits === 'km' ? 'Km' : 'Mile';
 }
 
+// Resolve the per-distance course file each download card should serve.
+// Prefer the real GPX (what Garmin/Wahoo/Coros/Strava import); fall back
+// to GeoJSON only where a distance has no GPX on disk. Distances with no
+// matching course file are skipped so the section never shows a dead
+// link. Returns the metadata both buildDownloadCards (to render the
+// anchors) and the publish step (to copy the files) consume.
+function courseDownloadFiles(theme, mapDir) {
+  const dataDir = path.join(mapDir, 'data');
+  const distances = (theme.raceFormat && theme.raceFormat.distances) || [];
+  const out = [];
+  for (const d of distances) {
+    let ext = null;
+    if (fs.existsSync(path.join(dataDir, d.id + '.gpx'))) ext = 'gpx';
+    else if (fs.existsSync(path.join(dataDir, d.id + '.geojson'))) ext = 'geojson';
+    if (!ext) continue;
+    out.push({ id: d.id, ext, name: cleanDistanceName(d.label) });
+  }
+  return out;
+}
+
+// Distance labels embed their length ("Marathon 26.2 mi"). Strip the
+// trailing distance token so the download card kind reads as a clean
+// name ("Marathon", "Half Marathon") — the length already lives in the
+// picker chips and stats, and label miles can drift from runMiles.
+function cleanDistanceName(label) {
+  return String(label).replace(/\s*\d[\d.]*\s*(mi|km|miles?|kilometers?)\b\.?$/i, '').trim();
+}
+
+// One download card per distance for the editorial "Take the map with
+// you" section. Each anchor links the published course file with a
+// watch-friendly, slug-namespaced download filename.
+function buildDownloadCards(files, slug) {
+  return files.map(f => {
+    const fmt = f.ext === 'gpx' ? 'GPX' : 'GeoJSON';
+    const href = `data/${f.id}.${f.ext}`;
+    const dl = `${slug}-${f.id}.${f.ext}`;
+    return `<a class="download-card" href="${href}" download="${dl}">
+        <span class="download-card__kind">${escapeHtml(f.name)} ${fmt}</span>
+        <p>Load to Garmin, Wahoo, Coros, or Strava.</p>
+        <span class="download-card__cta">Download →</span>
+      </a>`;
+  }).join('\n      ');
+}
+
 // Editorial-section subtitles. The race-shell.html template has three
 // "essentials" sections whose subs default to Tinman/triathlon copy
 // ("Run leg only", "Run-leg timing", "Tinman half — Sprint and Olympic").
@@ -457,6 +501,7 @@ function buildMap(slug, templates) {
       || t.raceFormat.distances[0];
     const logCells = buildLogisticsCells(t);
     const hostDomain = deriveHostDomain(t.identity.hostUrl);
+    const downloadFiles = courseDownloadFiles(t, mapDir);
     const fillEditorial = (tpl) => tpl
       .replace(/{{THEME_COLOR}}/g, config.themeColor)
       .replace(/{{TITLE}}/g, config.title)
@@ -476,6 +521,7 @@ function buildMap(slug, templates) {
       .replace(/{{HEADLINE_MILES}}/g, headlineDistance.runMiles + ' mi · ' + headlineDistance.runGainFt + ' ft')
       .replace(/{{DEFAULT_DISTANCE_ID}}/g, headlineDistance.id)
       .replace(/{{DEFAULT_DISTANCE_LABEL}}/g, escapeHtml(headlineDistance.label))
+      .replace(/{{DOWNLOAD_CARDS}}/g, buildDownloadCards(downloadFiles, t.slug))
       .replace(/{{MAP_HTML}}/g, config.mapHtml || mapView)
       .replace(/{{CUES_HTML}}/g, config.cueHtml || '')
       .replace(/{{MAP_VIEW}}/g, mapView)
@@ -519,6 +565,21 @@ function buildMap(slug, templates) {
   mkdirp(outDir);
   fs.writeFileSync(path.join(outDir, 'index.html'), html);
   console.log(`  Built: dist/maps/${slug}/index.html (${(html.length / 1024).toFixed(0)} KB)`);
+
+  // Publish the per-distance course files referenced by the download
+  // cards. Only the GPX/GeoJSON the cards link are copied — internal
+  // artifacts (turns, profiles, tbt, weather) stay out of dist.
+  if (editorial) {
+    const files = courseDownloadFiles(config.theme, mapDir);
+    if (files.length) {
+      const distData = path.join(outDir, 'data');
+      mkdirp(distData);
+      for (const f of files) {
+        const name = `${f.id}.${f.ext}`;
+        fs.copyFileSync(path.join(mapDir, 'data', name), path.join(distData, name));
+      }
+    }
+  }
 }
 
 // --- Build one embed ---

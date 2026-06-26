@@ -176,10 +176,15 @@ describe('Athlete-first chrome in dist/maps/tupper-lake-tinman/index.html', () =
     expect(builtHtml).toContain('Full athlete guide on tupperlaketinman.com');
   });
 
-  it('renders the downloads grid (print, GPX, pocket, embed)', () => {
+  it('renders the downloads grid (print, per-distance course files, pocket, embed)', () => {
     expect(builtHtml).toContain('id="essentialsDownloads"');
     expect(builtHtml).toContain('Print PDF cue sheet');
-    expect(builtHtml).toContain('GPX / GeoJSON');
+    // One working download card per distance. Tinman ships per-distance
+    // GeoJSON (no GPX on disk), so the cards fall back to GeoJSON and
+    // link real, published files — not the old single dead link.
+    expect(builtHtml).toContain('href="data/tinman.geojson" download="tupper-lake-tinman-tinman.geojson"');
+    expect(builtHtml).toContain('Tinman GeoJSON');
+    expect(builtHtml).not.toContain('{{DOWNLOAD_CARDS}}');
     expect(builtHtml).toContain('Pocket map');
     expect(builtHtml).toContain('Embed');
   });

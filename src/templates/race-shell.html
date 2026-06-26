@@ -171,11 +171,7 @@
         <p>Foldable, printer-friendly cues — no map graphic needed.</p>
         <span class="download-card__cta">Open print dialog →</span>
       </button>
-      <a class="download-card" href="data/{{DEFAULT_DISTANCE_ID}}.geojson" download="{{SLUG}}-{{DEFAULT_DISTANCE_ID}}.geojson">
-        <span class="download-card__kind">GPX / GeoJSON</span>
-        <p>Load to Garmin, Wahoo, Strava, or Gaia. {{DEFAULT_DISTANCE_LABEL}}.</p>
-        <span class="download-card__cta">Download →</span>
-      </a>
+      {{DOWNLOAD_CARDS}}
       <button type="button" class="download-card" onclick="openPocketModal()">
         <span class="download-card__kind">Pocket map</span>
         <p>Lightweight offline file you can open on your phone with no cell service.</p>
