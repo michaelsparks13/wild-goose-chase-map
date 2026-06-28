@@ -83,6 +83,92 @@ describe('Pocket map build output — standard map pages', () => {
   });
 });
 
+describe('Pocket map canonical source inlining (multi-loop support)', () => {
+  // build.js inlines the canonical single-course function bodies so the offline
+  // pocket map works even on multi-loop maps that lack these host globals.
+  const REQUIRED_FNS = [
+    'loopDist', 'getEleAtDist', 'getGradeAtDist', 'getGainAtDist',
+    'getCoordAtDist', 'drawElevationProfile', 'renderCourseMap', 'renderSimProfile'
+  ];
+
+  function extractCanonicalSources(html) {
+    const m = html.match(/var POCKET_CANONICAL_SOURCES = (\{.*?\});\n/s);
+    if (!m) return null;
+    return JSON.parse(m[1]);
+  }
+
+  // Single-course (escarpment) and multi-loop (pocantico-hills, javelina-jundred)
+  ['escarpment', 'pocantico-hills', 'javelina-jundred'].forEach(slug => {
+    const mapPath = resolve(__dirname, `../dist/maps/${slug}/index.html`);
+
+    it(`${slug}: inlines all canonical function bodies`, () => {
+      const sources = extractCanonicalSources(readFileSync(mapPath, 'utf-8'));
+      expect(sources).not.toBeNull();
+      REQUIRED_FNS.forEach(name => {
+        expect(typeof sources[name]).toBe('string');
+        expect(sources[name].startsWith(`function ${name}(`)).toBe(true);
+        expect(sources[name].length).toBeGreaterThan(40);
+      });
+    });
+
+    it(`${slug}: pocket code no longer depends on host-global .toString()`, () => {
+      const html = readFileSync(mapPath, 'utf-8');
+      expect(html).toContain('pmFnSource(');
+      // The old coupling — grabbing source from host globals — must be gone.
+      expect(html).not.toContain('renderCourseMap.toString()');
+      expect(html).not.toContain('renderSimProfile.toString()');
+      expect(html).not.toContain('drawElevationProfile.toString()');
+    });
+  });
+
+  it('canonical sources are NOT inlined into embed builds (no pocket map there)', () => {
+    const embedPath = resolve(__dirname, '../dist/embed/escarpment/index.html');
+    if (!existsSync(embedPath)) return;
+    expect(readFileSync(embedPath, 'utf-8')).not.toContain('POCKET_CANONICAL_SOURCES');
+  });
+});
+
+describe('Pocket map multi-loop source resolution (pure logic)', () => {
+  // Mirror of pmResolveFromLoops' assembly flattening + feet→meters conversion.
+  function flatten(LOOPS, race) {
+    const steps = (race.loops || []).map((id, i) => ({
+      loopId: id, reverse: /rev|back|ccw/i.test((race.directions && race.directions[i]) || 'forward')
+    }));
+    let coords = [], elesFt = [];
+    steps.forEach(s => {
+      const loop = LOOPS[s.loopId];
+      let c = loop.geojson.geometry.coordinates.slice();
+      let p = (loop.profile || []).map(x => x.e);
+      if (s.reverse) { c.reverse(); p.reverse(); }
+      if (coords.length && c.length) c = c.slice(1);
+      if (elesFt.length && p.length) p = p.slice(1);
+      coords = coords.concat(c); elesFt = elesFt.concat(p);
+    });
+    return { coords, elevations: elesFt.map(ft => ft / 3.28084) };
+  }
+
+  const LOOPS = {
+    a: { geojson: { geometry: { coordinates: [[0, 0], [1, 1], [2, 2]] } }, profile: [{ e: 100 }, { e: 200 }, { e: 300 }] },
+    b: { geojson: { geometry: { coordinates: [[2, 2], [3, 3]] } }, profile: [{ e: 300 }, { e: 400 }] }
+  };
+
+  it('concatenates assembled loops and drops the shared seam point', () => {
+    const { coords } = flatten(LOOPS, { loops: ['a', 'b'], directions: ['CW', 'CW'] });
+    expect(coords).toEqual([[0, 0], [1, 1], [2, 2], [3, 3]]);
+  });
+
+  it('reverses CCW/back steps', () => {
+    const { coords } = flatten(LOOPS, { loops: ['a'], directions: ['CCW'] });
+    expect(coords).toEqual([[2, 2], [1, 1], [0, 0]]);
+  });
+
+  it('converts feet-based profile elevations to meters', () => {
+    const { elevations } = flatten(LOOPS, { loops: ['a'], directions: ['CW'] });
+    expect(elevations[0]).toBeCloseTo(100 / 3.28084, 4);
+    expect(elevations[2]).toBeCloseTo(300 / 3.28084, 4);
+  });
+});
+
 describe('Pocket map NOT in embed builds', () => {
   slugs.forEach(slug => {
     const embedPath = resolve(__dirname, `../dist/embed/${slug}/index.html`);

@@ -314,3 +314,86 @@ test.describe('Pocket Map on other race maps', () => {
     await expect(page.locator('.pocket-modal h3')).toContainText('Save Pocket Map');
   });
 });
+
+test.describe('Pocket Map on multi-loop maps (downloads)', () => {
+  // Regression: multi-loop (skipSharedJs) maps store course data per-distance in
+  // LOOPS, so the pocket map used to short-circuit to "not available" and never
+  // download. It now flattens the active distance.
+
+  async function openPocketModal(page) {
+    const btn = page.locator('.top-bar__util-btn', { hasText: /Pocket map/i });
+    await btn.click();
+    await expect(page.locator('#pocketBackdrop')).toHaveClass(/open/);
+  }
+
+  test('pocantico-hills downloads a pocket map for the active distance', async ({ page }) => {
+    await page.goto('/maps/pocantico-hills/');
+    await page.waitForSelector('#map');
+    await page.waitForTimeout(2000);
+
+    await openPocketModal(page);
+    // Simulator option is hidden on multi-loop maps (no full sim palette).
+    await expect(page.locator('#pocketIncludeSim')).not.toBeVisible();
+
+    const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
+    await page.locator('#pocketDownloadBtn').click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe('pocantico-hills-marathon-pocket-map.html');
+
+    const html = readFileSync(await download.path(), 'utf-8');
+    expect(html).toContain('<!DOCTYPE html>');
+    // Active distance flattened: course coords + elevation present.
+    expect(html).toContain('pmDrawElevationProfile');
+    expect(html).toContain('courseCoords');
+    // Aid stations resolved from the shared spine.
+    expect(html).toContain('pm-aid-card');
+    expect(html).toContain('Aid #1');
+    // Simulator omitted (no sim palette on multi-loop maps).
+    expect(html).not.toContain('pmPlayBtn');
+    // Self-contained: no external libs.
+    expect(html).not.toContain('maplibre-gl.js');
+  });
+
+  test('pocantico-hills pocket map opens and renders offline', async ({ page, context }) => {
+    await page.goto('/maps/pocantico-hills/');
+    await page.waitForSelector('#map');
+    await page.waitForTimeout(2000);
+
+    await openPocketModal(page);
+    const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
+    await page.locator('#pocketDownloadBtn').click();
+    const download = await downloadPromise;
+
+    const htmlFilePath = resolve(tmpdir(), 'pocket-pocantico-test.html');
+    copyFileSync(await download.path(), htmlFilePath);
+    const pocketPage = await context.newPage();
+    await pocketPage.goto('file://' + htmlFilePath);
+
+    await expect(pocketPage.locator('.pm-header-title')).toContainText('Pocantico Hills');
+    // Only Map + Info tabs (no Simulator) on multi-loop maps.
+    await expect(pocketPage.locator('.pm-tab')).toHaveCount(2);
+    await pocketPage.locator('#pm-tab-info').click();
+    await expect(pocketPage.locator('.pm-aid-card').first()).toBeVisible();
+  });
+
+  test('javelina-jundred (assembled loops) downloads the headline distance', async ({ page }) => {
+    await page.goto('/maps/javelina-jundred/');
+    await page.waitForSelector('#map');
+    await page.waitForTimeout(2000);
+
+    // Javelina's older override exposes LOOPS/RACES but not currentRaceId, so the
+    // pocket map falls back to the headline (longest) distance.
+    const btn = page.locator('.top-bar__util-btn', { hasText: /Pocket map/i }).or(page.locator('.pocket-btn'));
+    await btn.first().click();
+    await expect(page.locator('#pocketBackdrop')).toHaveClass(/open/);
+
+    const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
+    await page.locator('#pocketDownloadBtn').click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe('javelina-jundred-all-pocket-map.html');
+
+    const html = readFileSync(await download.path(), 'utf-8');
+    expect(html).toContain('pmDrawElevationProfile');
+    expect(html).not.toContain('pmPlayBtn');
+  });
+});
