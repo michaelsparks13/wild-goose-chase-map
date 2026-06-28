@@ -753,7 +753,7 @@ body.race-page.race-wild-goose-ringwood {
 }
 .race-wild-goose-ringwood .goal-inputs { display: inline-flex; align-items: center; gap: 2px; }
 .race-wild-goose-ringwood .goal-input {
-  width: 38px;
+  width: 48px;
   padding: 4px 6px;
   border: 1px solid #c5bd99;
   background: var(--paper);
@@ -763,6 +763,17 @@ body.race-page.race-wild-goose-ringwood {
   font-variant-numeric: tabular-nums;
   text-align: center;
   color: var(--ink);
+  /* Drop the native number spinners: they consume the field's width (which
+     clipped two-digit values) and their default OS styling clashes with the
+     editorial paper UI. Goal time is set by typing — the field selects on
+     click. */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.race-wild-goose-ringwood .goal-input::-webkit-outer-spin-button,
+.race-wild-goose-ringwood .goal-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 .race-wild-goose-ringwood .goal-input:focus { outline: 2px solid var(--race-brand); outline-offset: 1px; }
 .race-wild-goose-ringwood .goal-colon { font-family: var(--font-micro); color: #7a7a6b; }

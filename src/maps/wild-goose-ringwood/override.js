@@ -285,29 +285,40 @@ function initMap() {
       tileSize: 256, maxzoom: 15, encoding: 'terrarium'
     });
 
+    // Pink and Blue share long corridors out of HQ — Pink's first and last
+    // ~2 mi run the Blue trail. Drawing both centered stacks one color on top
+    // of the other, hiding whichever loop is underneath. A small constant
+    // perpendicular offset with opposite signs splits them into side-by-side
+    // rails wherever they run parallel, so each loop reads in full. Pink and
+    // Blue travel the same physical direction along every shared run, so the
+    // signs stay consistent. Checkered shares no corridor (a separate
+    // singletrack network north of HQ) and stays centered on the trail.
+    var LOOP_OFFSET = { pink: -2.4, blue: 2.4, checkered: 0 };
+
     // Render loops bottom-up so Pink (top z) overlays Blue + Checkered.
     var loopOrder = ['checkered', 'blue', 'pink'];
     for (var li = 0; li < loopOrder.length; li++) {
       var id = loopOrder[li];
       var loop = LOOPS[id];
+      var off = LOOP_OFFSET[id] || 0;
       map.addSource(id, { type: 'geojson', data: loop.geojson });
       map.addLayer({
         id: id + '-outline', type: 'line', source: id,
-        paint: { 'line-color': '#000', 'line-width': 5, 'line-opacity': 0.22 }
+        paint: { 'line-color': '#000', 'line-width': 5, 'line-opacity': 0.22, 'line-offset': off }
       });
       if (loop.pattern === 'checkered') {
         map.addLayer({
           id: id + '-white', type: 'line', source: id,
-          paint: { 'line-color': '#fff', 'line-width': 4 }
+          paint: { 'line-color': '#fff', 'line-width': 4, 'line-offset': off }
         });
         map.addLayer({
           id: id, type: 'line', source: id,
-          paint: { 'line-color': '#1f1d18', 'line-width': 4, 'line-dasharray': [1, 1] }
+          paint: { 'line-color': '#1f1d18', 'line-width': 4, 'line-dasharray': [1, 1], 'line-offset': off }
         });
       } else {
         map.addLayer({
           id: id, type: 'line', source: id,
-          paint: { 'line-color': loop.color, 'line-width': 3.8 }
+          paint: { 'line-color': loop.color, 'line-width': 3.8, 'line-offset': off }
         });
       }
       (function(loopId, loopObj) {
@@ -324,26 +335,6 @@ function initMap() {
         map.on('mouseleave', loopId, function() { map.getCanvas().style.cursor = ''; });
       })(id, loop);
     }
-
-    var blueCoords = LOOPS.blue.geojson.geometry.coordinates;
-    var sharedCoords = blueCoords.slice(305);
-    var sharedSegment = {
-      type: 'Feature',
-      properties: { name: 'Shared Blue/Pink' },
-      geometry: { type: 'LineString', coordinates: sharedCoords }
-    };
-    map.addSource('shared-segment', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: [sharedSegment] }
-    });
-    map.addLayer({
-      id: 'shared-pink-offset', type: 'line', source: 'shared-segment',
-      paint: { 'line-color': LOOPS.pink.color, 'line-width': 2.5, 'line-offset': -1.5 }
-    });
-    map.addLayer({
-      id: 'shared-blue-offset', type: 'line', source: 'shared-segment',
-      paint: { 'line-color': LOOPS.blue.color, 'line-width': 2.5, 'line-offset': 1.5 }
-    });
 
     addHqMarker();
 
@@ -391,12 +382,6 @@ function setCourseDimmed(focusLoopId, dimmed) {
     if (map.getLayer(lid)) map.setPaintProperty(lid, 'line-opacity', op);
     if (map.getLayer(lid + '-outline')) map.setPaintProperty(lid + '-outline', 'line-opacity', haloOp);
     if (map.getLayer(lid + '-white')) map.setPaintProperty(lid + '-white', 'line-opacity', op);
-  }
-  // Dim the shared-segment offsets along with their owners (blue + pink).
-  if (map.getLayer('shared-blue-offset')) {
-    var sharedOp = dimmed && focusLoopId !== 'blue' && focusLoopId !== 'pink' ? 0.18 : 1;
-    map.setPaintProperty('shared-blue-offset', 'line-opacity', sharedOp);
-    map.setPaintProperty('shared-pink-offset', 'line-opacity', sharedOp);
   }
 }
 
@@ -458,11 +443,6 @@ function selectRace(raceId) {
       map.setLayoutProperty(id + '-outline', 'visibility', v);
       if (map.getLayer(id + '-white')) map.setLayoutProperty(id + '-white', 'visibility', v);
     }
-  }
-  if (map && map.getLayer('shared-blue-offset')) {
-    var sharedV = (usedSet.blue && usedSet.pink) ? 'visible' : 'none';
-    map.setLayoutProperty('shared-blue-offset', 'visibility', sharedV);
-    map.setLayoutProperty('shared-pink-offset', 'visibility', sharedV);
   }
 
   buildAssemblyStrip();
