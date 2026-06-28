@@ -1,10 +1,255 @@
 // pocket-map.js - Offline Pocket Map generator
-// Requires: CONFIG, map (MapLibre instance), coordDistances, eleProfile, getCoordAtDist
 // Generates a self-contained HTML file the runner can save and open offline.
+//
+// Works for two map shapes via pmResolveSource():
+//   - Single-course maps: the full course + palette live on CONFIG.
+//   - Multi-loop maps (skipSharedJs): course data lives in LOOPS keyed by
+//     distance; the active distance (currentRaceId) is flattened on demand.
+// The canonical helper/renderer sources it embeds come from
+// POCKET_CANONICAL_SOURCES (injected by build.js), so it never depends on the
+// host page exposing single-course globals.
+
+// --- Source resolution (single-course CONFIG vs multi-loop LOOPS) ---
+
+// Build-time-injected canonical single-course function bodies. Empty object if
+// the build didn't inject them (then we fall back to host globals below).
+function pmCanonicalSources() {
+  return (typeof POCKET_CANONICAL_SOURCES !== 'undefined' && POCKET_CANONICAL_SOURCES) ? POCKET_CANONICAL_SOURCES : {};
+}
+
+// Source text for a canonical helper/renderer to embed in the offline page.
+// Prefer the build-inlined canonical body; fall back to a host global of the
+// same name (single-course pages running the shared modules).
+function pmFnSource(name) {
+  var src = pmCanonicalSources()[name];
+  if (src) return src;
+  try {
+    if (typeof window !== 'undefined' && typeof window[name] === 'function') return window[name].toString();
+  } catch (e) {}
+  return '';
+}
+
+function pmBrandColor() {
+  try {
+    var v = getComputedStyle(document.documentElement).getPropertyValue('--primary');
+    v = (v || '').trim();
+    if (v) return v;
+  } catch (e) {}
+  return '#1a1a1a';
+}
+
+function pmHexToRgba(hex, a) {
+  var m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec((hex || '').trim());
+  if (!m) return 'rgba(26,26,26,' + a + ')';
+  var h = m[1];
+  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  var r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+}
+
+// Minimal palette for the offline elevation profile, derived from the brand
+// primary. Multi-loop maps don't ship the full CONFIG.colors object that the
+// simulator needs (sky/terrain/runner gradients), so the simulator is omitted
+// for them — see pmResolveSource().supportsSim.
+function pmElevationPalette(primary) {
+  return {
+    primary: primary,
+    profileGrid: 'rgba(26,26,26,0.08)',
+    profileFillTop: pmHexToRgba(primary, 0.22),
+    profileFillBottom: pmHexToRgba(primary, 0.02),
+    profileLabel: 'rgba(26,26,26,0.55)'
+  };
+}
+
+function pmSlug() {
+  if (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.slug) return CONFIG.slug;
+  try {
+    var m = /\/(?:maps|embed)\/([^\/]+)\//.exec(location.pathname);
+    if (m) return m[1];
+  } catch (e) {}
+  return 'race';
+}
+
+function pmRaceName() {
+  if (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.raceName) return CONFIG.raceName;
+  try {
+    var t = (document.title || '').split('—')[0].split('·')[0].split('|')[0].trim();
+    if (t) return t;
+  } catch (e) {}
+  return 'Race';
+}
+
+function pmParseStartHour(s) {
+  if (typeof s !== 'string') return 8;
+  var m = /(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i.exec(s);
+  if (!m) return 8;
+  var h = parseInt(m[1], 10) || 0;
+  var min = parseInt(m[2] || '0', 10) || 0;
+  var ap = (m[3] || '').toLowerCase();
+  if (ap === 'pm' && h < 12) h += 12;
+  if (ap === 'am' && h === 12) h = 0;
+  return h + min / 60;
+}
+
+// Aid stations for a multi-loop distance: index the shared spine and clamp
+// miles to the loop length — matching the live map's renderAidMarkers().
+function pmResolveAidStations(race) {
+  if (typeof AID_STATIONS_ALL === 'undefined' || !race.aidIdx) return null;
+  var out = [];
+  var loopLen = race.miles;
+  for (var i = 0; i < race.aidIdx.length; i++) {
+    var a = AID_STATIONS_ALL[race.aidIdx[i]];
+    if (!a) continue;
+    var mile = (a.mile != null) ? a.mile : (a.kilometer != null ? a.kilometer / 1.609344 : 0);
+    if (mile > loopLen) mile = loopLen;
+    out.push({ name: a.name, mile: Math.round(mile * 10) / 10, services: a.stocked || a.services || '' });
+  }
+  return out.length ? out : null;
+}
+
+// Longest race id — the headline distance, used as a fallback when the host
+// doesn't expose the live selection (currentRaceId / DEFAULT_DISTANCE_ID).
+function pmHeadlineRaceId() {
+  if (typeof RACES === 'undefined') return null;
+  var best = null, bestMiles = -1;
+  for (var id in RACES) {
+    if (!Object.prototype.hasOwnProperty.call(RACES, id)) continue;
+    var m = RACES[id].miles || 0;
+    if (m > bestMiles) { bestMiles = m; best = id; }
+  }
+  return best;
+}
+
+// Flatten the active distance from a multi-loop map into a single-course source
+// object. Prefers the live selection (currentRaceId), then the configured
+// default, then the headline (longest) distance. Concatenates the assembly's
+// loops (reversing CCW/back steps) and converts the feet-based profile to meters.
+function pmResolveFromLoops() {
+  if (typeof LOOPS === 'undefined' || typeof RACES === 'undefined') return { ok: false };
+  var raceId = (typeof currentRaceId !== 'undefined' && currentRaceId) ? currentRaceId
+    : (typeof DEFAULT_DISTANCE_ID !== 'undefined' ? DEFAULT_DISTANCE_ID : null);
+  if (!raceId || !RACES[raceId]) raceId = pmHeadlineRaceId();
+  var race = raceId && RACES[raceId];
+  if (!race) return { ok: false };
+
+  var steps = [];
+  if (race.loops && race.loops.length) {
+    for (var i = 0; i < race.loops.length; i++) {
+      var dir = (race.directions && race.directions[i]) || 'forward';
+      steps.push({ loopId: race.loops[i], reverse: /rev|back|ccw/i.test(dir) });
+    }
+  } else if (LOOPS[raceId]) {
+    steps.push({ loopId: raceId, reverse: false });
+  }
+  if (!steps.length) return { ok: false };
+
+  var courseCoords = [];
+  var elevationsFt = [];
+  for (var s = 0; s < steps.length; s++) {
+    var loop = LOOPS[steps[s].loopId];
+    if (!loop || !loop.geojson || !loop.geojson.geometry) continue;
+    var coords = loop.geojson.geometry.coordinates.slice();
+    var prof = (loop.profile || []).map(function(p) { return p.e; });
+    if (steps[s].reverse) { coords.reverse(); prof.reverse(); }
+    if (courseCoords.length && coords.length) coords = coords.slice(1); // drop shared seam point
+    if (elevationsFt.length && prof.length) prof = prof.slice(1);
+    courseCoords = courseCoords.concat(coords);
+    elevationsFt = elevationsFt.concat(prof);
+  }
+  if (courseCoords.length < 2) return { ok: false };
+
+  // LOOPS profiles store elevation in feet; the shared elevation code expects
+  // meters (it multiplies by 3.28084 for display).
+  var elevations = elevationsFt.map(function(ft) { return ft / 3.28084; });
+  var minE = elevations.length ? Math.min.apply(null, elevations) : 0;
+  var maxE = elevations.length ? Math.max.apply(null, elevations) : 1;
+  var primary = pmBrandColor();
+
+  return {
+    ok: true,
+    multiLoop: true,
+    supportsSim: false,
+    distanceLabel: race.label || race.name || '',
+    raceId: raceId,
+    slug: pmSlug(),
+    raceName: pmRaceName(),
+    totalMiles: race.miles,
+    totalGain: race.gain || race.gainFt || 0,
+    loopMiles: null,
+    raceStartHour: pmParseStartHour(race.startTime),
+    defaultGoalHours: Math.max(1, Math.round(race.miles / 6)),
+    defaultGoalMins: 0,
+    courseCoords: courseCoords,
+    elevations: elevations,
+    profileMaxEle: maxE,
+    profileMinEle: minE,
+    profileMaxDist: race.miles,
+    profileMileStep: race.miles > 18 ? 5 : 3,
+    finishCoords: null,
+    colors: pmElevationPalette(primary),
+    aidStations: pmResolveAidStations(race),
+    cutoffs: null,
+    trailsData: null,
+    mileMarkerFillColor: primary,
+    mileMarkerStrokeColor: '#fff',
+    mileMarkerTextColor: '#fff',
+    mileMarkerRadius: 10
+  };
+}
+
+// Resolve the course+palette source for the current map/distance.
+function pmResolveSource() {
+  if (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.courseCoords && CONFIG.courseCoords.length) {
+    return {
+      ok: true,
+      multiLoop: false,
+      supportsSim: !!(CONFIG.colors && CONFIG.colors.sky),
+      distanceLabel: '',
+      raceId: null,
+      slug: CONFIG.slug,
+      raceName: CONFIG.raceName,
+      totalMiles: CONFIG.totalMiles,
+      totalGain: CONFIG.totalGain,
+      loopMiles: CONFIG.loopMiles || null,
+      raceStartHour: CONFIG.raceStartHour,
+      defaultGoalHours: CONFIG.defaultGoalHours,
+      defaultGoalMins: CONFIG.defaultGoalMins,
+      defaultClock: CONFIG.defaultClock,
+      defaultRunnerMeta: CONFIG.defaultRunnerMeta,
+      defaultFinishTime: CONFIG.defaultFinishTime,
+      courseCoords: CONFIG.courseCoords,
+      elevations: CONFIG.elevations,
+      profileMaxEle: CONFIG.profileMaxEle,
+      profileMinEle: CONFIG.profileMinEle,
+      profileMaxDist: CONFIG.profileMaxDist || CONFIG.totalMiles,
+      profileMileStep: CONFIG.profileMileStep || 3,
+      finishCoords: CONFIG.finishCoords || null,
+      colors: CONFIG.colors,
+      aidStations: CONFIG.aidStations || null,
+      cutoffs: CONFIG.cutoffs || null,
+      trailsData: CONFIG.trailsData || null,
+      mileMarkerFillColor: CONFIG.mileMarkerFillColor,
+      mileMarkerStrokeColor: CONFIG.mileMarkerStrokeColor,
+      mileMarkerTextColor: CONFIG.mileMarkerTextColor || '#fff',
+      mileMarkerRadius: CONFIG.mileMarkerRadius || 10
+    };
+  }
+  return pmResolveFromLoops();
+}
 
 // --- Modal open/close ---
 
 function openPocketModal() {
+  // The simulator needs the full sim palette (sky/terrain/runner gradients),
+  // which multi-loop maps don't ship — hide that option when unsupported.
+  var src = pmResolveSource();
+  var simInput = document.getElementById('pocketIncludeSim');
+  if (simInput) {
+    var simOption = simInput.closest ? simInput.closest('.pocket-option') : simInput.parentNode;
+    var supportsSim = !!(src && src.ok && src.supportsSim);
+    if (simOption) simOption.style.display = supportsSim ? '' : 'none';
+    if (!supportsSim) simInput.checked = false;
+  }
   updatePocketSizeEstimate();
   document.getElementById('pocketBackdrop').classList.add('open');
 }
@@ -29,7 +274,8 @@ function updatePocketSizeEstimate() {
 // --- Main generation entry point ---
 
 function generatePocketMap() {
-  if (!CONFIG || !CONFIG.courseCoords) {
+  var src = pmResolveSource();
+  if (!src || !src.ok || !src.courseCoords || !src.courseCoords.length) {
     document.getElementById('pocketStatus').textContent = 'Pocket map not available for this map type.';
     return;
   }
@@ -41,7 +287,7 @@ function generatePocketMap() {
   status.textContent = 'Resetting map view\u2026';
 
   // Compute geo bounds from course coords (used for GPS projection)
-  var geoBounds = computeCourseBounds();
+  var geoBounds = computeCourseBounds(src.courseCoords);
 
   // Try to capture a map snapshot; fall back gracefully if map/WebGL unavailable
   try {
@@ -52,7 +298,7 @@ function generatePocketMap() {
 
     // Fit to course bounds (same as initial load)
     var bounds = new maplibregl.LngLatBounds();
-    CONFIG.courseCoords.forEach(function(c) { bounds.extend(c); });
+    src.courseCoords.forEach(function(c) { bounds.extend(c); });
     map.fitBounds(bounds, { padding: 40, duration: 0 });
 
     // Give fitBounds a moment to settle, then capture
@@ -61,7 +307,7 @@ function generatePocketMap() {
 
       // Set a timeout in case the render event never fires (e.g. headless/no WebGL)
       var captureTimeout = setTimeout(function() {
-        assemblePocketMap(null, geoBounds, btn, status);
+        assemblePocketMap(null, geoBounds, btn, status, src);
       }, 5000);
 
       map.once('render', function() {
@@ -78,25 +324,25 @@ function generatePocketMap() {
           };
           // Validate: a blank PNG is ~1.5 KB; anything real is larger
           if (snapshot.length >= 5000) {
-            assemblePocketMap(snapshot, renderedGeoBounds, btn, status);
+            assemblePocketMap(snapshot, renderedGeoBounds, btn, status, src);
           } else {
-            assemblePocketMap(null, geoBounds, btn, status);
+            assemblePocketMap(null, geoBounds, btn, status, src);
           }
         } catch (err) {
-          assemblePocketMap(null, geoBounds, btn, status);
+          assemblePocketMap(null, geoBounds, btn, status, src);
         }
       });
       map.triggerRepaint();
     }, 350);
   } catch (e) {
     // Map not available — generate pocket map without a snapshot
-    assemblePocketMap(null, geoBounds, btn, status);
+    assemblePocketMap(null, geoBounds, btn, status, src);
   }
 }
 
-function computeCourseBounds() {
+function computeCourseBounds(coords) {
   var minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
-  CONFIG.courseCoords.forEach(function(c) {
+  coords.forEach(function(c) {
     if (c[0] < minLng) minLng = c[0];
     if (c[0] > maxLng) maxLng = c[0];
     if (c[1] < minLat) minLat = c[1];
@@ -105,20 +351,23 @@ function computeCourseBounds() {
   return { minLng: minLng, maxLng: maxLng, minLat: minLat, maxLat: maxLat };
 }
 
-function assemblePocketMap(snapshot, geoBounds, btn, status) {
+function assemblePocketMap(snapshot, geoBounds, btn, status, src) {
   try {
     status.textContent = 'Assembling pocket map\u2026';
 
+    // Simulator is only available when the source ships a full sim palette.
+    var wantSim = document.getElementById('pocketIncludeSim') ? document.getElementById('pocketIncludeSim').checked : true;
     var options = {
       snapshot: snapshot,
       geoBounds: geoBounds,
-      includeSim: document.getElementById('pocketIncludeSim') ? document.getElementById('pocketIncludeSim').checked : true,
+      src: src,
+      includeSim: wantSim && !!src.supportsSim,
       includeElevation: document.getElementById('pocketIncludeElevation') ? document.getElementById('pocketIncludeElevation').checked : true,
       includeGPS: document.getElementById('pocketIncludeGPS') ? document.getElementById('pocketIncludeGPS').checked : true
     };
 
     var html = buildPocketHTML(options);
-    triggerPocketDownload(html);
+    triggerPocketDownload(html, src);
 
     status.textContent = 'Download started!';
     btn.textContent = 'Download Pocket Map';
@@ -135,11 +384,11 @@ function assemblePocketMap(snapshot, geoBounds, btn, status) {
 
 // --- Aid station card HTML ---
 
-function buildPocketAidCards() {
-  if (!CONFIG.aidStations || CONFIG.aidStations.length === 0) {
+function buildPocketAidCards(src) {
+  if (!src.aidStations || src.aidStations.length === 0) {
     return '<p style="color:#888;font-size:0.85rem;padding:8px 0;">No aid station data available.</p>';
   }
-  return CONFIG.aidStations.map(function(s) {
+  return src.aidStations.map(function(s) {
     return '<div class="pm-aid-card">' +
       '<div class="pm-aid-top">' +
         '<span class="pm-aid-name">' + escHtml(s.name) + '</span>' +
@@ -152,10 +401,25 @@ function buildPocketAidCards() {
 
 // --- Trail cue sheet HTML ---
 
-function buildPocketCueSheet() {
-  if (!CONFIG.trailsData || !CONFIG.trailsData.features || CONFIG.trailsData.features.length === 0) {
+function buildPocketCueSheet(src) {
+  if (!src.trailsData || !src.trailsData.features || src.trailsData.features.length === 0) {
     return '<p style="color:#888;font-size:0.85rem;padding:8px 0;">No trail data available.</p>';
   }
+
+  // Cumulative miles per coordinate, scaled to the course length — computed
+  // locally so we don't depend on a host coordDistances global.
+  var courseCoords = src.courseCoords;
+  var coordDistances = [0];
+  for (var ci = 1; ci < courseCoords.length; ci++) {
+    var x1 = courseCoords[ci - 1][0], y1 = courseCoords[ci - 1][1];
+    var x2 = courseCoords[ci][0], y2 = courseCoords[ci][1];
+    var dLng = (x2 - x1) * Math.cos((y1 + y2) / 2 * Math.PI / 180) * 69.172;
+    var dLat = (y2 - y1) * 69.172;
+    coordDistances.push(coordDistances[ci - 1] + Math.sqrt(dLng * dLng + dLat * dLat));
+  }
+  var rawTotal = coordDistances[coordDistances.length - 1] || 1;
+  var normMiles = src.loopMiles || src.totalMiles;
+  for (var di = 0; di < coordDistances.length; di++) coordDistances[di] = (coordDistances[di] / rawTotal) * normMiles;
 
   var blazeColors = {
     'white': '#e8e8e8', 'blue': '#2196F3', 'yellow': '#FFD700',
@@ -164,7 +428,7 @@ function buildPocketCueSheet() {
   };
 
   var segments = [];
-  CONFIG.trailsData.features.forEach(function(feature) {
+  src.trailsData.features.forEach(function(feature) {
     var name = (feature.properties && feature.properties.name) ? feature.properties.name : 'Trail';
     var blaze = (feature.properties && feature.properties.blaze) ? feature.properties.blaze : null;
     var color = blazeColors[blaze] || '#9E9E9E';
@@ -176,12 +440,12 @@ function buildPocketCueSheet() {
       : null;
 
     var mile = 0;
-    if (startCoord && coordDistances && CONFIG.courseCoords) {
+    if (startCoord && courseCoords) {
       var bestIdx = 0;
       var bestDist = Infinity;
-      for (var i = 0; i < CONFIG.courseCoords.length; i++) {
-        var dx = CONFIG.courseCoords[i][0] - startCoord[0];
-        var dy = CONFIG.courseCoords[i][1] - startCoord[1];
+      for (var i = 0; i < courseCoords.length; i++) {
+        var dx = courseCoords[i][0] - startCoord[0];
+        var dy = courseCoords[i][1] - startCoord[1];
         var d = dx * dx + dy * dy;
         if (d < bestDist) { bestDist = d; bestIdx = i; }
       }
@@ -262,13 +526,14 @@ function buildPocketCoordHelpersSource(pocketConfig) {
     '});',
   ].join('\n');
 
-  // Named helper functions — use .toString() to embed source directly
+  // Named helper functions — canonical source (build-inlined), so this works
+  // even on multi-loop pages that don't define these globals.
   var helpers = [
-    loopDist.toString(),
-    getEleAtDist.toString(),
-    getGradeAtDist.toString(),
-    getGainAtDist.toString(),
-    getCoordAtDist.toString(),
+    pmFnSource('loopDist'),
+    pmFnSource('getEleAtDist'),
+    pmFnSource('getGradeAtDist'),
+    pmFnSource('getGainAtDist'),
+    pmFnSource('getCoordAtDist'),
   ].join('\n\n');
 
   return iife + '\n\n' + helpers;
@@ -401,13 +666,14 @@ function buildPocketSimulatorSource() {
     '}',
   ].join('\n');
 
-  // pmRenderCourseMap and pmRenderSimProfile — adapted with pm- canvas IDs
-  // We use .toString() on the originals and patch element IDs
-  var courseMapSrc = renderCourseMap.toString()
+  // pmRenderCourseMap and pmRenderSimProfile — canonical renderer source
+  // (build-inlined) with the function name and canvas IDs patched for the
+  // pm- prefixed offline DOM.
+  var courseMapSrc = pmFnSource('renderCourseMap')
     .replace('function renderCourseMap(', 'function pmRenderCourseMap(')
     .replace("document.getElementById('courseMapCanvas')", "document.getElementById('pmCourseMapCanvas')");
 
-  var simProfileSrc = renderSimProfile.toString()
+  var simProfileSrc = pmFnSource('renderSimProfile')
     .replace('function renderSimProfile(', 'function pmRenderSimProfile(')
     .replace("document.getElementById('simProfileCanvas')", "document.getElementById('pmSimProfileCanvas')");
 
@@ -417,7 +683,7 @@ function buildPocketSimulatorSource() {
 // --- Build elevation profile JS source ---
 
 function buildPocketElevationSource() {
-  return drawElevationProfile.toString()
+  return pmFnSource('drawElevationProfile')
     .replace('function drawElevationProfile()', 'function pmDrawElevationProfile()')
     .replace("document.getElementById('profileCanvas')", "document.getElementById('pmProfileCanvas')");
 }
@@ -494,6 +760,7 @@ function buildPocketGPSSource(geoBounds) {
 // --- Assemble the full pocket HTML ---
 
 function buildPocketHTML(options) {
+  var src = options.src;
   var snapshot = options.snapshot;
   var geoBounds = options.geoBounds;
   var includeSim = options.includeSim;
@@ -501,43 +768,44 @@ function buildPocketHTML(options) {
   var includeGPS = options.includeGPS;
 
   // Downsample coordinates to keep file size manageable for long courses
-  var pocketCoords = downsampleCoords(CONFIG.courseCoords, 1000);
+  var pocketCoords = downsampleCoords(src.courseCoords, 1000);
 
-  // Build the CONFIG object for the pocket page (all the data needed by the simulator)
+  // Build the CONFIG object for the pocket page (all the data the offline page needs)
   var pocketConfig = {
-    slug: CONFIG.slug,
-    raceName: CONFIG.raceName,
-    totalMiles: CONFIG.totalMiles,
-    totalGain: CONFIG.totalGain,
-    loopMiles: CONFIG.loopMiles || null,
-    raceStartHour: CONFIG.raceStartHour,
-    defaultGoalHours: CONFIG.defaultGoalHours,
-    defaultGoalMins: CONFIG.defaultGoalMins,
+    slug: src.slug,
+    raceName: src.raceName,
+    totalMiles: src.totalMiles,
+    totalGain: src.totalGain,
+    loopMiles: src.loopMiles || null,
+    raceStartHour: src.raceStartHour,
+    defaultGoalHours: src.defaultGoalHours,
+    defaultGoalMins: src.defaultGoalMins,
     courseCoords: pocketCoords,
-    elevations: CONFIG.elevations,
-    profileMaxEle: CONFIG.profileMaxEle,
-    profileMinEle: CONFIG.profileMinEle,
-    profileMaxDist: CONFIG.profileMaxDist || CONFIG.totalMiles,
-    profileMileStep: CONFIG.profileMileStep || 3,
-    finishCoords: CONFIG.finishCoords || null,
-    colors: CONFIG.colors,
+    elevations: src.elevations,
+    profileMaxEle: src.profileMaxEle,
+    profileMinEle: src.profileMinEle,
+    profileMaxDist: src.profileMaxDist || src.totalMiles,
+    profileMileStep: src.profileMileStep || 3,
+    finishCoords: src.finishCoords || null,
+    colors: src.colors,
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
-    aidStations: CONFIG.aidStations || null,
-    cutoffs: CONFIG.cutoffs || null,
-    mileMarkerFillColor: CONFIG.mileMarkerFillColor,
-    mileMarkerStrokeColor: CONFIG.mileMarkerStrokeColor,
-    mileMarkerTextColor: CONFIG.mileMarkerTextColor || '#fff',
-    mileMarkerRadius: CONFIG.mileMarkerRadius || 10
+    aidStations: src.aidStations || null,
+    cutoffs: src.cutoffs || null,
+    mileMarkerFillColor: src.mileMarkerFillColor,
+    mileMarkerStrokeColor: src.mileMarkerStrokeColor,
+    mileMarkerTextColor: src.mileMarkerTextColor || '#fff',
+    mileMarkerRadius: src.mileMarkerRadius || 10
   };
 
   var configJson = 'var CONFIG = ' + JSON.stringify(pocketConfig) + ';';
 
   // Aid stations and cue sheet (generated before template)
-  var aidCardsHtml = buildPocketAidCards();
-  var cueSheetHtml = buildPocketCueSheet();
+  var aidCardsHtml = buildPocketAidCards(src);
+  var cueSheetHtml = buildPocketCueSheet(src);
 
-  // JS sources
-  var coordHelpersJs = buildPocketCoordHelpersSource(pocketConfig);
+  // JS sources. The coord helpers (loopDist/getCoordAtDist/…) are only used by
+  // the simulator, so embed them only when the sim is included.
+  var coordHelpersJs = includeSim ? buildPocketCoordHelpersSource(pocketConfig) : '';
   var elevationJs = includeElevation ? buildPocketElevationSource() : '';
   var simulatorJs = includeSim ? buildPocketSimulatorSource() : '';
   var gpsJs = includeGPS ? buildPocketGPSSource(geoBounds) : '';
@@ -552,8 +820,8 @@ function buildPocketHTML(options) {
       '    <div class="pm-goal-row">',
       '      <label class="pm-goal-label">Goal Time</label>',
       '      <div class="pm-goal-inputs">',
-      '        <input type="number" id="pmGoalHrs" min="0" max="99" value="' + CONFIG.defaultGoalHours + '" onchange="pmUpdateGoalTime()"> hrs',
-      '        <input type="number" id="pmGoalMins" min="0" max="59" value="' + CONFIG.defaultGoalMins + '" onchange="pmUpdateGoalTime()"> min',
+      '        <input type="number" id="pmGoalHrs" min="0" max="99" value="' + src.defaultGoalHours + '" onchange="pmUpdateGoalTime()"> hrs',
+      '        <input type="number" id="pmGoalMins" min="0" max="59" value="' + src.defaultGoalMins + '" onchange="pmUpdateGoalTime()"> min',
       '      </div>',
       '      <div class="pm-goal-pace" id="pmGoalPace"></div>',
       '    </div>',
@@ -573,11 +841,11 @@ function buildPocketHTML(options) {
       '  <div class="pm-runner-info">',
       '    <div class="pm-runner-main">',
       '      <span id="pmRunnerDist">Mile 0.0</span>',
-      '      <span id="pmClockTime">' + (CONFIG.defaultClock || '') + '</span>',
+      '      <span id="pmClockTime">' + (src.defaultClock || '') + '</span>',
       '    </div>',
       '    <div class="pm-runner-sub">',
-      '      <span id="pmRunnerMeta">' + (CONFIG.defaultRunnerMeta || '') + '</span>',
-      '      <span>\u2192 <span id="pmFinishTime">' + (CONFIG.defaultFinishTime || '') + '</span></span>',
+      '      <span id="pmRunnerMeta">' + (src.defaultRunnerMeta || '') + '</span>',
+      '      <span>\u2192 <span id="pmFinishTime">' + (src.defaultFinishTime || '') + '</span></span>',
       '    </div>',
       '  </div>',
       '  <canvas id="pmCourseMapCanvas" class="pm-course-canvas"></canvas>',
@@ -621,18 +889,22 @@ function buildPocketHTML(options) {
 
   var downloadDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
+  // Header/title name — append the distance label on multi-loop maps so each
+  // distance's download is self-identifying.
+  var displayName = src.raceName + (src.distanceLabel ? ' — ' + src.distanceLabel : '');
+
   return '<!DOCTYPE html>\n' +
   '<html lang="en">\n' +
   '<head>\n' +
   '<meta charset="utf-8">\n' +
   '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">\n' +
   '<meta name="apple-mobile-web-app-capable" content="yes">\n' +
-  '<title>' + escHtml(CONFIG.raceName) + ' \u2014 Pocket Map</title>\n' +
+  '<title>' + escHtml(displayName) + ' \u2014 Pocket Map</title>\n' +
   '<style>\n' + buildPocketCSS(pocketConfig) + '\n</style>\n' +
   '</head>\n' +
   '<body>\n' +
   '<header class="pm-header">\n' +
-  '  <div class="pm-header-title">' + escHtml(CONFIG.raceName) + '</div>\n' +
+  '  <div class="pm-header-title">' + escHtml(displayName) + '</div>\n' +
   '  <div class="pm-tabs">\n' +
   '    <button class="pm-tab active" id="pm-tab-map" onclick="pmSwitchTab(\'map\')">Map</button>\n' +
   '    <button class="pm-tab" id="pm-tab-info" onclick="pmSwitchTab(\'info\')">Info</button>\n' +
@@ -654,8 +926,8 @@ function buildPocketHTML(options) {
   '    <section class="pm-section">\n' +
   '      <h2>Race Stats</h2>\n' +
   '      <div class="pm-race-stats">\n' +
-  '        <div class="pm-race-stat"><div class="pm-race-stat-val">' + CONFIG.totalMiles + '</div><div class="pm-race-stat-lbl">Miles</div></div>\n' +
-  '        <div class="pm-race-stat"><div class="pm-race-stat-val">' + CONFIG.totalGain.toLocaleString() + '</div><div class="pm-race-stat-lbl">Ft Gain</div></div>\n' +
+  '        <div class="pm-race-stat"><div class="pm-race-stat-val">' + src.totalMiles + '</div><div class="pm-race-stat-lbl">Miles</div></div>\n' +
+  '        <div class="pm-race-stat"><div class="pm-race-stat-val">' + (src.totalGain || 0).toLocaleString() + '</div><div class="pm-race-stat-lbl">Ft Gain</div></div>\n' +
   '      </div>\n' +
   '    </section>\n' +
   '    <section class="pm-section">\n' +
@@ -688,7 +960,7 @@ function buildPocketHTML(options) {
   (includeElevation ? '  if (tab === "map") pmDrawElevationProfile();\n' : '') +
   (includeSim ? '  if (tab === "sim") pmRenderSim();\n' : '') +
   '}\n\n' +
-  coordHelpersJs + '\n\n' +
+  (coordHelpersJs ? coordHelpersJs + '\n\n' : '') +
   (elevationJs ? elevationJs + '\n\n' : '') +
   (simulatorJs ? simulatorJs + '\n\n' : '') +
   (gpsJs ? gpsJs + '\n\n' : '') +
@@ -787,8 +1059,8 @@ function buildPocketCSS(cfg) {
 
 // --- Download trigger ---
 
-function triggerPocketDownload(html) {
-  var filename = (CONFIG.slug || 'race') + '-pocket-map.html';
+function triggerPocketDownload(html, src) {
+  var filename = (src.slug || 'race') + (src.raceId ? '-' + src.raceId : '') + '-pocket-map.html';
 
   // iOS / Safari: try Web Share API first (lets user "Save to Files")
   var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);

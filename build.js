@@ -14,6 +14,48 @@ function readFile(filePath) {
   return fs.readFileSync(filePath, 'utf8');
 }
 
+// Extract a single top-level `function NAME(...) { ... }` block from a module
+// source by brace-matching. Used to inline canonical single-course helpers into
+// the offline Pocket Map without depending on host-page globals (multi-loop maps
+// define different functions or none at all). Single source of truth: the
+// functions live once in the shared modules and are extracted at build time.
+function extractFnSource(src, name) {
+  const sig = 'function ' + name + '(';
+  const start = src.indexOf(sig);
+  if (start === -1) throw new Error('extractFnSource: ' + name + ' not found');
+  const braceOpen = src.indexOf('{', start);
+  let depth = 0;
+  for (let i = braceOpen; i < src.length; i++) {
+    const ch = src[i];
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return src.slice(start, i + 1);
+    }
+  }
+  throw new Error('extractFnSource: unbalanced braces for ' + name);
+}
+
+// Canonical function sources the offline Pocket Map embeds. Extracted from the
+// shared single-course modules so multi-loop (skipSharedJs) maps — which lack
+// these globals — can still generate a working pocket map. Injected as the
+// POCKET_CANONICAL_SOURCES global ahead of pocket-map.js (see buildMap).
+function buildPocketCanonicalSources() {
+  const coordHelpers = readFile(path.join(SRC, 'shared', 'coord-helpers.js'));
+  const elevation = readFile(path.join(SRC, 'shared', 'elevation-profile.js'));
+  const simRenderers = readFile(path.join(SRC, 'shared', 'sim-renderers.js'));
+  return {
+    loopDist: extractFnSource(coordHelpers, 'loopDist'),
+    getEleAtDist: extractFnSource(coordHelpers, 'getEleAtDist'),
+    getGradeAtDist: extractFnSource(coordHelpers, 'getGradeAtDist'),
+    getGainAtDist: extractFnSource(coordHelpers, 'getGainAtDist'),
+    getCoordAtDist: extractFnSource(coordHelpers, 'getCoordAtDist'),
+    drawElevationProfile: extractFnSource(elevation, 'drawElevationProfile'),
+    renderCourseMap: extractFnSource(simRenderers, 'renderCourseMap'),
+    renderSimProfile: extractFnSource(simRenderers, 'renderSimProfile'),
+  };
+}
+
 function mkdirp(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
@@ -471,7 +513,15 @@ function buildMap(slug, templates) {
     ? readFile(path.join(SRC, 'shared', 'editorial-runtime.js'))
     : '';
 
-  const fullJS = configData + '\n\n' + sharedJS + (weatherUiJS ? '\n\n' + weatherUiJS : '') + (embedModalJS ? '\n\n' + embedModalJS : '') + (pocketMapJS ? '\n\n' + pocketMapJS : '') + (overrideJS ? '\n\n' + overrideJS : '') + (editorialRuntimeJS ? '\n\n' + editorialRuntimeJS : '');
+  // The offline Pocket Map embeds canonical single-course function sources so it
+  // works even on multi-loop maps that don't define these globals. Provide them
+  // as a top-level var ahead of pocket-map.js (present via sharedJS or injected).
+  const includesPocketMap = !config.skipSharedJs || !!pocketMapJS;
+  const pocketSourcesJS = includesPocketMap
+    ? 'var POCKET_CANONICAL_SOURCES = ' + JSON.stringify(buildPocketCanonicalSources()) + ';\n\n'
+    : '';
+
+  const fullJS = pocketSourcesJS + configData + '\n\n' + sharedJS + (weatherUiJS ? '\n\n' + weatherUiJS : '') + (embedModalJS ? '\n\n' + embedModalJS : '') + (pocketMapJS ? '\n\n' + pocketMapJS : '') + (overrideJS ? '\n\n' + overrideJS : '') + (editorialRuntimeJS ? '\n\n' + editorialRuntimeJS : '');
 
   // Build map view HTML (config can override entirely via mapViewHtml)
   let mapView;
