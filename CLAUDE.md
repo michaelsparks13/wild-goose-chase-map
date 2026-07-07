@@ -664,6 +664,59 @@ function estimateHeatStress(tempF, rhPct, solarRadWm2, windMph) {
 
 **Embed builds** also include `weather-ui.js` and render the weather panel via the same `buildWeatherHtml()` / `{{WEATHER_HTML}}` mechanism.
 
+### AR Course Preview (`dist/ar/{slug}/`)
+
+Opt-in tabletop AR/3D preview: runners open `/ar/{slug}/` on a phone, see a
+satellite-textured 3D terrain model of the course with aid-station pins and
+an animated "lead pack" marker, and can place it on their floor/table in AR.
+
+**How to add AR to a race** (needs `courseCoords` + `aidStations` in config):
+```bash
+node scripts/build-ar-model.js <slug>   # fetches DEM + imagery → data/ar/course.glb + ar-meta.json
+node scripts/export-usdz.js <slug>      # headless three.js → data/ar/course.usdz (iOS Quick Look)
+node build.js                           # emits dist/ar/<slug>/ automatically
+```
+Like weather, AR assets are generated at authoring time and **committed** —
+the Netlify build never touches the network. `build.js` builds an AR page for
+any map whose `data/ar/course.glb` exists; maps without it are unaffected.
+Multi-loop maps (`configDataJs`, no `courseCoords`) are not yet supported —
+the pipeline needs a flattened headline-race coordinate list.
+
+**Architecture:**
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| Tile/geo math | `scripts/ar/geo.js` | Slippy-tile + local-meter projection, mile interpolation |
+| DEM | `scripts/ar/dem.js` | Terrarium tile fetch/decode, bilinear height raster |
+| Imagery | `scripts/ar/imagery.js` | Esri World Imagery stitch → cropped diffuse JPEG |
+| Meshes | `scripts/ar/mesh.js` | Terrain grid + plinth, course tube, aid pins, keyframes |
+| GLB | `scripts/ar/glb.js` | gltf-transform assembly, quantization, unlit course material |
+| CLI | `scripts/build-ar-model.js` | Progressive quality tiers against a size budget (5 MB, 15 MB for >120 mi) |
+| USDZ | `scripts/export-usdz.js` | three.js USDZExporter in headless Chromium (static — no animation) |
+| Viewer | `src/ar/ar-shell.html` + `ar-viewer.css` + `ar-viewer.js` | Standalone page: model-viewer stage, timing-strip scrubber, hotspot cards |
+| Capability gating | `src/ar/ar-capabilities.js` | `chooseArMode()`: WebXR > Scene Viewer/Quick Look > plain 3D |
+| Build | `build.js` `buildArPage()`/`copyArLibs()` | Page + asset copy; self-hosted libs in `dist/ar/lib/` |
+| Tests | `tests/ar-pipeline.test.js`, `tests/ar-viewer.test.js`, `tests/ar-viewer.e2e.js` | Pipeline math, built-page assertions + budgets, viewer e2e |
+
+**Key decisions:**
+- **Fallback-first**: the model-viewer page is the baseline for everyone;
+  WebXR (custom three.js immersive-ar session with hit-test placement,
+  raycast aid taps, dom-overlay console) is layered on only when
+  `navigator.xr.isSessionSupported('immersive-ar')` resolves true.
+- **Self-hosted libs** (`dist/ar/lib/`): model-viewer + three are copied from
+  node_modules at build time — no CDN scripts on the AR pages.
+- Model space: 1 glTF unit = 1 m at tabletop scale (~0.42 m long side);
+  `ar-meta.json` carries `scaleDenominator`, hotspot anchors, and the
+  animation duration. Vertical exaggeration default 1.6.
+- The lead-pack animation is a glTF translation channel — model-viewer scrubs
+  it via `currentTime`, the XR session via `AnimationMixer`; the scrubber UI
+  drives both through a swappable `timeline` object.
+- `netlify.toml` pins `Content-Type: model/vnd.usdz+zip` on `/ar/*/course.usdz`
+  (iOS Quick Look requires it).
+- Per-race options via `config.ar = { targetSizeM, exaggeration, budgetMB, animationSeconds, padRatio }`.
+
+Currently built for: `escarpment` (2.17 MB GLB), `golden-leaf` (0.87 MB GLB).
+
 ## Race Map Business Context
 This project serves as a template for building custom race maps. Key selling points:
 - Interactive loop selection with elevation profiles
