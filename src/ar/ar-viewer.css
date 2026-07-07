@@ -1,0 +1,488 @@
+/* AR course preview — museum-vitrine stage with a timing-strip console.
+   Race branding arrives via {{ACCENT}} and {{FONT_FAMILY}} placeholders. */
+
+:root {
+  --ar-accent: {{ACCENT}};
+  --ar-bg: #161310;
+  --ar-bg-deep: #0d0b09;
+  --ar-surface: #211d19;
+  --ar-ink: #ede6d8;
+  --ar-ink-muted: #a49a89;
+  --ar-hairline: rgba(237, 230, 216, 0.16);
+  --ar-font: {{FONT_FAMILY}};
+  --ar-console-h: 84px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--ar-font);
+  background:
+    radial-gradient(120% 90% at 50% 30%, rgba(255, 244, 214, 0.05), transparent 55%),
+    linear-gradient(var(--ar-bg), var(--ar-bg-deep));
+  color: var(--ar-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Masthead ---------------------------------------------------------- */
+
+.masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: calc(12px + env(safe-area-inset-top)) 18px 12px;
+  border-bottom: 1px solid var(--ar-hairline);
+}
+
+.masthead-kicker {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ar-accent);
+  margin-bottom: 3px;
+}
+
+.masthead-name {
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+}
+
+.masthead-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.masthead-scale {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  color: var(--ar-ink-muted);
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--ar-hairline);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
+.masthead-studio {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ar-ink-muted);
+}
+
+/* ---- Stage -------------------------------------------------------------- */
+
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+model-viewer {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  --poster-color: transparent;
+  --progress-bar-color: transparent;
+}
+
+.poster {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.poster-mark {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--ar-hairline);
+  border-radius: 50%;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  color: var(--ar-ink-muted);
+}
+
+.poster-note {
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ar-ink-muted);
+  animation: poster-breathe 2.2s ease-in-out infinite;
+}
+
+@keyframes poster-breathe {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+.load-bar {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 2px;
+  background: rgba(237, 230, 216, 0.08);
+}
+
+.load-bar-fill {
+  height: 100%;
+  width: 0;
+  background: var(--ar-accent);
+  transition: width 0.2s ease;
+}
+
+/* ---- AR launch buttons -------------------------------------------------- */
+
+.ar-launch {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid color-mix(in srgb, var(--ar-accent) 65%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ar-bg-deep) 82%, var(--ar-accent) 18%);
+  color: var(--ar-ink);
+  font-family: var(--ar-font);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.ar-launch[hidden] { display: none; }
+.ar-launch:active { transform: scale(0.97); }
+.ar-launch svg { width: 17px; height: 17px; fill: var(--ar-accent); }
+
+.xr-hint {
+  position: absolute;
+  left: 50%;
+  top: 18px;
+  transform: translateX(-50%);
+  max-width: 82%;
+  padding: 9px 16px;
+  border-radius: 12px;
+  background: rgba(13, 11, 9, 0.82);
+  border: 1px solid var(--ar-hairline);
+  font-size: 0.78rem;
+  text-align: center;
+  color: var(--ar-ink);
+}
+
+/* ---- Aid station hotspots ----------------------------------------------- */
+
+.hotspot {
+  --dot: 26px;
+  width: var(--dot);
+  height: var(--dot);
+  border: 1.5px solid var(--ar-bg-deep);
+  border-radius: 50%;
+  background: var(--ar-ink);
+  color: var(--ar-bg-deep);
+  font-family: var(--ar-font);
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.hotspot:hover, .hotspot:focus-visible { transform: scale(1.18); }
+
+.hotspot[data-active="true"] {
+  background: var(--ar-accent);
+  color: #fff;
+}
+
+.hotspot:not([data-visible]) { opacity: 0.25; }
+
+/* ---- Aid card (bottom sheet above the console) --------------------------- */
+
+.xr-ui {
+  flex-shrink: 0;
+}
+
+.aid-card {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--ar-console-h) + 12px + env(safe-area-inset-bottom));
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 14px 16px 16px;
+  background: var(--ar-surface);
+  border: 1px solid var(--ar-hairline);
+  border-top: 2px solid var(--ar-accent);
+  border-radius: 14px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+  animation: card-rise 0.22s ease;
+  z-index: 30;
+}
+
+@keyframes card-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.aid-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.aid-card-kicker {
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ar-accent);
+}
+
+.aid-card-close {
+  border: 0;
+  background: transparent;
+  color: var(--ar-ink-muted);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.aid-card-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.aid-card-mile {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--ar-accent);
+  margin-bottom: 6px;
+}
+
+.aid-card-mile-unit {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--ar-ink-muted);
+  margin-left: 4px;
+  letter-spacing: 0.08em;
+}
+
+.aid-card-services {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ar-ink-muted);
+}
+
+/* ---- Timing-strip console ------------------------------------------------ */
+
+.console {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: var(--ar-console-h);
+  padding: 0 16px calc(env(safe-area-inset-bottom));
+  border-top: 1px solid var(--ar-hairline);
+  background: linear-gradient(rgba(33, 29, 25, 0.6), rgba(13, 11, 9, 0.9));
+  backdrop-filter: blur(10px);
+}
+
+.play-btn {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--ar-accent);
+  background: transparent;
+  color: var(--ar-ink);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.play-btn svg { width: 13px; height: 13px; fill: var(--ar-ink); }
+.play-btn .icon-play { display: none; }
+.play-btn[data-state="paused"] .icon-play { display: block; }
+.play-btn[data-state="paused"] .icon-pause { display: none; }
+
+.track {
+  position: relative;
+  flex: 1;
+  height: 42px;
+}
+
+.track-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tick {
+  position: absolute;
+  top: 50%;
+  width: 1.5px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+  background: var(--ar-ink-muted);
+  opacity: 0.7;
+}
+
+.track-fill {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 3px;
+  width: 0;
+  transform: translateY(-50%);
+  background: var(--ar-accent);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.scrubber {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-x;
+}
+
+.scrubber::-webkit-slider-runnable-track {
+  height: 3px;
+  margin-top: 19.5px;
+  background: rgba(237, 230, 216, 0.18);
+  border-radius: 2px;
+}
+
+.scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7.5px;
+  border-radius: 50%;
+  background: var(--ar-ink);
+  border: 2.5px solid var(--ar-accent);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+
+.scrubber::-moz-range-track {
+  height: 3px;
+  background: rgba(237, 230, 216, 0.18);
+  border-radius: 2px;
+}
+
+.scrubber::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--ar-ink);
+  border: 2.5px solid var(--ar-accent);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+
+.scrubber:focus-visible {
+  outline: 2px solid var(--ar-accent);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.readout {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  min-width: 96px;
+}
+
+.readout-kicker {
+  font-size: 0.56rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ar-ink-muted);
+}
+
+.readout-mile {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.readout-of {
+  font-size: 0.66rem;
+  font-weight: 500;
+  color: var(--ar-ink-muted);
+  margin-left: 5px;
+}
+
+.xr-exit {
+  flex-shrink: 0;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--ar-hairline);
+  background: transparent;
+  color: var(--ar-ink);
+  font-family: var(--ar-font);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+/* ---- XR session state ----------------------------------------------------
+   During an immersive session the .xr-ui element becomes the dom-overlay
+   root: the console pins to the bottom of the camera view. */
+
+body[data-xr-active] .masthead,
+body[data-xr-active] .stage { visibility: hidden; }
+
+body[data-xr-active] .xr-ui {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 40;
+}
+
+/* ---- Desktop ------------------------------------------------------------- */
+
+@media (min-width: 900px) {
+  .masthead { padding: 16px 28px; }
+  .masthead-name { font-size: 1.2rem; }
+  .console { padding: 0 28px calc(env(safe-area-inset-bottom)); }
+  .aid-card { left: auto; right: 28px; max-width: 340px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poster-note { animation: none; }
+  .aid-card { animation: none; }
+}

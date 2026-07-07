@@ -739,6 +739,104 @@ function buildEmbed(slug, templates) {
   console.log(`  Built: dist/embed/${slug}/index.html (${(html.length / 1024).toFixed(0)} KB)`);
 }
 
+// --- AR course preview (dist/ar/{slug}/) ---
+// Built only for maps with committed AR assets (see scripts/build-ar-model.js).
+// The page is standalone: inlined CSS/JS, self-hosted libs under /ar/lib/,
+// course.glb (+ course.usdz when present) copied alongside.
+function buildArHotspots(meta) {
+  return meta.aidStations
+    .map((station, i) => {
+      const label = escapeHtml(
+        `Aid station: ${station.name}, mile ${station.mile}`
+      );
+      return (
+        `    <button class="hotspot" type="button" slot="hotspot-aid-${i}" ` +
+        `data-aid="${i}" data-position="${station.position.join(' ')}" ` +
+        `data-normal="0 1 0" data-visibility-attribute="visible" ` +
+        `aria-label="${label}">${i + 1}</button>`
+      );
+    })
+    .join('\n');
+}
+
+function buildArTicks(meta) {
+  return meta.aidStations
+    .map((station) => {
+      const pct = ((station.mile / meta.totalMiles) * 100).toFixed(2);
+      return `<span class="tick" style="left:${pct}%"></span>`;
+    })
+    .join('');
+}
+
+function buildArPage(slug) {
+  const mapDir = path.join(SRC, 'maps', slug);
+  const arDataDir = path.join(mapDir, 'data', 'ar');
+  const glbPath = path.join(arDataDir, 'course.glb');
+  if (!fs.existsSync(glbPath)) return false;
+
+  const configPath = path.resolve(path.join(mapDir, 'config.js'));
+  delete require.cache[configPath];
+  const config = require(configPath);
+  const meta = JSON.parse(readFile(path.join(arDataDir, 'ar-meta.json')));
+
+  const accent = (config.cssVars && config.cssVars['--primary']) || '#C1440E';
+  const fontFamily =
+    config.fontFamily || "-apple-system, BlinkMacSystemFont, system-ui, sans-serif";
+  const css = readFile(path.join(SRC, 'ar', 'ar-viewer.css'))
+    .replace('{{ACCENT}}', accent)
+    .replace('{{FONT_FAMILY}}', fontFamily);
+  const js =
+    readFile(path.join(SRC, 'ar', 'ar-capabilities.js')) +
+    '\n' +
+    readFile(path.join(SRC, 'ar', 'ar-viewer.js'));
+
+  const usdzPath = path.join(arDataDir, 'course.usdz');
+  const hasUsdz = fs.existsSync(usdzPath);
+  const raceName = config.raceName || config.title || slug;
+  const scaleLabel = `Tabletop &middot; 1:${meta.scaleDenominator.toLocaleString('en-US')}`;
+
+  const html = readFile(path.join(SRC, 'ar', 'ar-shell.html'))
+    .replace(/{{RACE_NAME}}/g, escapeHtml(raceName))
+    .replace('{{GOOGLE_FONTS}}', config.googleFontsUrl || '')
+    .replace('{{SCALE_LABEL}}', scaleLabel)
+    .replace('{{TOTAL_MILES}}', String(meta.totalMiles))
+    .replace('{{IOS_SRC_ATTR}}', hasUsdz ? '\n    ios-src="./course.usdz"' : '')
+    .replace('{{HOTSPOTS}}', () => buildArHotspots(meta))
+    .replace('{{AID_TICKS}}', () => buildArTicks(meta))
+    .replace('{{AR_CSS}}', () => css)
+    .replace('{{AR_META_JSON}}', () => JSON.stringify(meta))
+    .replace('{{AR_JS}}', () => js);
+
+  const outDir = path.join(DIST, 'ar', slug);
+  mkdirp(outDir);
+  fs.writeFileSync(path.join(outDir, 'index.html'), html);
+  fs.copyFileSync(glbPath, path.join(outDir, 'course.glb'));
+  if (hasUsdz) fs.copyFileSync(usdzPath, path.join(outDir, 'course.usdz'));
+  console.log(`  Built: dist/ar/${slug}/index.html (+ course.glb${hasUsdz ? ' + course.usdz' : ''})`);
+  return true;
+}
+
+// Self-hosted viewer libraries shared by all AR pages.
+function copyArLibs() {
+  const libDir = path.join(DIST, 'ar', 'lib');
+  mkdirp(path.join(libDir, 'loaders'));
+  mkdirp(path.join(libDir, 'utils'));
+  const copies = [
+    ['@google/model-viewer/dist/model-viewer.min.js', 'model-viewer.min.js'],
+    ['three/build/three.module.min.js', 'three.module.min.js'],
+    ['three/build/three.core.min.js', 'three.core.min.js'],
+    ['three/examples/jsm/loaders/GLTFLoader.js', 'loaders/GLTFLoader.js'],
+    ['three/examples/jsm/utils/BufferGeometryUtils.js', 'utils/BufferGeometryUtils.js'],
+    ['three/examples/jsm/utils/SkeletonUtils.js', 'utils/SkeletonUtils.js'],
+  ];
+  for (const [from, to] of copies) {
+    fs.copyFileSync(
+      path.join(ROOT, 'node_modules', from),
+      path.join(libDir, to)
+    );
+  }
+}
+
 // --- Main ---
 function build() {
   const start = Date.now();
@@ -761,15 +859,18 @@ function build() {
   // Load templates once
   const templates = loadTemplates();
 
-  // Build each map + embed
+  // Build each map + embed (+ AR preview for maps with committed AR assets)
   const maps = getMapDirs();
+  let arCount = 0;
   for (const slug of maps) {
     buildMap(slug, templates);
     buildEmbed(slug, templates);
+    if (buildArPage(slug)) arCount++;
   }
+  if (arCount > 0) copyArLibs();
 
   const elapsed = Date.now() - start;
-  console.log(`Done! Built ${maps.length} map(s) + embeds in ${elapsed}ms`);
+  console.log(`Done! Built ${maps.length} map(s) + embeds + ${arCount} AR preview(s) in ${elapsed}ms`);
 }
 
 build();

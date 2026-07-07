@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>{{RACE_NAME}} — AR Course Preview</title>
+<meta name="description" content="Tabletop 3D preview of the {{RACE_NAME}} course. Point your phone at the floor and walk around the terrain.">
+<meta name="theme-color" content="#161310">
+{{GOOGLE_FONTS}}
+<style>
+{{AR_CSS}}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-race">
+    <span class="masthead-kicker">Course preview</span>
+    <h1 class="masthead-name">{{RACE_NAME}}</h1>
+  </div>
+  <div class="masthead-side">
+    <span class="masthead-scale">{{SCALE_LABEL}}</span>
+    <span class="masthead-studio">False Summit Studio</span>
+  </div>
+</header>
+
+<main class="stage">
+  <model-viewer id="courseModel"
+    src="./course.glb"{{IOS_SRC_ATTR}}
+    alt="Tabletop 3D terrain model of the {{RACE_NAME}} course"
+    camera-controls
+    camera-orbit="20deg 62deg 95%"
+    min-camera-orbit="auto 0deg 55%"
+    max-camera-orbit="auto 88deg 240%"
+    interaction-prompt="none"
+    ar ar-modes="scene-viewer quick-look"
+    ar-scale="auto"
+    autoplay
+    exposure="1.05"
+    shadow-intensity="0.7"
+    shadow-softness="0.9">
+{{HOTSPOTS}}
+    <button slot="ar-button" class="ar-launch" id="nativeArBtn" type="button">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8 3 5.6v8.8l7 3.8 7-3.8V5.6L10 1.8Zm0 2.3 4.9 2.6L10 9.4 5.1 6.7 10 4.1ZM5 8.4l4 2.2v4.9l-4-2.2V8.4Zm10 0v4.9l-4 2.2v-4.9l4-2.2Z"/></svg>
+      View on your table
+    </button>
+    <div slot="progress-bar" class="load-bar"><div class="load-bar-fill"></div></div>
+    <div slot="poster" class="poster">
+      <span class="poster-mark">FS</span>
+      <span class="poster-note">Raising the terrain…</span>
+    </div>
+  </model-viewer>
+
+  <button id="xrArBtn" class="ar-launch ar-launch-xr" type="button" hidden>
+    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8 3 5.6v8.8l7 3.8 7-3.8V5.6L10 1.8Zm0 2.3 4.9 2.6L10 9.4 5.1 6.7 10 4.1ZM5 8.4l4 2.2v4.9l-4-2.2V8.4Zm10 0v4.9l-4 2.2v-4.9l4-2.2Z"/></svg>
+    View on your table
+  </button>
+
+  <p id="xrHint" class="xr-hint" hidden>Point your phone at the floor, then tap to place the course.</p>
+</main>
+
+<div id="xrUi" class="xr-ui">
+  <div id="aidCard" class="aid-card" hidden role="dialog" aria-modal="false" aria-labelledby="aidCardName">
+    <div class="aid-card-head">
+      <span class="aid-card-kicker">Aid station</span>
+      <button id="aidCardClose" class="aid-card-close" type="button" aria-label="Close aid station details">&times;</button>
+    </div>
+    <h2 id="aidCardName" class="aid-card-name"></h2>
+    <p class="aid-card-mile"><span id="aidCardMile"></span><span class="aid-card-mile-unit">mi</span></p>
+    <p id="aidCardServices" class="aid-card-services"></p>
+  </div>
+
+  <section class="console" aria-label="Lead pack timeline">
+    <button id="playBtn" class="play-btn" type="button" aria-label="Pause lead pack animation" data-state="playing">
+      <svg class="icon-pause" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 1.5h3v11h-3zM8.5 1.5h3v11h-3z"/></svg>
+      <svg class="icon-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5 12 7 3 12.5z"/></svg>
+    </button>
+    <div class="track">
+      <div class="track-ticks" aria-hidden="true">{{AID_TICKS}}</div>
+      <div id="trackFill" class="track-fill" aria-hidden="true"></div>
+      <input id="scrubber" class="scrubber" type="range" min="0" max="1000" value="0" step="1"
+        aria-label="Scrub the lead pack along the course" aria-valuetext="Mile 0">
+    </div>
+    <div class="readout">
+      <span class="readout-kicker">Lead pack</span>
+      <span class="readout-mile"><span id="mileNow">0.0</span><span class="readout-of">/ {{TOTAL_MILES}} mi</span></span>
+    </div>
+    <button id="xrExitBtn" class="xr-exit" type="button" hidden>Exit AR</button>
+  </section>
+</div>
+
+<script src="/ar/lib/model-viewer.min.js" type="module"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/ar/lib/three.module.min.js",
+    "three/addons/loaders/GLTFLoader.js": "/ar/lib/loaders/GLTFLoader.js"
+  }
+}
+</script>
+<script type="module">
+const AR_META = {{AR_META_JSON}};
+{{AR_JS}}
+</script>
+</body>
+</html>

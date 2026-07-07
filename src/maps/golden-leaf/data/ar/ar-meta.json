@@ -1,0 +1,50 @@
+{
+  "slug": "golden-leaf",
+  "raceName": "Golden Leaf Half Marathon",
+  "totalMiles": 13.3,
+  "budgetMB": 5,
+  "glbBytes": 915092,
+  "scaleDenominator": 39027,
+  "animationSeconds": 45,
+  "exaggeration": 1.6,
+  "modelSize": {
+    "x": 0.42,
+    "y": 0.057,
+    "z": 0.158
+  },
+  "aidStations": [
+    {
+      "node": "aid-0",
+      "name": "Elk Camp Road Junction",
+      "mile": 4,
+      "services": "Water, Skratch · Cutoff: 1h 10m",
+      "position": [
+        -0.0842,
+        0.054,
+        -0.0038
+      ]
+    },
+    {
+      "node": "aid-1",
+      "name": "West Buttermilk",
+      "mile": 8,
+      "services": "Water, Skratch",
+      "position": [
+        0.0262,
+        0.0533,
+        0.0238
+      ]
+    },
+    {
+      "node": "aid-2",
+      "name": "Tiehack Road Cutoff",
+      "mile": 11,
+      "services": "Cutoff: 3h 10m",
+      "position": [
+        0.0953,
+        0.0382,
+        0.0092
+      ]
+    }
+  ]
+}

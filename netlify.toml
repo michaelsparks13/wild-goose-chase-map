@@ -20,3 +20,17 @@
   for = "/maps/*"
   [headers.values]
     Content-Security-Policy = "frame-ancestors *"
+
+# AR course preview assets. iOS Quick Look requires the exact USDZ MIME type;
+# models never change without a filename-preserving redeploy, so cache hard.
+[[headers]]
+  for = "/ar/*/course.usdz"
+  [headers.values]
+    Content-Type = "model/vnd.usdz+zip"
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/ar/*/course.glb"
+  [headers.values]
+    Content-Type = "model/gltf-binary"
+    Cache-Control = "public, max-age=86400"
