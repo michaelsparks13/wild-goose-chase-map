@@ -783,8 +783,8 @@ function buildArPage(slug) {
   const fontFamily =
     config.fontFamily || "-apple-system, BlinkMacSystemFont, system-ui, sans-serif";
   const css = readFile(path.join(SRC, 'ar', 'ar-viewer.css'))
-    .replace('{{ACCENT}}', accent)
-    .replace('{{FONT_FAMILY}}', fontFamily);
+    .replace(/{{ACCENT}}/g, accent)
+    .replace(/{{FONT_FAMILY}}/g, fontFamily);
   const js =
     readFile(path.join(SRC, 'ar', 'ar-capabilities.js')) +
     '\n' +

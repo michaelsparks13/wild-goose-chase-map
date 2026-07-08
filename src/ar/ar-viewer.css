@@ -1,5 +1,5 @@
 /* AR course preview — museum-vitrine stage with a timing-strip console.
-   Race branding arrives via {{ACCENT}} and {{FONT_FAMILY}} placeholders. */
+   Race branding arrives via the accent and font-family build placeholders. */
 
 :root {
   --ar-accent: {{ACCENT}};

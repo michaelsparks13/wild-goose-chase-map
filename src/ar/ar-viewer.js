@@ -171,15 +171,21 @@ async function setupXR() {
 
 async function enterXR() {
   xrArBtn.disabled = true;
+  let session = null;
   try {
     if (!xr) xr = await setupXR();
     const { THREE, renderer, scene, camera, model, mixer, action, reticle, controller, raycaster, pinTargets } = xr;
 
-    const session = await navigator.xr.requestSession('immersive-ar', {
+    session = await navigator.xr.requestSession('immersive-ar', {
       requiredFeatures: ['hit-test'],
-      optionalFeatures: ['dom-overlay'],
+      optionalFeatures: ['dom-overlay', 'local-floor'],
       domOverlay: { root: document.getElementById('xrUi') },
     });
+
+    // three defaults to 'local-floor', which is only valid when granted.
+    const grantedFloor =
+      session.enabledFeatures && session.enabledFeatures.includes('local-floor');
+    renderer.xr.setReferenceSpaceType(grantedFloor ? 'local-floor' : 'local');
 
     document.body.dataset.xrActive = '1';
     xrExitBtn.hidden = false;
@@ -187,6 +193,25 @@ async function enterXR() {
     hideAidCard();
     let placed = false;
     model.visible = false;
+
+    // Registered before any await that can fail, so a botched start
+    // (e.g. hit-test source rejection) still restores the page UI.
+    session.addEventListener('end', () => {
+      controller.removeEventListener('select', onSelect);
+      try { renderer.setAnimationLoop(null); } catch { /* session already gone */ }
+      delete document.body.dataset.xrActive;
+      xrExitBtn.hidden = true;
+      xrHint.hidden = true;
+      // Hand the console back to model-viewer, keeping the scrub position.
+      const frac = (action.time % DURATION) / DURATION;
+      timeline = {
+        getFraction: () => ((mv.currentTime || 0) % DURATION) / DURATION,
+        setFraction: (f) => { mv.currentTime = f * DURATION; },
+        setPlaying: (p) => { if (p) mv.play(); else mv.pause(); },
+      };
+      timeline.setFraction(frac);
+      timeline.setPlaying(playing);
+    });
 
     // Continuity: pick up where the page timeline left off.
     action.time = timeline.getFraction() * DURATION;
@@ -239,26 +264,14 @@ async function enterXR() {
 
     await renderer.xr.setSession(session);
 
-    session.addEventListener('end', () => {
-      controller.removeEventListener('select', onSelect);
-      renderer.setAnimationLoop(null);
-      delete document.body.dataset.xrActive;
-      xrExitBtn.hidden = true;
-      xrHint.hidden = true;
-      // Hand the console back to model-viewer, keeping the scrub position.
-      const frac = (action.time % DURATION) / DURATION;
-      timeline = {
-        getFraction: () => ((mv.currentTime || 0) % DURATION) / DURATION,
-        setFraction: (f) => { mv.currentTime = f * DURATION; },
-        setPlaying: (p) => { if (p) mv.play(); else mv.pause(); },
-      };
-      timeline.setFraction(frac);
-      timeline.setPlaying(playing);
-    });
-
     xrExitBtn.onclick = () => session.end();
   } catch (err) {
     console.error('Failed to start AR session', err);
+    if (session) {
+      try { await session.end(); } catch { /* already ended */ }
+    }
+    delete document.body.dataset.xrActive;
+    xrExitBtn.hidden = true;
     xrHint.textContent = 'Could not start AR on this device.';
     xrHint.hidden = false;
     setTimeout(() => { xrHint.hidden = true; }, 4000);

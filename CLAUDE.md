@@ -715,6 +715,19 @@ the pipeline needs a flattened headline-race coordinate list.
   (iOS Quick Look requires it).
 - Per-race options via `config.ar = { targetSizeM, exaggeration, budgetMB, animationSeconds, padRatio }`.
 
+**Verifying the WebXR path** (headless Chromium can't run immersive-ar):
+```bash
+npm i -D iwer @iwer/sem                 # emulator deps, not in the suite
+node build.js && node scripts/verify-ar-webxr.js escarpment
+```
+`scripts/verify-ar-webxr.js` drives the real session via IWER + its Synthetic
+Environment Module (hit-test) and checks entry, dom-overlay scrubbing while
+immersed, and clean exit with scrub position preserved. The automated suite
+(`tests/ar-viewer.e2e.js`) covers everything a real phone doesn't need — the
+model-viewer fallback, scrubber, hotspots, and capability gating (with a
+mocked `navigator.xr`) — because emulating a full AR session is too slow and
+environment-sensitive to belong in CI.
+
 Currently built for: `escarpment` (2.17 MB GLB), `golden-leaf` (0.87 MB GLB).
 
 ## Race Map Business Context
