@@ -63,12 +63,22 @@ ffmpeg.
 
 ## Adapting to another event
 
-1. Change `--date/--cycle/--hours` to the forecast cycle covering the event.
-2. Adjust `GRID_BBOX` in `fetch_smoke.py` and the view constants
+**Same region, new date** (the common case — e.g. next summer's smoke):
+pass matching flags to both scripts, nothing else changes:
+
+```bash
+/usr/bin/python3 fetch_smoke.py --date 20270712 --cycle 12 --hours 0-48
+/usr/bin/python3 render.py     --date 20270712 --cycle 12 --hours 0-48 --tz-offset -5
+```
+
+**New region:**
+
+1. Adjust `GRID_BBOX` in `fetch_smoke.py` and the view constants
    (`LON0/LAT0`, `VIEW_W_KM`, `VIEW_CX_KM/VIEW_CY_KM`) in `render.py`.
-3. Swap `CITIES` / `REGIONS` label lists and `CYCLE_UTC`/timezone.
-4. Re-run the three steps above. `--still` renders single frames for fast
-   design iteration before committing to the full sequence.
+2. Swap the `CITIES` / `REGIONS` label lists.
+3. Re-run `fetch_basemap.sh` if the region leaves the clipped extent.
+4. `--still <fh>` renders single frames for fast design iteration before
+   committing to the full sequence.
 
 Note: `cache/` (per-hour rasters) and `frames/` are throwaway build
 artifacts; `output/` holds the final MP4.

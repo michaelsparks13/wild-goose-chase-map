@@ -56,6 +56,13 @@ def test_timestamps_match_reference_clip():
     assert render.timestamp_lines(60) == ("7:00 p.m.", "Thu. July 16")
 
 
+def test_timestamps_accept_other_cycles_and_zones():
+    from datetime import datetime, timedelta, timezone
+    cycle = datetime(2026, 7, 20, 0, tzinfo=timezone.utc)
+    est_dst = timezone(timedelta(hours=-4))
+    assert render.timestamp_lines(0, cycle, est_dst) == ("8:00 p.m.", "Sun. July 19")
+
+
 def test_idx_byte_range_parsing():
     idx = "\n".join([
         "82:1000:d=2026071412:PRES:surface:18 hour fcst:",

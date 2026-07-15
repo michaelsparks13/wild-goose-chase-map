@@ -114,8 +114,10 @@ REGIONS = [
     ("MICHIGAN", -87.5, 46.1),
 ]
 
+# Defaults match the July 2026 Boundary Waters event; override via CLI flags.
 CDT = timezone(timedelta(hours=-5))
 CYCLE_UTC = datetime(2026, 7, 14, 12, tzinfo=timezone.utc)
+CYCLE_DATE, CYCLE_HOUR = "20260714", 12
 
 
 def build_cmap():
@@ -141,8 +143,8 @@ def letterspace(text):
     return " ".join(re.findall(r"\d+\.\d+|\S", text))
 
 
-def timestamp_lines(fh_float):
-    valid = (CYCLE_UTC + timedelta(hours=float(fh_float))).astimezone(CDT)
+def timestamp_lines(fh_float, cycle_utc=CYCLE_UTC, tz=CDT):
+    valid = (cycle_utc + timedelta(hours=float(fh_float))).astimezone(tz)
     hr = valid.strftime("%I").lstrip("0")
     ampm = "a.m." if valid.strftime("%p") == "AM" else "p.m."
     return f"{hr}:00 {ampm}", valid.strftime("%a. %B %-d")
@@ -151,10 +153,10 @@ def timestamp_lines(fh_float):
 # ------------------------------------------------------------------- data ---
 
 
-def load_hours(hours):
+def load_hours(hours, date=CYCLE_DATE, cycle=CYCLE_HOUR):
     fields = {}
     for fh in hours:
-        path = os.path.join(CACHE, f"smoke.20260714.t12z.f{fh:03d}.bil")
+        path = os.path.join(CACHE, f"smoke.{date}.t{cycle:02d}z.f{fh:03d}.bil")
         a = np.fromfile(path, dtype=np.float32).reshape(GRID_ROWS, GRID_COLS)
         fields[fh] = a * 1e9  # kg/m³ -> µg/m³
     return fields
@@ -304,9 +306,9 @@ class FrameRenderer:
                  family=FONT, weight="medium", ha="right", zorder=11)
         return ts_hour, ts_date
 
-    def render(self, field_ug, fh_float, out_path):
+    def render(self, field_ug, fh_float, out_path, cycle_utc=CYCLE_UTC, tz=CDT):
         self.smoke_artist.set_array(smoke_norm(field_ug).ravel())
-        hour, date = timestamp_lines(fh_float)
+        hour, date = timestamp_lines(fh_float, cycle_utc, tz)
         self.ts_hour.set_text(hour)
         self.ts_date.set_text(date)
         self.fig.savefig(out_path, dpi=DPI, facecolor=LAND)
@@ -322,7 +324,17 @@ def main():
     ap.add_argument("--hours", default="0-60")
     ap.add_argument("--subframes", type=int, default=4,
                     help="interpolated frames per forecast hour")
+    ap.add_argument("--date", default=CYCLE_DATE,
+                    help="forecast cycle date, YYYYMMDD (must match fetch)")
+    ap.add_argument("--cycle", type=int, default=CYCLE_HOUR,
+                    help="forecast cycle hour, UTC (must match fetch)")
+    ap.add_argument("--tz-offset", type=float, default=-5.0,
+                    help="local UTC offset for the timestamp, hours")
     args = ap.parse_args()
+
+    cycle_utc = datetime.strptime(args.date, "%Y%m%d").replace(
+        hour=args.cycle, tzinfo=timezone.utc)
+    tz = timezone(timedelta(hours=args.tz_offset))
 
     lo, hi = (int(x) for x in args.hours.split("-"))
     os.makedirs(FRAMES, exist_ok=True)
@@ -331,24 +343,26 @@ def main():
     if args.still is not None:
         fh0 = int(np.floor(args.still))
         frac = args.still - fh0
-        fields = load_hours({fh0, min(fh0 + 1, hi)})
+        fields = load_hours({fh0, min(fh0 + 1, hi)}, args.date, args.cycle)
         f = fields[fh0] if frac == 0 else (
             (1 - frac) * fields[fh0] + frac * fields[min(fh0 + 1, hi)])
         out = os.path.join(FRAMES, f"still_f{args.still:06.2f}.png")
-        renderer.render(f, args.still, out)
+        renderer.render(f, args.still, out, cycle_utc, tz)
         print(out)
         return
 
-    fields = load_hours(range(lo, hi + 1))
+    fields = load_hours(range(lo, hi + 1), args.date, args.cycle)
     n = 0
     for fh in range(lo, hi):
         a, b = fields[fh], fields[fh + 1]
         for s in range(args.subframes):
             frac = s / args.subframes
             renderer.render((1 - frac) * a + frac * b, fh + frac,
-                            os.path.join(FRAMES, f"frame_{n:04d}.png"))
+                            os.path.join(FRAMES, f"frame_{n:04d}.png"),
+                            cycle_utc, tz)
             n += 1
-    renderer.render(fields[hi], hi, os.path.join(FRAMES, f"frame_{n:04d}.png"))
+    renderer.render(fields[hi], hi, os.path.join(FRAMES, f"frame_{n:04d}.png"),
+                    cycle_utc, tz)
     print(f"{n + 1} frames -> {FRAMES}")
 
 
