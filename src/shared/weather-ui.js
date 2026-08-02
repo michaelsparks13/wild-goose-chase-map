@@ -351,7 +351,10 @@
         zoom: 6,
         minZoom: 3,
         maxZoom: 9,
-        attributionControl: false
+        attributionControl: false,
+        // Same rule as every map constructor: on touch devices a
+        // one-finger drag must scroll the page, not pan the map.
+        cooperativeGestures: window.matchMedia('(pointer: coarse)').matches
       });
 
       radarMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
