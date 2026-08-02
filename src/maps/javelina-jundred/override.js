@@ -110,7 +110,10 @@ function initMap() {
     bearing: 0,
     antialias: true,
     attributionControl: false,
-    preserveDrawingBuffer: true  // Required for pocket map canvas snapshot
+    preserveDrawingBuffer: true,  // Required for pocket map canvas snapshot
+    // On phones the map dominates the viewport; without cooperative
+    // gestures a one-finger drag pans the map and the page can't scroll.
+    cooperativeGestures: window.matchMedia('(pointer: coarse)').matches
   });
 
   map.addControl(new maplibregl.AttributionControl({ compact: true }));

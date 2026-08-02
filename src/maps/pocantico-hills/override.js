@@ -1568,6 +1568,9 @@ function initMap() {
     zoom: 13.2,
     pitch: 0,
     attributionControl: { compact: true },
+    // On phones the map dominates the viewport; without cooperative
+    // gestures a one-finger drag pans the map and the page can't scroll.
+    cooperativeGestures: window.matchMedia('(pointer: coarse)').matches,
   });
 
   // No NavigationControl on the main map — the editorial layout puts

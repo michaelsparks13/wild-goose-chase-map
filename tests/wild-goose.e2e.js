@@ -492,3 +492,59 @@ test.describe('Wild Goose — mobile (iPhone 11 / 375×812)', () => {
     });
   });
 });
+
+// On phones the map column is sticky and ~50vh tall, so it owns a huge
+// share of every viewport. If the MapLibre canvas swallows one-finger
+// drags (its default), the page becomes nearly unscrollable in iPhone
+// Safari — a customer-reported issue. Cooperative gestures must be on
+// for coarse-pointer devices: one finger scrolls the page, two fingers
+// pan the map.
+test.describe('Wild Goose — mobile touch scrolling', () => {
+  test.use({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/maps/wild-goose/');
+    await page.waitForSelector('#map .maplibregl-canvas');
+  });
+
+  test('cooperative gestures are enabled on touch devices', async ({ page }) => {
+    await expect(page.locator('#map .maplibregl-cooperative-gesture-screen')).toHaveCount(1);
+  });
+
+  test('a one-finger drag on the map scrolls the page, not the map', async ({ page }) => {
+    const box = await page.locator('#map').boundingBox();
+    const x = box.x + box.width / 2;
+    const startY = box.y + box.height * 0.75;
+
+    // The map auto-fitBounds on load; let that animation settle so the
+    // before/after center comparison only measures the drag.
+    await page.waitForFunction(() =>
+      typeof map !== 'undefined' && map.loaded() && !map.isMoving());
+
+    const before = await page.evaluate(() => ({
+      scrollY: window.scrollY,
+      center: typeof map !== 'undefined' ? map.getCenter().toArray() : null,
+    }));
+    expect(before.scrollY).toBe(0);
+
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart', touchPoints: [{ x, y: startY }],
+    });
+    for (let i = 1; i <= 8; i++) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove', touchPoints: [{ x, y: startY - i * 45 }],
+      });
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+
+    await expect.poll(() => page.evaluate(() => window.scrollY), {
+      timeout: 3000,
+    }).toBeGreaterThan(100);
+
+    const centerAfter = await page.evaluate(() =>
+      typeof map !== 'undefined' ? map.getCenter().toArray() : null);
+    expect(centerAfter[0]).toBeCloseTo(before.center[0], 5);
+    expect(centerAfter[1]).toBeCloseTo(before.center[1], 5);
+  });
+});
