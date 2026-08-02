@@ -184,6 +184,17 @@ These Protomaps layer IDs correspond to:
 ### No Course Click Popup
 Do NOT add click interaction on the course line. The course info is already displayed in the stats section and header — a click popup is redundant and clutters the map.
 
+### Mobile Scroll Behavior (Required)
+A customer report (Aug 2026) showed the Wild Goose page was nearly unscrollable in iPhone Safari. Two rules prevent this class of bug, both enforced by tests:
+
+1. **Every `new maplibregl.Map(...)` constructor — main maps, the weather radar mini-map, any future embedded map — MUST pass:**
+   ```javascript
+   cooperativeGestures: window.matchMedia('(pointer: coarse)').matches
+   ```
+   Without it, MapLibre captures every one-finger drag on touch devices, so the page cannot scroll wherever the canvas is. Gating on `(pointer: coarse)` keeps desktop scroll-wheel zoom unchanged (unconditional `cooperativeGestures` would force Ctrl+scroll on desktop). `tests/mobile-scroll-guardrails.test.js` asserts every built page has exactly as many `cooperativeGestures:` options as constructors — a new constructor without it fails the build.
+
+2. **Never make a map container `position: sticky` at mobile widths.** A pinned ~50vh map keeps half the phone screen occupied while content scrolls behind it; the map must scroll out of frame with the page. (Desktop's sticky map-beside-cues split is fine — the cue column scrolls independently there.) Related: per-race `min-height` on `.map-wrap` must not exceed the mobile container height, or the canvas overhangs onto the content below — editorial.css zeroes it inside `.course__map`. `tests/mobile-map-flow.e2e.js` checks every built map at 375×812 for both non-sticky containers and zero canvas overhang.
+
 **Trail data sources (in priority order):**
 
 1. **OpenStreetMap via Overpass API** (best for named/blazed trails with geometry)
