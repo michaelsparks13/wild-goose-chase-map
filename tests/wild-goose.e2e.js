@@ -485,6 +485,33 @@ test.describe('Wild Goose — mobile (iPhone 11 / 375×812)', () => {
     expect(w).toBeGreaterThan(320);
   });
 
+  test('map scrolls out of frame with the page — not pinned over the cue list', async ({ page }) => {
+    // Customer report: with the map sticky on mobile, the cue steps
+    // scrolled up BEHIND the map and the map only left the frame after
+    // the entire course section. The map must scroll away like normal
+    // page content. Wait for the cue list to hydrate first — before
+    // that the page is short and the assertion would pass vacuously.
+    await page.waitForSelector('#map .maplibregl-canvas');
+    await page.waitForFunction(() =>
+      document.querySelectorAll('#loopCueList li').length > 3);
+    await page.evaluate(() => window.scrollTo(0, 1200));
+    const top = await page.evaluate(() =>
+      document.querySelector('.course__map').getBoundingClientRect().top);
+    expect(top).toBeLessThan(0);
+  });
+
+  test('map canvas stays inside its container — no overhang onto the distance tabs', async ({ page }) => {
+    const geo = await page.evaluate(() => {
+      const container = document.querySelector('.course__map').getBoundingClientRect();
+      const canvas = document.querySelector('.course__map .map-wrap').getBoundingClientRect();
+      const tabs = document.querySelector('.dir-race-tabs').getBoundingClientRect();
+      return { containerBottom: container.bottom, canvasBottom: canvas.bottom, tabsTop: tabs.top };
+    });
+    expect(geo.canvasBottom).toBeLessThanOrEqual(geo.containerBottom + 1);
+    // Breathing room between the map edge and the distance selector.
+    expect(geo.tabsTop).toBeGreaterThanOrEqual(geo.canvasBottom + 8);
+  });
+
   test('captures a mobile fullpage screenshot for manual review', async ({ page }, testInfo) => {
     await page.screenshot({
       path: testInfo.outputPath('wild-goose-mobile.png'),

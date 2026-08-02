@@ -184,13 +184,14 @@ body.race-page {
     min-height: 600px;
   }
 }
+/* On phones the map is NOT sticky: pinning a 50vh map while the cue
+ * list scrolled behind it made the page feel unscrollable (customer
+ * report, Aug 2026). The map scrolls away with the page; the cue list
+ * gets the screen to itself once you're reading it. */
 @media (max-width: 1023px) {
   .course__map {
-    position: sticky;
-    top: 56px;
     height: 50vh;
     min-height: 360px;
-    z-index: 10;
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
@@ -204,6 +205,10 @@ body.race-page {
   inset: 0 !important;
   width: 100% !important;
   height: 100% !important;
+  /* Per-race sheets set min-height on .map-wrap for the legacy layout;
+   * here it would overflow the 50vh mobile container and overhang the
+   * distance tabs below. The container alone owns the height. */
+  min-height: 0 !important;
   display: block !important;
   background: transparent;
 }
