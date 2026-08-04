@@ -169,9 +169,33 @@ body.race-page {
   }
 }
 
-/* Map column — sticky on desktop so it stays visible while cues scroll. */
+/* Map column — sticky on desktop so it stays visible while cues scroll.
+ *
+ * INVARIANT: this element must stay positioned (relative or sticky) and
+ * must keep an explicit height. Every layer inside it — .map-wrap,
+ * #mapView, .view, #map and MapLibre's own canvas — is `position:
+ * absolute; inset: 0`, so the column is their containing block. Make it
+ * `static` and those boxes resolve against the initial containing block
+ * instead: the canvas lands at the document origin at full viewport
+ * size and paints over the cue sheet. That is exactly what the
+ * reduced-motion block used to do (customer report, Aug 2026); see the
+ * note beside it in section 8.
+ *
+ * `isolation` gives the column its own stacking context in every state,
+ * so MapLibre's high z-index overlays (the cooperative-gesture screen
+ * sits at 99999) stay inside the map and below the sticky top bar
+ * rather than depending on an animation to establish one.
+ *
+ * `overflow: clip` is the backstop: per-race sheets still set a
+ * min-height on .map-wrap for the legacy layout, so if one ever
+ * out-specifies the reset below, the mismatch degrades to a harmless
+ * crop instead of an absolutely-positioned canvas painting over the
+ * cues. `clip` — not `hidden` — so the column never becomes a scroll
+ * container. */
 .course__map {
   position: relative;
+  isolation: isolate;
+  overflow: clip;
   background: color-mix(in srgb, var(--ink) 5%, var(--paper) 95%);
   border-right: 1px solid var(--border);
   min-height: 420px;
@@ -190,8 +214,23 @@ body.race-page {
  * gets the screen to itself once you're reading it. */
 @media (max-width: 1023px) {
   .course__map {
+    /* svh, not vh: iOS Safari resolves vh against the LARGE viewport
+     * (URL bar retracted) and never re-resolves it when the bar is
+     * showing, so 50vh is ~64% of the band the runner can actually see
+     * and it pushes the distance selector onto the fold. svh tracks the
+     * small viewport, so the map really is half the visible screen —
+     * and unlike dvh it does not reflow as the URL bar hides.
+     * The vh/px declarations directly above each svh one are fallbacks:
+     * engines without svh (Safari < 15.4, Chrome < 108) drop the svh
+     * line at parse time and would otherwise land on the base
+     * `min-height: 420px` with an auto height. */
     height: 50vh;
+    height: 50svh;
+    /* Floor the map so it stays usable on tall phones, but cap the
+     * floor against the viewport: in landscape a flat 360px is 92% of
+     * the screen and leaves zero pixels of cue sheet on it. */
     min-height: 360px;
+    min-height: min(360px, 60svh);
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
@@ -249,6 +288,17 @@ body.race-page {
   flex-direction: column;
   gap: 8px;
   align-items: flex-end;
+}
+/* On phones the right-anchored control row and the left-anchored HQ
+ * badge cannot share the map's first row — the badge label ends up
+ * underneath the buttons (tupper-lake-tinman clipped "RUN START" to
+ * "RUN STAR" at 375px). The badge keeps row one; the controls drop to
+ * their own row beneath it. Races that replace this bar with the Layers
+ * popover hide it outright, so this only applies where it still shows. */
+@media (max-width: 600px) {
+  .course__map .map-controls {
+    top: 52px;
+  }
 }
 .distance-toggles {
   display: inline-flex;
@@ -835,8 +885,12 @@ body.race-page {
 /* Mobile collapse trigger — hidden on desktop. */
 .top-bar__expand {
   display: none;
+  position: relative;
   background: transparent;
-  border: 1px solid color-mix(in srgb, var(--paper) 24%, var(--ink) 76%);
+  /* 40% paper over the ink bar lands near 3.8:1 across the catalog's
+     palettes — the WCAG 1.4.11 floor for a control boundary is 3:1, and
+     the previous 24% mix sat at 2.18:1. */
+  border: 1px solid color-mix(in srgb, var(--paper) 40%, var(--ink) 60%);
   border-radius: 999px;
   width: 30px;
   height: 30px;
@@ -846,12 +900,31 @@ body.race-page {
   cursor: pointer;
   transition: border-color 0.18s, color 0.18s, transform 0.18s;
 }
+/* The ring stays a 30px dot so the bar keeps its compact rhythm, but the
+ * tappable area is padded out to the 44px minimum. This is the only way
+ * back to the collapsed bar, and it is thumb-reached at the screen edge. */
+.top-bar__expand::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
 .top-bar__expand svg {
   width: 12px;
   height: 12px;
   transition: transform 0.22s ease-out;
 }
-.top-bar__expand:hover { border-color: var(--race-brand); color: var(--race-brand); }
+/* Brighten toward paper on hover rather than tinting to --race-brand:
+ * brand colours are dark by design here (Ringwood's is #353F1E, 1.56:1
+ * on the ink bar), so the old rule made the control vanish. Gated on a
+ * real pointer because iOS keeps :hover applied after a tap — the
+ * chevron would stay in its hover state while the bar sat expanded. */
+@media (hover: hover) and (pointer: fine) {
+  .top-bar__expand:hover { border-color: var(--paper); color: var(--paper); }
+}
 .top-bar[data-expanded="true"] .top-bar__expand svg { transform: rotate(180deg); }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -958,8 +1031,8 @@ body.race-page {
 }
 
 /* ──────────────────────────────────────────────────────────────────────
- * Accessibility — single page-load reveal, no scroll-triggered animations.
- * Cue ↔ map sync is the interaction; nothing else animates.
+ * 8. ACCESSIBILITY — single page-load reveal, no scroll-triggered
+ *    animations. Cue ↔ map sync is the interaction; nothing else animates.
  * ────────────────────────────────────────────────────────────────────── */
 @keyframes raceFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .race-page > .top-bar,
@@ -967,7 +1040,24 @@ body.race-page {
 .race-page > .page-footer {
   animation: raceFadeIn 0.4s ease both;
 }
+/* Repeat the selector list verbatim rather than reaching for a
+ * `.race-page > *` catch-all: that is specificity (0,1,0) and loses to
+ * the (0,2,0) rule above, and media queries contribute none of their
+ * own — so the reveal never actually stopped for the people who asked
+ * for it. MapLibre handles the other motion on this page itself; it
+ * skips easeTo/flyTo animation under this same preference unless the
+ * call passes `essential: true`, which none of ours do.
+ *
+ * Scope note: this block suppresses animation and nothing else. It must
+ * never touch `.course__map` layout. It used to force `position: static;
+ * height: auto` on it, which detached the MapLibre canvas from its
+ * column and dropped it at the document origin on top of the cue sheet
+ * (customer report, Aug 2026) — see the invariant on .course__map in
+ * section 2. Sticky positioning is layout, not motion. */
 @media (prefers-reduced-motion: reduce) {
-  .race-page > * { animation: none; }
-  .course__map { position: static !important; height: auto !important; }
+  .race-page > .top-bar,
+  .race-page > .race-page__main,
+  .race-page > .page-footer {
+    animation: none;
+  }
 }

@@ -1,14 +1,21 @@
 import { defineConfig } from '@playwright/test';
 
+// Port 3000 is a popular default and is often already taken by an
+// unrelated dev server. Combined with `reuseExistingServer` that makes the
+// whole suite run against the wrong origin and fail on #map timeouts, with
+// nothing in the output pointing at the cause. Override with
+// `FSS_TEST_PORT=4321 npx playwright test` when 3000 is occupied.
+const PORT = Number(process.env.FSS_TEST_PORT) || 3000;
+
 export default defineConfig({
   testDir: './tests',
   testMatch: '**/*.e2e.js',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: `http://localhost:${PORT}`,
   },
   webServer: {
-    command: 'node build.js && npx serve -l 3000 --no-clipboard dist',
-    port: 3000,
+    command: `node build.js && npx serve -l ${PORT} --no-clipboard dist`,
+    port: PORT,
     reuseExistingServer: true,
   },
   projects: [

@@ -418,20 +418,42 @@ test.describe('Wild Goose — mobile (iPhone 11 / 375×812)', () => {
     expect(dims.h).toBeGreaterThanOrEqual(24);
   });
 
-  test('distance picker tabs horizontal-scroll instead of overflowing', async ({ page }) => {
-    const tabsContainer = page.locator('.dir-race-tabs');
-    await expect(tabsContainer).toBeVisible();
-    const overflowOk = await tabsContainer.evaluate(el => {
-      const cs = getComputedStyle(el);
-      // Either content fits, OR the container is set up to scroll
-      return el.scrollWidth <= el.clientWidth + 1 || cs.overflowX !== 'visible';
-    });
-    expect(overflowOk).toBe(true);
+  test('distance tabs wrap without stretching a lone tab across the strip', async ({ page }) => {
+    // The strip wraps rather than scrolls. In a wrapped flex container a
+    // grow-enabled final line absorbs all free space, so a single orphan
+    // tab balloons to the full strip width — 6.5x its peers before
+    // `.dir-race-tab` was pinned to `flex: 0 1 auto`. Guard the ratio at
+    // the widths most likely to leave an orphan on the last row.
+    for (const [width, height] of [[1440, 900], [1024, 800], [390, 844], [320, 568]]) {
+      await page.setViewportSize({ width, height });
+      const widths = await page.evaluate(() =>
+        [...document.querySelectorAll('.dir-race-tab')].map((t) => t.getBoundingClientRect().width));
+      const ratio = Math.max(...widths) / Math.min(...widths);
+      expect(ratio, `widest/narrowest distance tab at ${width}px`).toBeLessThan(3);
+    }
   });
 
-  test('all 6 distance tabs remain reachable (tap-scrollable)', async ({ page }) => {
+  test('all 6 distance tabs remain reachable', async ({ page }) => {
     const tabs = page.locator('.dir-race-tab');
     await expect(tabs).toHaveCount(6);
+
+    // Counting the DOM is not enough: the strip used to be a scroller
+    // with no affordance, so tabs past the right edge were invisible and
+    // the row still read as complete. Assert each tab is inside the box.
+    for (const width of [320, 375, 390]) {
+      await page.setViewportSize({ width, height: 812 });
+      const clipped = await page.evaluate(() => {
+        const strip = document.querySelector('.dir-race-tabs');
+        const s = strip.getBoundingClientRect();
+        return [...document.querySelectorAll('.dir-race-tab')]
+          .filter((t) => {
+            const b = t.getBoundingClientRect();
+            return b.right > s.right + 1 || b.left < s.left - 1;
+          })
+          .map((t) => t.textContent.trim().split('\n')[0]);
+      });
+      expect(clipped, `tabs outside the visible strip at ${width}px`).toEqual([]);
+    }
   });
 
   test('assembly chip strip wraps or scrolls without breaking layout', async ({ page }) => {

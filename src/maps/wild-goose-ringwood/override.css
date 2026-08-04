@@ -274,7 +274,7 @@ body.race-page.race-wild-goose-ringwood {
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #7a7a6b;
+  color: #6b6b5c;
   margin-bottom: 2px;
 }
 .race-wild-goose-ringwood .hq-aid-card__grid dd {
@@ -322,12 +322,17 @@ body.race-page.race-wild-goose-ringwood {
   padding: 6px 6px 0;
   background: var(--surface-warm);
   border-bottom: 1px solid #e0d8bf;
-  overflow-x: auto;
-  scrollbar-width: none;
+  /* Wrap rather than scroll: the row carried no scroll affordance, so
+   * below ~360px the 100 Miler simply vanished off the right edge with
+   * the strip still reading as complete. Wrapping keeps every distance
+   * discoverable and is a no-op at widths where they already fit. */
+  flex-wrap: wrap;
 }
-.race-wild-goose-ringwood .dir-race-tabs::-webkit-scrollbar { display: none; }
 .race-wild-goose-ringwood .dir-race-tab {
-  flex: 1 1 auto;
+  /* 0 not 1 for flex-grow: in a wrapped container a grow-enabled
+   * final line absorbs all free space, stretching a lone orphan tab to
+   * the full strip width. Tabs size to their own content instead. */
+  flex: 0 1 auto;
   min-width: max-content;
   display: inline-flex;
   align-items: center;
@@ -340,7 +345,7 @@ body.race-page.race-wild-goose-ringwood {
   font-family: var(--font-body);
   font-size: 0.76rem;
   font-weight: 600;
-  color: #7a7a6b;
+  color: #6b6b5c;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s, color 0.15s, box-shadow 0.15s;
@@ -367,7 +372,7 @@ body.race-page.race-wild-goose-ringwood {
   letter-spacing: 0.04em;
 }
 .race-wild-goose-ringwood .dir-race-mi {
-  color: #7a7a6b;
+  color: #6b6b5c;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
   font-size: 0.7rem;
@@ -384,10 +389,23 @@ body.race-page.race-wild-goose-ringwood {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* Wrap instead of squeezing: with one row the zoom checkbox (106px)
+   * and the static cutoff chip (91px) out-measured the headline course
+   * stat, which shrank to 99px and split "3,240" from "ft". The stat
+   * takes row one outright; the two controls share row two. */
+  flex-wrap: wrap;
   gap: 12px;
   padding: 14px 16px 6px;
 }
-.race-wild-goose-ringwood .directions-titles { min-width: 0; }
+.race-wild-goose-ringwood .directions-titles {
+  /* Share row one with the controls when the column can afford it, and
+   * drop to a row of its own only when it cannot. A hard `flex: 1 1 100%`
+   * forced the break at every width, costing 40px of header on wide
+   * desktops where all three fit on one line. min() keeps the basis from
+   * ever exceeding the column and forcing horizontal overflow. */
+  flex: 1 1 auto;
+  min-width: min(15rem, 100%);
+}
 .race-wild-goose-ringwood .directions-eyebrow {
   margin: 0;
   font-family: var(--font-micro);
@@ -395,7 +413,7 @@ body.race-page.race-wild-goose-ringwood {
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #7a7a6b;
+  color: #6b6b5c;
 }
 .race-wild-goose-ringwood .directions-race {
   display: block;
@@ -512,7 +530,7 @@ body.race-page.race-wild-goose-ringwood {
   color: #4a4a3e;
 }
 .race-wild-goose-ringwood .assembly-chip__arrow {
-  color: #c5bd99;
+  color: #88826a;
   font-size: 0.85rem;
   margin: 0 1px;
 }
@@ -532,7 +550,7 @@ body.race-page.race-wild-goose-ringwood {
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #7a7a6b;
+  color: #6b6b5c;
 }
 .race-wild-goose-ringwood .assembly-now__label {
   font-family: var(--font-body);
@@ -560,6 +578,7 @@ body.race-page.race-wild-goose-ringwood {
 .race-wild-goose-ringwood .loop-cue:hover { background: var(--surface-warm); }
 .race-wild-goose-ringwood .loop-cue__mile {
   font-family: var(--font-micro);
+  white-space: nowrap;
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--ink);
@@ -574,7 +593,7 @@ body.race-page.race-wild-goose-ringwood {
 .race-wild-goose-ringwood .loop-cue--hazard .loop-cue__kind  { color: var(--hazard-color, #B53528); }
 .race-wild-goose-ringwood .loop-cue--water  .loop-cue__kind  { color: #2A77B0; }
 .race-wild-goose-ringwood .loop-cue--landmark .loop-cue__kind { color: var(--race-brand); }
-.race-wild-goose-ringwood .loop-cue--surface  .loop-cue__kind { color: #7a7a6b; }
+.race-wild-goose-ringwood .loop-cue--surface  .loop-cue__kind { color: #6b6b5c; }
 .race-wild-goose-ringwood .loop-cue__text {
   font-family: var(--font-body);
   font-size: 0.86rem;
@@ -749,7 +768,7 @@ body.race-page.race-wild-goose-ringwood {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #7a7a6b;
+  color: #6b6b5c;
 }
 .race-wild-goose-ringwood .goal-inputs { display: inline-flex; align-items: center; gap: 2px; }
 .race-wild-goose-ringwood .goal-input {
@@ -776,7 +795,7 @@ body.race-page.race-wild-goose-ringwood {
   margin: 0;
 }
 .race-wild-goose-ringwood .goal-input:focus { outline: 2px solid var(--race-brand); outline-offset: 1px; }
-.race-wild-goose-ringwood .goal-colon { font-family: var(--font-micro); color: #7a7a6b; }
+.race-wild-goose-ringwood .goal-colon { font-family: var(--font-micro); color: #6b6b5c; }
 .race-wild-goose-ringwood .goal-pace {
   margin-left: auto;
   font-family: var(--font-micro);
@@ -885,7 +904,7 @@ body.race-page.race-wild-goose-ringwood {
   font-size: 0.66rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #7a7a6b;
+  color: #6b6b5c;
   margin-top: 3px;
 }
 .race-wild-goose-ringwood .clock-finish {
@@ -923,7 +942,7 @@ body.race-page.race-wild-goose-ringwood {
   font-size: 0.6rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #7a7a6b;
+  color: #6b6b5c;
   margin-top: 1px;
 }
 
@@ -940,7 +959,7 @@ body.race-page.race-wild-goose-ringwood {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #7a7a6b;
+  color: #6b6b5c;
 }
 .race-wild-goose-ringwood .loop-row {
   display: flex;
@@ -1121,7 +1140,15 @@ body.race-page.race-wild-goose-ringwood {
   .race-wild-goose-ringwood .hq-aid-card__title { font-size: 1.18rem; }
   .race-wild-goose-ringwood .assembly-strip { gap: 3px; padding: 8px 12px; }
   .race-wild-goose-ringwood .assembly-chip { padding: 4px 8px 4px 6px; font-size: 0.74rem; }
-  .race-wild-goose-ringwood .loop-cue { grid-template-columns: 48px 18px 1fr; padding: 8px 12px; }
+  /* The 44px iOS touch target used to come only from the mile cell
+   * wrapping to two lines — so it held for "4.95 mi" but not for
+   * "2.2 mi". Make it explicit and uniform instead. */
+  .race-wild-goose-ringwood .loop-cue {
+    grid-template-columns: 56px 18px 1fr;
+    padding: 8px 12px;
+    min-height: 44px;
+    align-content: center;
+  }
   .race-wild-goose-ringwood .clock-time { font-size: 1.5rem; }
   .race-wild-goose-ringwood .course-map-wrap { height: 220px; }
 }
