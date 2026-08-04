@@ -141,6 +141,25 @@ test.describe('Wild Goose @ Ringwood — mobile', () => {
 
   test('all seven distance tabs are reachable on mobile', async ({ page }) => {
     await expect(page.locator('.dir-race-tab')).toHaveCount(7);
+
+    // Counting the DOM is not enough: the strip used to be a scroller
+    // with no affordance, so at narrow widths the 100 Miler sat entirely
+    // outside the visible box and read as if it did not exist. Assert
+    // every tab is actually inside the strip a runner can see.
+    for (const width of [320, 375, 390]) {
+      await page.setViewportSize({ width, height: 812 });
+      const clipped = await page.evaluate(() => {
+        const strip = document.querySelector('.dir-race-tabs');
+        const s = strip.getBoundingClientRect();
+        return [...document.querySelectorAll('.dir-race-tab')]
+          .filter((t) => {
+            const b = t.getBoundingClientRect();
+            return b.right > s.right + 1 || b.left < s.left - 1;
+          })
+          .map((t) => t.textContent.trim().split('\n')[0]);
+      });
+      expect(clipped, `tabs outside the visible strip at ${width}px`).toEqual([]);
+    }
   });
 
   test('captures a mobile screenshot', async ({ page }, testInfo) => {

@@ -106,11 +106,15 @@ test.describe('Embed URL parameters', () => {
 });
 
 test.describe('Embed iframe integration', () => {
-  test('loads correctly inside an iframe', async ({ page }) => {
+  // The iframe src must come from baseURL, not a hardcoded port — the
+  // suite runs on FSS_TEST_PORT when 3000 is occupied, and a literal
+  // localhost:3000 here silently points the frame at whatever else is
+  // listening there.
+  test('loads correctly inside an iframe', async ({ page, baseURL }) => {
     await page.setContent(`
       <html><body style="margin:0">
         <h1>Race Website</h1>
-        <iframe id="mapFrame" src="http://localhost:3000/embed/escarpment/"
+        <iframe id="mapFrame" src="${baseURL}/embed/escarpment/"
                 width="100%" height="600" style="border:none;border-radius:8px;"
                 loading="lazy" allow="geolocation"></iframe>
       </body></html>
