@@ -60,6 +60,24 @@ function mkdirp(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
+/**
+ * copyRecursive for static/, minus the READMEs. Each static subdirectory
+ * documents where its page came from and how to regenerate it; that note is for
+ * whoever opens the repo, not for the public site.
+ */
+function copyStatic(src, dest) {
+  for (const entry of fs.readdirSync(src)) {
+    if (entry === 'README.md') continue;
+    const from = path.join(src, entry);
+    if (fs.statSync(from).isDirectory()) {
+      mkdirp(path.join(dest, entry));
+      copyStatic(from, path.join(dest, entry));
+    } else {
+      fs.copyFileSync(from, path.join(dest, entry));
+    }
+  }
+}
+
 function copyRecursive(src, dest) {
   if (!fs.existsSync(src)) return;
   const stat = fs.statSync(src);
@@ -854,6 +872,15 @@ function build() {
   }
   if (fs.existsSync(path.join(ROOT, 'assets'))) {
     copyRecursive(path.join(ROOT, 'assets'), path.join(DIST, 'assets'));
+  }
+
+  // static/ is a verbatim passthrough into dist/. It exists for self-contained
+  // pages built by a sibling pipeline rather than by this template system --
+  // they have no config.js, no shared CSS/JS, and nothing here to compile. Each
+  // subdirectory carries a README recording where it came from and how to
+  // regenerate it. Everything else on the site still goes through buildMap().
+  if (fs.existsSync(path.join(ROOT, 'static'))) {
+    copyStatic(path.join(ROOT, 'static'), DIST);
   }
 
   // Load templates once
