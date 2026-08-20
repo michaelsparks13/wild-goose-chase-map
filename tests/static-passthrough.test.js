@@ -16,6 +16,17 @@ describe('static/ passthrough', () => {
     expect(existsSync(LEADVILLE)).toBe(true);
   });
 
+  /**
+   * vitest reads dist/ but never builds it, so a stale dist/ silently validates
+   * bytes nobody is shipping — a failure introduced upstream can pass here for
+   * a whole round. Compare the published copy against its source and fail loud
+   * instead. If this fails, run `node build.js`.
+   */
+  it('dist carries the current static/ source, not a stale build', () => {
+    const source = resolve(__dirname, '../static/leadville-2026/index.html');
+    expect(readFileSync(LEADVILLE, 'utf-8')).toBe(readFileSync(source, 'utf-8'));
+  });
+
   it('does not publish the internal provenance README', () => {
     expect(existsSync(resolve(DIST, 'leadville-2026/README.md'))).toBe(false);
   });
@@ -38,7 +49,16 @@ describe('Leadville 2026 page', () => {
   });
 
   it('inlines its data — nothing is fetched at runtime', () => {
-    expect(html).not.toMatch(/\bfetch\s*\(/);
+    // The page's own code never fetches: every course, cue and advisory is
+    // inlined, so nothing loads from a sibling file. Its basemap streams from
+    // the studio's PMTiles archive, and the vendored protocol handler prepended
+    // to the bundle is range requests by definition — that library is the one
+    // place `fetch` is allowed, so it is cut out before the check.
+    const vendorStart = html.indexOf('// ===== core/vendor/');
+    expect(vendorStart).toBeGreaterThan(-1);
+    const vendorEnd = html.indexOf('// ===== core/', vendorStart + 1);
+    const ours = html.slice(0, vendorStart) + html.slice(vendorEnd === -1 ? html.length : vendorEnd);
+    expect(ours).not.toMatch(/\bfetch\s*\(/);
     expect(html).not.toContain('type="module"');
   });
 
@@ -48,13 +68,18 @@ describe('Leadville 2026 page', () => {
     expect(html).toContain('Turquoise Lake Dam');
     expect(html).toContain('15.8');
     expect(html).toContain('Turn by turn');
+    // Now rendered on the card of each stop it affects, not in a panel.
     expect(html).toContain('Conflicting official information');
+    expect(html).not.toContain('See the conflict');
     expect(html).toContain('leadvilleraceseries.com');
   });
 
-  it('surfaces the elevation-gain delta rather than picking a number', () => {
-    expect(html).toContain('14,992');
+  it('publishes the official elevation figure and does not argue with it', () => {
+    // LEADVILLE_RULES.md section 2, as revised: LRS owns the course, so LRS's
+    // figure is the one that ships. Our own measurement stays in the inlined
+    // advisory data as provenance, but no code path renders it any more.
     expect(html).toContain('13,552');
+    expect(html).not.toMatch(/ADV\.measurement|ADVISORIES\.measurement/);
   });
 
   it('lets a runner pinch-zoom the page', () => {
