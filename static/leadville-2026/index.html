@@ -105,7 +105,22 @@
   .maplibregl-ctrl-group button span { filter: invert(1); }
   .maplibregl-ctrl-attrib { font-size: 11px; background: rgba(14, 14, 13, 0.7) !important; }
   .maplibregl-ctrl-attrib a { color: var(--faint); }
-  .maplibregl-ctrl-attrib-button { width: var(--tap); height: var(--tap); }
+  /* Enlarged to a 44 px thumb target. Two things break if you only set the box:
+     the icon tiles to fill it and the control draws four "i" glyphs in a grid,
+     and the 24 px container it sits in stays 24 px, so a big button overflows a
+     small panel. Pin the background, size the collapsed container to match, and
+     invert the dark glyph onto the same chrome the zoom stack uses. */
+  .maplibregl-ctrl-attrib-button {
+    width: var(--tap); height: var(--tap);
+    background-repeat: no-repeat; background-position: center;
+    background-color: transparent; filter: invert(1);
+  }
+  .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) {
+    width: var(--tap); height: var(--tap); min-height: var(--tap);
+    padding: 0; margin: 0 10px 10px 0;
+    border-radius: 10px; border: 1px solid var(--hairline);
+    display: grid; place-items: center;
+  }
   .maplibregl-ctrl-scale {
     background: rgba(14, 14, 13, 0.7); border-color: var(--hairline);
     color: var(--muted); font-size: 11px;
@@ -1409,6 +1424,20 @@ function createRaceMap(o) {
 
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'imperial' }), 'bottom-left');
+
+    // A compact attribution still renders EXPANDED on first paint, which on a
+    // phone lays a 370 px ribbon across the bottom of a 390 px map and covers
+    // whatever is down there. MapLibre collapses it on the first map gesture
+    // (_updateCompactMinimize), so this only has to do the same thing once,
+    // before the reader has touched anything. Tapping the button still opens it.
+    map.once('idle', () => {
+      map.getContainer()
+        .querySelectorAll('.maplibregl-ctrl-attrib.maplibregl-compact-show')
+        .forEach((el) => {
+          el.classList.remove('maplibregl-compact-show');
+          el.removeAttribute('open');
+        });
+    });
 
     map.on('load', () => {
       try {
