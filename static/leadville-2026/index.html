@@ -1527,11 +1527,6 @@ function cumulativeMiles(coords) {
 
 const GHOST_SOURCE = 'fss-ghost-course';
 const GHOST_LAYER = 'fss-ghost-course-line';
-const GAP_SOURCE = 'fss-unsupported-gap';
-const GAP_GLOW_LAYER = 'fss-unsupported-gap-glow';
-const GAP_LAYER = 'fss-unsupported-gap-line';
-const GAP_LABEL_LAYER = 'fss-unsupported-gap-label';
-
 const STATION_SOURCE = 'fss-aid-stations';
 const STATION_HIT_LAYER = 'fss-aid-hit';
 const STATION_DOT_LAYER = 'fss-aid-dot';
@@ -1577,14 +1572,18 @@ const TAP_RADIUS_PX = 22;
 // MapLibre culls the scene: at z13.8/pitch 55 the map renders black with the
 // course lines floating on nothing.
 //
-// The detail pitch was tuned against the headless software rasteriser, which
-// drops different layers at different pitches depending on how steep the ground
-// under the camera is — at one cue pitch 40 painted the relief but not the
-// course, and pitch 30 lost the aid dots that pitch 55 drew. 55 is the value
-// that held up across the most verification runs. If detail views look wrong on
-// real hardware, this constant is the first thing to try.
+// Detail pitch was 55, tuned against the headless software rasteriser. On real
+// hardware that camera renders the scene black — reported from a phone, and not
+// reproducible in any headless viewport tried (390, 430, 664 and 1440 wide, at
+// four heights each), which is the whole problem with tuning a camera against a
+// software rasteriser.
+//
+// So the detail view now uses the overview's pitch. That angle is known to draw
+// on the reporter's own hardware, because it is what the map opens at. Detail
+// views lose some drama and gain being visible, which for a crew at 2 a.m. is
+// the right side of that trade.
 const OVERVIEW_PITCH = 30;
-const DETAIL_PITCH = 55;
+const DETAIL_PITCH = OVERVIEW_PITCH;
 const DETAIL_ZOOM = 13.2;
 /** Cues use the same framing as stations, for the same reason. */
 const TURN_ZOOM = DETAIL_ZOOM;
@@ -1695,6 +1694,10 @@ function stopRows(aid) {
 function createCrewConsole(o) {
   const { handle, aid, advisories } = o;
   const annotations = o.annotations || null;
+  // How many pixels at the bottom of the map are covered by page chrome right
+  // now. The console does not go looking for the sheet itself — the page owns
+  // its own layout and reports it.
+  const obscuredBottom = typeof o.obscuredBottom === 'function' ? o.obscuredBottom : () => 0;
   const map = handle.map;
   const maplibregl = window.maplibregl;
   const trackMiles = handle.trackMiles;
@@ -1737,91 +1740,6 @@ function createCrewConsole(o) {
     );
   }
 
-  function addGap() {
-    if (map.getSource(GAP_SOURCE)) return;
-    const gapCoords = sliceCoordsByMile(flat, trackMiles, gapFromTrack, gapToTrack);
-    const mid = pointAtMile(flat, trackMiles, (gapFromTrack + gapToTrack) / 2);
-    map.addSource(GAP_SOURCE, {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: [
-          {
-            type: 'Feature',
-            properties: { kind: 'line' },
-            geometry: { type: 'LineString', coordinates: gapCoords },
-          },
-          {
-            type: 'Feature',
-            properties: {
-              kind: 'label',
-              label: advisories.gap.miles + ' mi · no aid',
-            },
-            geometry: { type: 'Point', coordinates: mid },
-          },
-        ],
-      },
-    });
-    map.addLayer({
-      id: GAP_GLOW_LAYER,
-      type: 'line',
-      source: GAP_SOURCE,
-      filter: ['==', ['get', 'kind'], 'line'],
-      layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: {
-        'line-color': CREW_PALETTE.gap,
-        'line-width': ['interpolate', ['linear'], ['zoom'], 8, 8, 13, 16, 16, 22],
-        'line-opacity': 0.22,
-        'line-blur': 3,
-      },
-    });
-    map.addLayer({
-      id: GAP_LAYER,
-      type: 'line',
-      source: GAP_SOURCE,
-      filter: ['==', ['get', 'kind'], 'line'],
-      layout: { 'line-cap': 'butt', 'line-join': 'round' },
-      paint: {
-        'line-color': CREW_PALETTE.gap,
-        'line-width': ['interpolate', ['linear'], ['zoom'], 8, 3, 13, 5, 16, 7],
-        'line-dasharray': [2.5, 1.6],
-      },
-    });
-    map.addLayer({
-      id: GAP_LABEL_LAYER,
-      type: 'symbol',
-      source: GAP_SOURCE,
-      filter: ['==', ['get', 'kind'], 'label'],
-      layout: {
-        'text-field': ['get', 'label'],
-        'text-font': ['Noto Sans Medium'],
-        'text-size': ['interpolate', ['linear'], ['zoom'], 8, 11, 13, 14],
-        'text-offset': [0, -1.1],
-        // The gap is the headline of this map. It always draws; station labels
-        // stay in the collision index and move out of its way instead.
-        'text-allow-overlap': true,
-        'text-ignore-placement': false,
-      },
-      paint: {
-        'text-color': CREW_PALETTE.gap,
-        'text-halo-color': 'rgba(14,14,13,0.95)',
-        'text-halo-width': 1.8,
-      },
-    });
-  }
-
-  /**
-   * Stations, start/finish and the scrub cursor are drawn as MapLibre layers,
-   * not HTML markers — and that is a correctness decision, not a style one.
-   *
-   * With 3D terrain MapLibre lifts an HTML Marker to the terrain height under it
-   * but draws line layers on the flat projection. At Leadville that is 3 km of
-   * disagreement: measured on this course, an HTML pin for Winfield rendered
-   * 308 px below the course line it is supposed to sit on, and the error grew
-   * with elevation and with distance down the screen. Drawn as a circle layer
-   * the same station lands exactly on the line, because now one renderer places
-   * both. It also hands label collision back to MapLibre, which does it properly.
-   */
   function stationFeatures() {
     const feats = (aid.stations || []).map((st) => ({
       type: 'Feature',
@@ -2186,6 +2104,7 @@ function createCrewConsole(o) {
       center: t.coord,
       zoom: TURN_ZOOM,
       pitch: DETAIL_PITCH,
+      offset: focusCameraOffset(),
       duration: FLIGHT_MS,
       essential: true,
     });
@@ -2235,14 +2154,24 @@ function createCrewConsole(o) {
   }
 
   /**
-   * Tapping a station centres it. Deliberately no camera offset: on a pitched
-   * terrain map a flyTo `offset` shifts the target toward the horizon and the
-   * scene stops rendering altogether — measured at a cue near Sheep Gulch, an
-   * offset of -179 px drew a completely black map where the same camera with no
-   * offset drew the course and six turn badges. `padding` keeps the course but
-   * stops symbols being placed. So the card is sized to clear the middle of the
-   * map instead, which costs nothing and cannot break the render.
+   * Half the pixels the sheet is covering, as a camera offset — so a focused
+   * station lands in the middle of the map you can still SEE rather than the
+   * middle of the map element, which on a phone is underneath the card.
+   *
+   * A flyTo `offset` used to be banned here, and the reason is worth keeping:
+   * at DETAIL_PITCH 55 an offset of -179 px drew a completely black map where
+   * the same camera without one drew the course and six badges. That was a
+   * property of the pitch, not of `offset`. At 30 — which is what detail views
+   * now use — offsets of -80 and -140 px both render the scene intact, checked
+   * at 390 px. If DETAIL_PITCH ever climbs again, re-check this.
    */
+  function focusCameraOffset() {
+    const covered = obscuredBottom();
+    if (!covered || covered <= 0) return [0, 0];
+    return [0, -Math.round(covered / 2)];
+  }
+
+  /** Tapping a station centres it in the part of the map that is still visible. */
   function focusStation(id, zoom) {
     const st = (aid.stations || []).find((s) => s.id === id);
     if (!st) return;
@@ -2250,6 +2179,7 @@ function createCrewConsole(o) {
       center: st.coord,
       zoom: zoom || DETAIL_ZOOM,
       pitch: DETAIL_PITCH,
+      offset: focusCameraOffset(),
       duration: FLIGHT_MS,
       essential: true,
     });
@@ -2283,7 +2213,6 @@ function createCrewConsole(o) {
   }
 
   addGhost();
-  addGap();
   addTurns();
   addStations();
   addAnnotations();
@@ -2736,7 +2665,8 @@ window.FSS = Object.assign(window.FSS || {}, { createRaceMap, createLineReveal, 
       var st = null;
       console_.stations.forEach(function (s) { if (s.id === id) st = s; });
       if (!st) return;
-      console_.focusStation(id);
+      // Open first, then fly: the offset is measured from the sheet, so it has
+      // to be on screen before the camera is told where to go.
       openSheet('Aid station', function (root) {
         var card = el('div', 'cc-card');
         add(card, el('h3', null, st.name), el('p', 'cc-note', st.note));
@@ -2767,6 +2697,7 @@ window.FSS = Object.assign(window.FSS || {}, { createRaceMap, createLineReveal, 
           root.appendChild(warn);
         }
       });
+      console_.focusStation(id);
     }
 
     // ---- turn-by-turn ----
@@ -3013,7 +2944,18 @@ window.FSS = Object.assign(window.FSS || {}, { createRaceMap, createLineReveal, 
         console_ = FSS.createCrewConsole({
           handle: handle, aid: DATA.AID, advisories: DATA.ADVISORIES,
           ghost: DATA.GHOST, turns: DATA.TURNS, profile: DATA.PROFILE,
-          annotations: DATA.ANNOTATIONS
+          annotations: DATA.ANNOTATIONS,
+          // On a phone the sheet lies over the bottom half of the map, so a
+          // point centred in the map element is centred underneath the card.
+          // On desktop the sheet sits beside the map and covers none of it.
+          obscuredBottom: function () {
+            var sheetEl = document.getElementById('sheet');
+            if (!sheetEl || sheetEl.hidden) return 0;
+            var mapRect = document.getElementById('map').getBoundingClientRect();
+            var sheetRect = sheetEl.getBoundingClientRect();
+            if (sheetRect.left >= mapRect.right - 1) return 0;
+            return Math.max(0, mapRect.bottom - sheetRect.top);
+          }
         });
         console_.on('station', showStation);
         console_.on('turn', showTurn);
