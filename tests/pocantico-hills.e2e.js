@@ -360,3 +360,38 @@ test.describe('Pocantico Hills Marathon — mobile (iPhone 14 / 390×844)', () =
     });
   });
 });
+
+// The course should open as large as the map allows on every device:
+// fully visible, clear of the overlay chrome, and tight against the
+// edges on whichever axis limits it.
+test.describe('Pocantico Hills Marathon — course framing', () => {
+  const VIEWPORTS = [
+    [1440, 900], [1280, 800], [1024, 768], [768, 1024], [390, 844], [375, 667],
+  ];
+  for (const [width, height] of VIEWPORTS) {
+    test(`${width}×${height}: course fills the map without touching the chrome`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto('/maps/pocantico-hills/');
+      await page.waitForFunction(() => window.map && window.map.loaded());
+      const f = await page.evaluate(() => {
+        const m = window.map, c = m.getContainer().getBoundingClientRect();
+        const b = loopBounds(currentRaceId), sw = m.project(b[0]), ne = m.project(b[1]);
+        const below = sel => {
+          const el = document.querySelector(sel);
+          return el && el.offsetParent ? el.getBoundingClientRect().bottom - c.top : 0;
+        };
+        return {
+          left: sw.x, right: c.width - ne.x, top: ne.y, bottom: c.height - sw.y,
+          chromeBottom: Math.max(below('.hq-badge'), below('.map-layers')),
+        };
+      });
+      expect(f.left).toBeGreaterThanOrEqual(0);
+      expect(f.right).toBeGreaterThanOrEqual(0);
+      expect(f.top).toBeGreaterThanOrEqual(f.chromeBottom);
+      expect(f.bottom).toBeGreaterThanOrEqual(34); // scale bar + attribution
+      const widthLimited = f.left <= 24 && f.right <= 24;
+      const heightLimited = f.top <= f.chromeBottom + 16 && f.bottom <= 48;
+      expect(widthLimited || heightLimited, JSON.stringify(f)).toBe(true);
+    });
+  }
+});
