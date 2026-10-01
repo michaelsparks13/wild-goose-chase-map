@@ -1092,6 +1092,17 @@ Currently set on: `gran-fondo-badlands` only. The build.js change is
 back-compatible — when `displayUnits` is unset, all existing races keep
 their mile labels and `Mile` column header.
 
+## Official race distance (Required)
+
+**Every distance on a race page reads against the official race length, never the GPX's measured length.** A marathon is 26.2 mi, a half 13.1 mi, a 50K 31.1 mi — even when the GPX measures 26.81 (GPS noise, switchbacks, or a long course). Runners compare the page against course signage, the race website, and their watch; a page whose total, mile markers, aid miles, and profile axis all quietly disagree with the official number reads as wrong.
+
+1. Set the theme's distance (`miles` / `runMiles` / `kilometers`) to the **official** value. Keep the GPX's measured length in the data files (`distance_mi` in the course GeoJSON) — they stay the raw record so re-running the course-build script can't undo the rescale.
+2. Rescale everything derived from the GPX by `official / gpxMeasured`, once, at build time in `config.js`: profile `d` values and turn-by-turn `course_mi`. The course line itself is normalized at runtime (`loopCoordDistances` divides by its raw length and multiplies by `LOOPS[id].miles`).
+3. Author every hand-written mile — aid stations, cues, cutoffs, prose — in official miles. Derive them by projecting the real location onto the line and scaling, not by eyeballing the GPX mile.
+4. Final axis/tick labels show the official length to one decimal (`26.2 mi`, not `26`).
+
+Reference implementation: `src/maps/pocantico-hills/config.js` (`MILE_SCALE`, `loadProfile`). Guarded there by `tests/pocantico-hills.test.js` ("distances display the official race length", "compiled profiles and turns are rescaled"). Maps built before Oct 2026 have not been audited against this rule.
+
 ## Multi-distance vs multi-loop-assembly formats
 
 Two patterns exist in the catalog. Pick the closest match for new builds:

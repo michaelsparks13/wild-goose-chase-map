@@ -84,17 +84,13 @@ body.race-page.race-pocantico-hills {
 }
 /* Marker color via CSS — SVG fills use currentColor since CSS var() in
  * fill="..." attributes is not reliably supported. Aid stations get
- * ochre, finish gets the brand rust. (The start pennant moved to a GL
- * symbol layer so it can sit beneath Liberty's place labels — see
- * makeStartIconImage / addHqStartLayer in override.js.) */
+ * ochre. The start/finish pennant is a GL symbol layer so it can sit
+ * beneath Liberty's place labels — see makeStartIconImage /
+ * addHqStartLayer in override.js. */
 .race-pocantico-hills .aid-marker {
   width: 28px; height: 28px;
   cursor: pointer;
   color: var(--aid-color);
-}
-.race-pocantico-hills .aid-marker--finish {
-  width: 32px; height: 32px;
-  color: var(--race-brand);
 }
 .race-pocantico-hills .hq-marker { color: var(--race-brand); }
 .race-pocantico-hills .aid-marker svg {
@@ -218,6 +214,28 @@ body.race-page.race-pocantico-hills {
   font-size: 12.5px;
   color: var(--text-secondary);
   line-height: 1.45;
+}
+/* A shared site lists each visit (Aid #3 · Mile 9.5, Aid #6 · Mile 16.7)
+ * as its own block, split by a hairline. */
+.race-pocantico-hills .aid-popup__visits {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+.race-pocantico-hills .aid-popup__visit + .aid-popup__visit {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.race-pocantico-hills .aid-popup__visit .aid-popup__km { margin-bottom: 2px; }
+.race-pocantico-hills .aid-popup__cutoff {
+  font-family: var(--font-micro);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--hazard-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
 }
 
 /* ─── Distance picker (dinosaur chips) ─────────────────────────────── */
