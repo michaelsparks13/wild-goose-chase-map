@@ -461,3 +461,27 @@ test.describe('Pocantico Hills Marathon — terrain relief', () => {
     });
   }
 });
+
+// The course runs on the carriage roads the basemap labels, so the
+// default centered grey trail names land on the red line and vanish.
+// They must sit beside the course in dark ink with a solid halo.
+test.describe('Pocantico Hills Marathon — trail labels', () => {
+  test('trail names are offset off the course in brand ink with a halo', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/maps/pocantico-hills/');
+    await page.waitForFunction(() => window.map && window.map.loaded());
+    const style = await page.evaluate(() => {
+      const m = window.map, id = 'roads_labels_minor';
+      return {
+        color: m.getPaintProperty(id, 'text-color'),
+        haloWidth: m.getPaintProperty(id, 'text-halo-width'),
+        offset: m.getLayoutProperty(id, 'text-offset'),
+        font: m.getLayoutProperty(id, 'text-font'),
+      };
+    });
+    expect(style.color).toBe('#34421e');
+    expect(style.haloWidth).toBeGreaterThanOrEqual(2);
+    expect(Math.abs(style.offset[1])).toBeGreaterThanOrEqual(1);
+    expect(style.font).toEqual(['Noto Sans Medium']);
+  });
+});
