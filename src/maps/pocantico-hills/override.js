@@ -37,9 +37,10 @@ maplibregl.addProtocol('pmtiles', protocol.tile);
 // of the catalog uses, with the cream-tone basemap flavor overrides
 // applied in map.on('load') to lean into the editorial-archival voice.
 //
-// AWS Terrarium hillshade is stacked on top in map.on('load') for the
-// Hudson bluff terrain — Rockefeller Preserve sits on a 700-foot ridge
-// above the river, and the carriage roads weave its contours.
+// AWS Terrarium multidirectional hillshade is stacked on top in
+// map.on('load') for the Hudson bluff terrain — Rockefeller Preserve
+// sits on a 700-foot ridge above the river, and the carriage roads
+// weave its contours.
 var PMTILES_URL = 'pmtiles://https://pub-e494904da8db4a209e8229adcd8b63f9.r2.dev/basemap.pmtiles';
 var BASEMAP_STYLE = {
   version: 8,
@@ -648,10 +649,9 @@ function toggleAid() {
 // of the rider after page load.
 function applyTerrain(animate) {
   if (terrain3D) {
-    // Exaggeration 1.0 keeps the badlands valley readable in
-    // perspective without distorting Liberty's labels off-screen.
-    // Earlier we used 1.4 and labels at the valley floor pushed
-    // behind hills (terrain occlusion check hid them).
+    // Exaggeration 1.0 is a hard ceiling here: at 1.4 and above,
+    // terrain occlusion hides every basemap label and the HQ start
+    // flag at the default framing (measured Oct 2026).
     map.setTerrain({ source: 'hillshade-dem', exaggeration: 1.0 });
     // Pitch 45° instead of 50° — same perspective drama, less
     // angle for labels + markers to be raycast as "covered".
@@ -1601,11 +1601,13 @@ function initMap() {
   collapseAttributionOnOpen();
 
   map.on('load', function() {
-    // Add the AWS Terrarium hillshade overlay on top of OpenFreeMap's
-    // Liberty style. beforeId targets one of Liberty's label layers
-    // so labels stay on top of the shading. We find the first symbol
-    // layer (OMT labels are all symbol-type) and insert hillshade
-    // just before it.
+    // Swiss-style multidirectional relief from AWS Terrarium. The
+    // preserve's terrain is subtle (~0–730 ft), so a single NW sun
+    // leaves the carriage-road hills flat; four lights sculpt them
+    // instead: a low NW key, softer W and N fills, and a high overhead
+    // fill that lifts the valley floors. Warm highlights and cool
+    // blue-grey shadows keep the relief behind the red/yellow course.
+    // Inserted below the first symbol layer so labels stay on top.
     if (!map.getSource('hillshade-dem')) {
       map.addSource('hillshade-dem', {
         type: 'raster-dem',
@@ -1613,27 +1615,20 @@ function initMap() {
         tileSize: 256, maxzoom: 15, encoding: 'terrarium',
       });
     }
-    var firstSymbolId = null;
-    var styleLayers = map.getStyle().layers;
-    for (var li = 0; li < styleLayers.length; li++) {
-      if (styleLayers[li].type === 'symbol') { firstSymbolId = styleLayers[li].id; break; }
-    }
     map.addLayer({
       id: 'hillshade',
       type: 'hillshade',
       source: 'hillshade-dem',
       paint: {
-        // Maxed at 1.0 (MapLibre caps hillshade-exaggeration there)
-        // — since we default to 2D, the hillshade does ALL the
-        // heavy lifting for the badlands geology story. Warm rust
-        // shadow + cream highlight match the rust palette and pull
-        // out the dramatic Red Deer River bluffs.
-        'hillshade-exaggeration': 0.5,
-        'hillshade-shadow-color': '#3c4630',
-        'hillshade-highlight-color': '#fbfaf3',
-        'hillshade-accent-color': '#7f9c3e',
+        'hillshade-method': 'multidirectional',
+        'hillshade-exaggeration': 1.0,
+        // Order: NW key, W fill, N fill, overhead fill.
+        'hillshade-illumination-direction': [315, 270, 0, 330],
+        'hillshade-illumination-altitude': [30, 40, 40, 65],
+        'hillshade-highlight-color': ['rgba(255,246,220,0.70)', 'rgba(255,246,220,0.30)', 'rgba(255,246,220,0.30)', 'rgba(255,246,220,0.15)'],
+        'hillshade-shadow-color': ['rgba(34,44,62,0.75)', 'rgba(34,44,62,0.40)', 'rgba(34,44,62,0.40)', 'rgba(34,44,62,0.20)'],
       },
-    }, firstSymbolId);
+    }, findFirstSymbolLayerId());
 
     addLoopLayers();
     addHqStartLayer();
@@ -1642,7 +1637,7 @@ function initMap() {
     renderAidMarkers();
     addKmMarkerLayers();
     rebuildKmMarkers();
-    applyTerrain(false);  // honors the default terrain3D = true
+    applyTerrain(false);  // honors the default terrain3D = false
     drawProfile();
     renderDirectionsList();
     updateRaceMeta();

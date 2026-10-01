@@ -408,3 +408,56 @@ test.describe('Pocantico Hills Marathon — course framing', () => {
     });
   }
 });
+
+// Swiss-style multidirectional relief: the terrain should read as
+// sculpted in the default 2D view while the course, aid markers, and
+// labels stay on top of it, on desktop and phone alike.
+test.describe('Pocantico Hills Marathon — terrain relief', () => {
+  for (const [width, height] of [[1440, 900], [390, 844]]) {
+    test(`${width}×${height}: multidirectional hillshade under the course and labels`, async ({ page }) => {
+      const errors = [];
+      page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
+      page.on('pageerror', err => errors.push(err.message));
+      await page.setViewportSize({ width, height });
+      await page.goto('/maps/pocantico-hills/');
+      await page.waitForFunction(() => window.map && window.map.loaded());
+
+      const relief = await page.evaluate(() => {
+        const m = window.map;
+        const ids = m.getStyle().layers.map(l => l.id);
+        const firstSymbol = m.getStyle().layers.findIndex(l => l.type === 'symbol');
+        return {
+          method: m.getPaintProperty('hillshade', 'hillshade-method'),
+          exaggeration: m.getPaintProperty('hillshade', 'hillshade-exaggeration'),
+          directions: m.getPaintProperty('hillshade', 'hillshade-illumination-direction'),
+          highlights: m.getPaintProperty('hillshade', 'hillshade-highlight-color').length,
+          shadows: m.getPaintProperty('hillshade', 'hillshade-shadow-color').length,
+          hillshadeIndex: ids.indexOf('hillshade'),
+          courseIndex: ids.indexOf('loop-' + currentRaceId + '-line'),
+          firstSymbol,
+          courseVisible: m.getLayoutProperty('loop-' + currentRaceId + '-line', 'visibility'),
+          pitch: m.getPitch(),
+          terrain: m.getTerrain(),
+        };
+      });
+      expect(relief.method).toBe('multidirectional');
+      expect(relief.exaggeration).toBe(1);
+      expect(relief.directions).toEqual([315, 270, 0, 330]);
+      expect(relief.highlights).toBe(4);
+      expect(relief.shadows).toBe(4);
+      expect(relief.hillshadeIndex).toBeGreaterThanOrEqual(0);
+      expect(relief.hillshadeIndex).toBeLessThan(relief.firstSymbol);
+      expect(relief.hillshadeIndex).toBeLessThan(relief.courseIndex);
+      expect(relief.courseVisible).toBe('visible');
+      // The relief is 2D by default; 3D stays an opt-in toggle.
+      expect(relief.pitch).toBe(0);
+      expect(relief.terrain).toBeNull();
+
+      const markers = page.locator('#map .aid-marker');
+      expect(await markers.count()).toBeGreaterThan(0);
+      await expect(markers.first()).toBeVisible();
+      await expect(markers.first()).toHaveCSS('opacity', '1');
+      expect(errors).toEqual([]);
+    });
+  }
+});
