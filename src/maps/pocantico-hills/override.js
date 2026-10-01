@@ -574,69 +574,60 @@ function renderAidMarkers() {
 // HTML markers (numerous markers tank perf on Bronto's 16-marker count).
 
 var kmMarkerSourceId = 'km-markers';
+// Created once in map.on('load') — like addLoopLayers / addHqStartLayer
+// — so later calls only need to swap the data.
+function addKmMarkerLayers() {
+  // WebGL can't read CSS variables, so resolve the brand stroke first.
+  var brand = getComputedStyle(document.documentElement).getPropertyValue('--race-brand').trim() || '#c19434';
+  map.addSource(kmMarkerSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  map.addLayer({
+    id: 'km-markers-circle',
+    type: 'circle',
+    source: kmMarkerSourceId,
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, 7, 14, 11, 17, 14],
+      'circle-color': '#1f1d18',
+      'circle-stroke-color': brand,
+      'circle-stroke-width': 2,
+    },
+  });
+  map.addLayer({
+    id: 'km-markers-label',
+    type: 'symbol',
+    source: kmMarkerSourceId,
+    layout: {
+      'text-field': ['get', 'label'],
+      'text-font': ['Noto Sans Medium'],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 9, 9, 14, 12, 17, 15],
+      'text-allow-overlap': true,
+      'text-ignore-placement': true,
+    },
+    paint: {
+      'text-color': '#ffffff',
+    },
+  });
+}
+
 function rebuildKmMarkers() {
-  if (!map || !map.isStyleLoaded()) return;
+  var source = map && map.getSource(kmMarkerSourceId);
+  if (!source) return; // before load — the load handler builds them
   var race = RACES[currentRaceId];
   if (!race) return;
   var totalMi = race.miles;
   // Marathon: every 5 mi (5/10/15/20/25). Half: every 2.5 mi
   // (2.5/5/7.5/10/12.5). Tight enough to read distance at a glance,
-  // sparse enough to keep the cream substrate clean.
+  // sparse enough to keep the cream substrate clean. The last marker
+  // may sit up to half a mile from the finish.
   var stride = (totalMi > 20) ? 5 : 2.5;
   var features = [];
-  for (var k = stride; k < totalMi - stride / 2 + 0.001; k += stride) {
-    var coord = getCoordAtMile(currentRaceId, k);
+  for (var k = stride; k < totalMi - 0.5; k += stride) {
     features.push({
       type: 'Feature',
-      properties: { km: k, label: (k % 1 === 0) ? String(k) : k.toFixed(1), priority: (k % 10 === 0) ? 1 : 2 },
-      geometry: { type: 'Point', coordinates: coord },
+      properties: { label: (k % 1 === 0) ? String(k) : k.toFixed(1) },
+      geometry: { type: 'Point', coordinates: getCoordAtMile(currentRaceId, k) },
     });
   }
-  var fc = { type: 'FeatureCollection', features: features };
-  if (map.getSource(kmMarkerSourceId)) {
-    map.getSource(kmMarkerSourceId).setData(fc);
-  } else {
-    map.addSource(kmMarkerSourceId, { type: 'geojson', data: fc });
-    map.addLayer({
-      id: 'km-markers-circle',
-      type: 'circle',
-      source: kmMarkerSourceId,
-      paint: {
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, 7, 14, 11, 17, 14],
-        'circle-color': '#1f1d18',
-        'circle-stroke-color': 'var-fallback', // overridden runtime below
-        'circle-stroke-width': 2,
-      },
-    });
-    // Brand-color stroke (read at runtime since CSS vars don't apply in WebGL)
-    var brand = '#c19434';
-    try {
-      var v = getComputedStyle(document.documentElement).getPropertyValue('--race-brand').trim();
-      if (v) brand = v;
-    } catch (e) { /* noop */ }
-    map.setPaintProperty('km-markers-circle', 'circle-stroke-color', brand);
-    map.addLayer({
-      id: 'km-markers-label',
-      type: 'symbol',
-      source: kmMarkerSourceId,
-      layout: {
-        'text-field': ['get', 'label'],
-        'text-font': ['Noto Sans Medium'],
-        'text-size': ['interpolate', ['linear'], ['zoom'], 9, 9, 14, 12, 17, 15],
-        'text-allow-overlap': true,
-        'text-ignore-placement': true,
-      },
-      paint: {
-        'text-color': '#ffffff',
-      },
-    });
-  }
-}
-function clearKmMarkers() {
-  ['km-markers-label', 'km-markers-circle'].forEach(function(id) {
-    if (map.getLayer(id)) map.removeLayer(id);
-  });
-  if (map.getSource(kmMarkerSourceId)) map.removeSource(kmMarkerSourceId);
+  source.setData({ type: 'FeatureCollection', features: features });
 }
 
 
@@ -1649,6 +1640,7 @@ function initMap() {
     precomputeSnappedTurns();
     setActiveDistance(currentRaceId);
     renderAidMarkers();
+    addKmMarkerLayers();
     rebuildKmMarkers();
     applyTerrain(false);  // honors the default terrain3D = true
     drawProfile();
