@@ -182,11 +182,14 @@ describe('pocantico-hills · shared aid sites', () => {
   const byNumber = n => theme.aidStations.find(s => s.number === n);
 
   it('stations the race director named as one location share a single site', () => {
-    expect(theme.aidSites).toHaveLength(4);
-    for (const [a, b] of [[1, 8], [2, 7], [3, 6], [4, 5]]) {
+    expect(theme.aidSites).toHaveLength(5);
+    for (const [a, b] of [[2, 7], [3, 6], [4, 5]]) {
       expect(byNumber(a).site).toBeTruthy();
       expect(byNumber(a).site).toBe(byNumber(b).site);
     }
+    // #1 and #8 are separate stations (race director, Oct 2026), despite
+    // sharing one volunteer team on the host's roster.
+    expect(byNumber(1).site).not.toBe(byNumber(8).site);
     for (const stn of theme.aidStations) {
       if (stn.site) expect(site(stn.site)).toBeDefined();
     }

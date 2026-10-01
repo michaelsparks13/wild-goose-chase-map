@@ -111,7 +111,7 @@ module.exports = {
   // needs its own copy. See [[race-map-editorial-copy-overrides]].
   editorialCopy: {
     profileSub: 'Full course · marathon flagship loop · half marathon shares the first half',
-    aidSub:     'Eight stations at four sites — the course passes each site twice. The marathon hits all eight, the half hits four. Water + electrolytes throughout; six of eight stations carry a full hot/cold spread including broth, boiled potatoes, salt, brined snacks, PB&J, fruit, chips, and candy.',
+    aidSub:     'Eight stations at five sites — the course passes three of them twice (#2/#7, #3/#6, #4/#5). The marathon hits all eight, the half hits four. Water + electrolytes throughout; six of eight stations carry a full hot/cold spread including broth, boiled potatoes, salt, brined snacks, PB&J, fruit, chips, and candy.',
     daySub:     'Marathon rolls out at 8:00 AM (walkers 7:00 AM). Half marathon starts at 9:00 AM. Award ceremony for the half at 12:00 noon at Rockwood Hall.',
   },
 
@@ -145,14 +145,14 @@ module.exports = {
         defaultDirection: 'CW',
         cues: [
           { mile: 0.0,  kind: 'landmark', text: 'Roll out from Rockwood Hall — the William Rockefeller mansion foundation sits behind the start arch with sweeping views of the Hudson and Palisades.' },
-          { mile: 2.0,  kind: 'water',    text: 'Aid #1 — water only, where the Old Croton Aqueduct crosses Route 117. You pass this spot again as Aid #8.' },
+          { mile: 2.0,  kind: 'water',    text: 'Aid #1 — water only, where the Old Croton Aqueduct crosses Route 117.' },
           { mile: 5.5,  kind: 'landmark', text: 'Aid #2 at the underpass below Old Sleepy Hollow Rd — full aid and porta-johns. The half and marathon split here; you return to this station as Aid #7.' },
           { mile: 9.5,  kind: 'hazard',   text: 'Cutoff: 11:30 AM at Aid #3, the underpass below Bedford Rd (Route 448). Miss it and the marathon is over — about 22:00/mi from the 8:00 AM gun.' },
           { mile: 11.2, kind: 'water',    text: 'Aid #4 at the Ferguson Lake Trail / Reservoir Loop junction — head out on the far Pocantico Hills loop.' },
           { mile: 13.6, kind: 'landmark', text: 'Aid #5 — back at the same junction. You have closed the far loop.' },
           { mile: 16.7, kind: 'hazard',   text: 'Cutoff: 2:30 PM at Aid #6, the same Bedford Rd underpass as Aid #3. Walk-friendly pace from here to the finish.' },
           { mile: 19.8, kind: 'water',    text: 'Aid #7 — back under Old Sleepy Hollow Rd at the Aid #2 station.' },
-          { mile: 23.8, kind: 'water',    text: 'Last aid — Aid #8, at the Old Croton Aqueduct / Route 117 crossing where Aid #1 stood. A little over two miles to go.' },
+          { mile: 23.6, kind: 'water',    text: 'Last aid — Aid #8 on the Thirteen Bridges Trail. A little over two miles of carriage road and you are home.' },
           { mile: 26.0, kind: 'landmark', text: 'Final approach to Rockwood Hall — the Hudson opens to the west, the foundation arch comes into view.' },
         ],
       },
@@ -167,10 +167,10 @@ module.exports = {
         defaultDirection: 'CW',
         cues: [
           { mile: 0.0,  kind: 'landmark', text: 'Roll out from Rockwood Hall at 9:00 AM — the half shares the marathon course out to Old Sleepy Hollow Rd before peeling off back toward the Hudson.' },
-          { mile: 2.0,  kind: 'water',    text: 'Aid #1 — water only, where the Old Croton Aqueduct crosses Route 117. You pass this spot again as Aid #8.' },
+          { mile: 2.0,  kind: 'water',    text: 'Aid #1 — water only, where the Old Croton Aqueduct crosses Route 117.' },
           { mile: 5.6,  kind: 'landmark', text: 'Aid #2 at the underpass below Old Sleepy Hollow Rd — full aid and porta-johns. The half turns toward the return spine from here.' },
           { mile: 6.7,  kind: 'water',    text: 'Aid #7 — back through the same Old Sleepy Hollow Rd underpass on the return.' },
-          { mile: 10.7, kind: 'water',    text: 'Final aid — Aid #8, at the Old Croton Aqueduct / Route 117 crossing where Aid #1 stood.' },
+          { mile: 10.4, kind: 'water',    text: 'Final aid — Aid #8 on the Thirteen Bridges Trail.' },
           { mile: 12.8, kind: 'landmark', text: 'Awards at 12:00 noon under the tent at the mansion foundation site.' },
         ],
       },
@@ -255,24 +255,27 @@ module.exports = {
     ],
   },
 
-  // Physical aid sites. The course doubles back through each one, so
-  // two numbered stations share every site (#1/#8, #2/#7, #3/#6,
-  // #4/#5 — per the race director and the host's volunteer roster).
-  // Coordinates are where the course line meets the OSM feature that
-  // names the station: the Route 117 / Sleepy Hollow Rd / Route 448
-  // road bridges the carriage roads pass under, and the Ferguson Lake
-  // Trail × Reservoir Loop junction node.
+  // Physical aid sites. The course doubles back through three of them,
+  // so #2/#7, #3/#6 and #4/#5 each share a site (per the race director).
+  // #1 and #8 are separate stations, though the host's volunteer roster
+  // staffs them as one team ("#1/8"). Coordinates are where the course
+  // line meets the OSM feature that names the station: the Route 117 /
+  // Sleepy Hollow Rd / Route 448 road bridges the carriage roads pass
+  // under, and the Ferguson Lake Trail × Reservoir Loop junction node.
+  // Thirteen Bridges is the original map's Aid #8 position, confirmed
+  // by the race director.
   aidSites: [
     { id: 'oca-117',          name: 'Old Croton Aqueduct · Route 117',          lngLat: [-73.85446, 41.10926] },
     { id: 'sleepy-hollow-rd', name: 'Underpass · Old Sleepy Hollow Rd',         lngLat: [-73.84925, 41.09360] },
     { id: 'bedford-rd',       name: 'Underpass · Bedford Rd (Route 448)',       lngLat: [-73.82019, 41.10937] },
     { id: 'fl-rl-junction',   name: 'Ferguson Lake Trail × Reservoir Loop',     lngLat: [-73.82089, 41.10132] },
+    { id: 'thirteen-bridges', name: 'Thirteen Bridges Trail',                   lngLat: [-73.85007, 41.10974] },
   ],
 
   // Aid station spine — one entry per visit, in marathon order. Each
   // distance's `aidStations` indexes into this list. `mile` is the
   // marathon position in official miles (course rescaled to 26.2);
-  // `mileByLoop` overrides it for the half, which reaches the shared
+  // `mileByLoop` overrides it for the half, which reaches the same
   // sites at different distances. The half visits #1, #2, #7, #8.
   aidStations: [
     {
@@ -338,11 +341,11 @@ module.exports = {
     },
     {
       number: 8,
-      site: 'oca-117',
-      name: 'Aid #8 — Old Croton Aqueduct · Route 117 · last aid',
-      mile: 23.8,
-      kilometer: 38.3,
-      mileByLoop: { 'half-marathon': 10.7 },
+      site: 'thirteen-bridges',
+      name: 'Aid #8 — Thirteen Bridges Trail · last aid',
+      mile: 23.6,
+      kilometer: 37.9,
+      mileByLoop: { 'half-marathon': 10.4 },
       stocked: 'Full aid spread',
     },
     {

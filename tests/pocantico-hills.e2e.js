@@ -113,12 +113,12 @@ test.describe('Pocantico Hills Marathon — desktop (1440×900)', () => {
   });
 
   test('marathon draws one aid marker per shared site, not one per visit', async ({ page }) => {
-    // Eight stations at four sites (#1/#8, #2/#7, #3/#6, #4/#5). The
+    // Eight stations at five sites (#2/#7, #3/#6, #4/#5 shared). The
     // finish coincides with the start pennant (a GL symbol), so it adds
     // no HTML marker. Scope to #map so radar markers can't leak in.
     await page.waitForSelector('#map .aid-marker', { timeout: 8000 });
     const sites = await page.locator('#map .aid-marker').evaluateAll(els => els.map(el => el.dataset.site));
-    expect(sites.sort()).toEqual(['bedford-rd', 'fl-rl-junction', 'oca-117', 'sleepy-hollow-rd']);
+    expect(sites.sort()).toEqual(['bedford-rd', 'fl-rl-junction', 'oca-117', 'sleepy-hollow-rd', 'thirteen-bridges']);
   });
 
   test('a shared-site popup lists both visits with their miles and cutoffs', async ({ page }) => {
@@ -133,12 +133,12 @@ test.describe('Pocantico Hills Marathon — desktop (1440×900)', () => {
     await expect(popup).toContainText('Cutoff 2:30 PM');
   });
 
-  test('half marathon shows its two shared sites at half-marathon miles', async ({ page }) => {
+  test('half marathon shows its three sites at half-marathon miles', async ({ page }) => {
     await page.locator('[data-race="half-marathon"]').click();
     const markers = page.locator('#map .aid-marker');
-    await expect(markers).toHaveCount(2);
+    await expect(markers).toHaveCount(3);
     const sites = await markers.evaluateAll(els => els.map(el => el.dataset.site));
-    expect(sites.sort()).toEqual(['oca-117', 'sleepy-hollow-rd']);
+    expect(sites.sort()).toEqual(['oca-117', 'sleepy-hollow-rd', 'thirteen-bridges']);
     await page.locator('#map .aid-marker[data-site="sleepy-hollow-rd"]').click();
     const popup = page.locator('.maplibregl-popup');
     await expect(popup).toContainText('Mile 5.6');
@@ -150,7 +150,7 @@ test.describe('Pocantico Hills Marathon — desktop (1440×900)', () => {
     // 8 on-course aid stations + 1 Finish entry = 9 rows
     await expect(rows).toHaveCount(9);
     await expect(rows.nth(0).locator('td').first()).toHaveText('2.0');
-    await expect(rows.nth(7).locator('td').first()).toHaveText('23.8');
+    await expect(rows.nth(7).locator('td').first()).toHaveText('23.6');
     await expect(rows.nth(8)).toContainText('Finish');
     await expect(rows.nth(8).locator('td').first()).toHaveText('26.2');
   });
