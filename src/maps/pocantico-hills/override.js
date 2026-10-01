@@ -228,6 +228,24 @@ var LOOP_IDS = ['marathon', 'half-marathon'];
 // Find the first symbol layer in Liberty's style so route + highlight
 // layers can be inserted below it. Without this, the loop lines stack
 // above Liberty's place-name symbols and cover labels like "Drumheller".
+// Trail names come from the basemap's roads_labels_minor layer, which
+// centers 12px grey text on each path. The course runs on those same
+// carriage roads, so the default labels land on the red line and its
+// dark casing and can't be read. Restyle them in brand ink with a
+// solid halo and shift them one em off the centerline so they sit
+// beside the course instead of under it.
+function styleTrailLabels() {
+  var id = 'roads_labels_minor';
+  if (!map.getLayer(id)) return;
+  map.setLayoutProperty(id, 'text-font', ['Noto Sans Medium']);
+  map.setLayoutProperty(id, 'text-size', ['interpolate', ['linear'], ['zoom'], 13, 12, 16, 14, 20, 16]);
+  map.setLayoutProperty(id, 'text-offset', [0, -1.1]);
+  map.setPaintProperty(id, 'text-color', '#34421e');
+  map.setPaintProperty(id, 'text-halo-color', 'rgba(255,255,255,0.92)');
+  map.setPaintProperty(id, 'text-halo-width', 2);
+  map.setPaintProperty(id, 'text-halo-blur', 0.5);
+}
+
 function findFirstSymbolLayerId() {
   var styleLayers = map.getStyle().layers;
   for (var li = 0; li < styleLayers.length; li++) {
@@ -1629,6 +1647,7 @@ function initMap() {
         'hillshade-shadow-color': ['rgba(34,44,62,0.75)', 'rgba(34,44,62,0.40)', 'rgba(34,44,62,0.40)', 'rgba(34,44,62,0.20)'],
       },
     }, findFirstSymbolLayerId());
+    styleTrailLabels();
 
     addLoopLayers();
     addHqStartLayer();
