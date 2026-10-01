@@ -169,6 +169,32 @@ describe('Pocket map multi-loop source resolution (pure logic)', () => {
   });
 });
 
+describe('Pocket map aid stations on multi-distance maps', () => {
+  // Load the real pmResolveAidStations out of the shared module, with the
+  // page-global AID_STATIONS_ALL injected as a parameter.
+  const src = readFileSync(resolve(__dirname, '../src/shared/pocket-map.js'), 'utf-8');
+  const fnSrc = src.match(/function pmResolveAidStations\([\s\S]*?\n}\n/)[0];
+  const resolver = stations => new Function('AID_STATIONS_ALL', `${fnSrc}; return pmResolveAidStations;`)(stations);
+
+  const STATIONS = [
+    { name: 'Aid #2', mile: 5.5, mileByLoop: { half: 5.6 }, stocked: 'Full aid' },
+    { name: 'Aid #7', mile: 19.8, mileByLoop: { half: 6.7 }, stocked: 'Full aid' },
+    { name: 'Finish', mile: 26.2 },
+  ];
+
+  it("uses a station's per-distance mile when the distance sets one", () => {
+    const out = resolver(STATIONS)({ miles: 13.1, aidIdx: [0, 1] }, 'half');
+    expect(out.map(s => s.mile)).toEqual([5.6, 6.7]);
+  });
+
+  it('falls back to the shared mile, clamped to the distance length', () => {
+    const out = resolver(STATIONS)({ miles: 26.2, aidIdx: [0, 1, 2] }, 'marathon');
+    expect(out.map(s => s.mile)).toEqual([5.5, 19.8, 26.2]);
+    const clamped = resolver(STATIONS)({ miles: 13.1, aidIdx: [2] }, 'half');
+    expect(clamped[0].mile).toBe(13.1);
+  });
+});
+
 describe('Pocket map NOT in embed builds', () => {
   slugs.forEach(slug => {
     const embedPath = resolve(__dirname, `../dist/embed/${slug}/index.html`);

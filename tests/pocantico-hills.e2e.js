@@ -112,40 +112,64 @@ test.describe('Pocantico Hills Marathon — desktop (1440×900)', () => {
     expect(featureCount).toBeGreaterThanOrEqual(0); // not -1 / -2; source exists
   });
 
-  test('aid station markers + Rockwood Hall start are visible by default', async ({ page }) => {
-    // Aid Stations are enabled by default. The marathon's 8-station
-    // spine renders as: 1 GL symbol layer for the start (Rockwood
-    // Hall) + 6-7 HTML aid markers (the finish coincides with the
-    // start and is skipped). Scope to the main #map container so
-    // weather-radar aid markers can't confuse the count.
+  test('marathon draws one aid marker per shared site, not one per visit', async ({ page }) => {
+    // Eight stations at four sites (#1/#8, #2/#7, #3/#6, #4/#5). The
+    // finish coincides with the start pennant (a GL symbol), so it adds
+    // no HTML marker. Scope to #map so radar markers can't leak in.
     await page.waitForSelector('#map .aid-marker', { timeout: 8000 });
-    const aidMarkers = page.locator('#map .aid-marker');
-    const count = await aidMarkers.count();
-    expect(count).toBeGreaterThanOrEqual(5);
-    // The HQ start is rendered as a GL symbol layer ('hq-start')
-    // inside the canvas, not an HTML marker — assert the layer
-    // is present via map state.
-    const hqVisible = await page.evaluate(() => {
-      return !!(window.map && window.map.getLayer && window.map.getLayer('hq-start'));
-    }).catch(() => false);
-    // We don't expose `window.map`, so the GL-symbol assertion is
-    // best-effort. The presence of HTML aid markers above is the
-    // primary signal.
-    expect(typeof hqVisible).toBe('boolean');
+    const sites = await page.locator('#map .aid-marker').evaluateAll(els => els.map(el => el.dataset.site));
+    expect(sites.sort()).toEqual(['bedford-rd', 'fl-rl-junction', 'oca-117', 'sleepy-hollow-rd']);
   });
 
-  test('aid-station essentials table lists 8 on-course stations + the Finish in mile order', async ({ page }) => {
+  test('a shared-site popup lists both visits with their miles and cutoffs', async ({ page }) => {
+    await page.locator('#map .aid-marker[data-site="bedford-rd"]').click();
+    const popup = page.locator('.maplibregl-popup');
+    await expect(popup).toContainText('Bedford Rd');
+    await expect(popup).toContainText('Aid #3');
+    await expect(popup).toContainText('Mile 9.5');
+    await expect(popup).toContainText('Cutoff 11:30 AM');
+    await expect(popup).toContainText('Aid #6');
+    await expect(popup).toContainText('Mile 16.7');
+    await expect(popup).toContainText('Cutoff 2:30 PM');
+  });
+
+  test('half marathon shows its two shared sites at half-marathon miles', async ({ page }) => {
+    await page.locator('[data-race="half-marathon"]').click();
+    const markers = page.locator('#map .aid-marker');
+    await expect(markers).toHaveCount(2);
+    const sites = await markers.evaluateAll(els => els.map(el => el.dataset.site));
+    expect(sites.sort()).toEqual(['oca-117', 'sleepy-hollow-rd']);
+    await page.locator('#map .aid-marker[data-site="sleepy-hollow-rd"]').click();
+    const popup = page.locator('.maplibregl-popup');
+    await expect(popup).toContainText('Mile 5.6');
+    await expect(popup).toContainText('Mile 6.7');
+  });
+
+  test('aid-station essentials table lists 8 on-course stations + the Finish in official miles', async ({ page }) => {
     const rows = page.locator('.aid-table tbody tr');
     // 8 on-course aid stations + 1 Finish entry = 9 rows
     await expect(rows).toHaveCount(9);
-    // First row mile should be 2.1 (Aid #1 at OCA bridge)
-    await expect(rows.nth(0).locator('td').first()).toContainText('2.1');
-    // Aid #8 (last on-course aid) at mile 24.1
-    await expect(rows.nth(7).locator('td').first()).toContainText('24.1');
-    // Last row is the Rockwood Hall Finish at mile 26.8 (marathon
-    // total length).
+    await expect(rows.nth(0).locator('td').first()).toHaveText('2.0');
+    await expect(rows.nth(7).locator('td').first()).toHaveText('23.8');
     await expect(rows.nth(8)).toContainText('Finish');
-    await expect(rows.nth(8).locator('td').first()).toContainText('26.8');
+    await expect(rows.nth(8).locator('td').first()).toHaveText('26.2');
+  });
+
+  test('elevation profile axis ends at the official race length', async ({ page }) => {
+    // Canvas text never reaches the DOM — record fillText calls instead.
+    await page.addInitScript(() => {
+      window.__canvasText = [];
+      const fillText = CanvasRenderingContext2D.prototype.fillText;
+      CanvasRenderingContext2D.prototype.fillText = function(text, ...rest) {
+        window.__canvasText.push(String(text));
+        return fillText.call(this, text, ...rest);
+      };
+    });
+    await page.reload();
+    await page.locator('#profileCanvas').scrollIntoViewIfNeeded();
+    await expect.poll(() => page.evaluate(() => window.__canvasText)).toContain('26.2 mi');
+    await page.locator('[data-race="half-marathon"]').click();
+    await expect.poll(() => page.evaluate(() => window.__canvasText)).toContain('13.1 mi');
   });
 
   test('race-day essentials show the marathon cutoffs', async ({ page }) => {

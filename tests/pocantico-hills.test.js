@@ -40,13 +40,19 @@ describe('pocantico-hills · theme + config', () => {
     }
   });
 
-  it('GPX-derived distances match the theme within 2%', () => {
+  it('distances display the official race length, not the raw GPX length', () => {
+    const theme = require(join(ROOT, 'src/themes/pocantico-hills.js'));
+    const official = { 'marathon': 26.2, 'half-marathon': 13.1 };
+    for (const d of theme.raceFormat.distances) expect(d.runMiles).toBe(official[d.id]);
+    for (const l of theme.raceFormat.loops) expect(l.miles).toBe(official[l.id]);
+  });
+
+  it('GPX length stays within 3% of the official distance (a rescale, not a different course)', () => {
     const theme = require(join(ROOT, 'src/themes/pocantico-hills.js'));
     for (const d of theme.raceFormat.distances) {
       const fc = JSON.parse(readFileSync(join(DATA_DIR, d.id + '.geojson'), 'utf8'));
-      const mi = fc.features[0].properties.distance_mi;
-      const tol = d.runMiles * 0.02;
-      expect(Math.abs(mi - d.runMiles)).toBeLessThanOrEqual(tol);
+      const gpxMi = fc.features[0].properties.distance_mi;
+      expect(Math.abs(gpxMi - d.runMiles)).toBeLessThanOrEqual(d.runMiles * 0.03);
     }
   });
 
@@ -83,6 +89,15 @@ describe('pocantico-hills · theme + config', () => {
     // routed through the same code path as gran-fondo-badlands).
     expect(m.aidStations).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
     expect(h.aidStations).toEqual([0, 1, 6, 7, 8]);
+  });
+
+  it('cutoffs sit at the aid stations that enforce them', () => {
+    const theme = require(join(ROOT, 'src/themes/pocantico-hills.js'));
+    const byNumber = n => theme.aidStations.find(s => s.number === n);
+    expect(byNumber(3).cutoff).toBe('11:30 AM');
+    expect(byNumber(6).cutoff).toBe('2:30 PM');
+    const cutoffMiles = theme.raceDay.cutoffs.map(c => c.mile);
+    expect(cutoffMiles).toEqual([byNumber(3).mile, byNumber(6).mile, 26.2]);
   });
 
   it('race day is November 7, 2026 — Saturday', () => {
@@ -123,6 +138,104 @@ describe('pocantico-hills · theme + config', () => {
   });
 });
 
+// The course doubles back through four shared aid sites; each numbered
+// station is one visit to a site. These helpers mirror the runtime's
+// loopCoordDistances (equirectangular, normalized to the official race
+// length) so a station's mile resolves to the same point the map draws.
+describe('pocantico-hills · shared aid sites', () => {
+  const theme = require(join(ROOT, 'src/themes/pocantico-hills.js'));
+  const METERS_PER_DEG = 111320;
+
+  function loadLine(id) {
+    const fc = JSON.parse(readFileSync(join(DATA_DIR, id + '.geojson'), 'utf8'));
+    return fc.features[0].geometry.coordinates;
+  }
+
+  function cumulativeMiles(coords, officialMiles) {
+    const dists = [0];
+    for (let i = 1; i < coords.length; i++) {
+      const [x1, y1] = coords[i - 1], [x2, y2] = coords[i];
+      const dLng = (x2 - x1) * Math.cos((y1 + y2) / 2 * Math.PI / 180);
+      dists.push(dists[i - 1] + Math.hypot(dLng, y2 - y1));
+    }
+    const raw = dists[dists.length - 1];
+    return dists.map(d => d / raw * officialMiles);
+  }
+
+  function coordAtMile(coords, dists, mile) {
+    const j = dists.findIndex(d => d >= mile);
+    if (j <= 0) return coords[Math.max(j, 0)];
+    const t = (mile - dists[j - 1]) / (dists[j] - dists[j - 1]);
+    return [0, 1].map(k => coords[j - 1][k] + (coords[j][k] - coords[j - 1][k]) * t);
+  }
+
+  function metersBetween(a, b) {
+    const dLng = (b[0] - a[0]) * Math.cos(a[1] * Math.PI / 180);
+    return Math.hypot(dLng, b[1] - a[1]) * METERS_PER_DEG;
+  }
+
+  function stationMile(stn, raceId) {
+    return (stn.mileByLoop && stn.mileByLoop[raceId] != null) ? stn.mileByLoop[raceId] : stn.mile;
+  }
+
+  const site = id => theme.aidSites.find(s => s.id === id);
+  const byNumber = n => theme.aidStations.find(s => s.number === n);
+
+  it('stations the race director named as one location share a single site', () => {
+    expect(theme.aidSites).toHaveLength(4);
+    for (const [a, b] of [[1, 8], [2, 7], [3, 6], [4, 5]]) {
+      expect(byNumber(a).site).toBeTruthy();
+      expect(byNumber(a).site).toBe(byNumber(b).site);
+    }
+    for (const stn of theme.aidStations) {
+      if (stn.site) expect(site(stn.site)).toBeDefined();
+    }
+  });
+
+  function metersToSegment(p, a, b) {
+    const cos = Math.cos(p[1] * Math.PI / 180);
+    const ax = a[0] * cos, ay = a[1], bx = b[0] * cos, by = b[1], px = p[0] * cos, py = p[1];
+    const dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy;
+    const t = len2 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2)) : 0;
+    return Math.hypot(px - ax - t * dx, py - ay - t * dy) * METERS_PER_DEG;
+  }
+
+  it('every aid site sits on the marathon course line', () => {
+    const coords = loadLine('marathon');
+    for (const s of theme.aidSites) {
+      let nearest = Infinity;
+      for (let i = 1; i < coords.length; i++) {
+        nearest = Math.min(nearest, metersToSegment(s.lngLat, coords[i - 1], coords[i]));
+      }
+      expect(nearest, s.id).toBeLessThan(10);
+    }
+  });
+
+  // The regression the race director reported: paired stations rendered
+  // up to 2 km apart because their miles didn't land on the shared site.
+  // 150 m allows for the marathon's first Bedford Rd pass, where the GPX
+  // is a sparse straight chord ~110 m off the bridge.
+  for (const d of theme.raceFormat.distances) {
+    it(`${d.id}: each station's mile lands at its site`, () => {
+      const coords = loadLine(d.id);
+      const dists = cumulativeMiles(coords, d.runMiles);
+      for (const i of d.aidStations) {
+        const stn = theme.aidStations[i];
+        if (stn.number == null) continue; // the Finish — rendered by the start pennant
+        expect(site(stn.site), `Aid #${stn.number} site`).toBeDefined();
+        const at = coordAtMile(coords, dists, stationMile(stn, d.id));
+        expect(metersBetween(at, site(stn.site).lngLat), `Aid #${stn.number}`).toBeLessThan(150);
+      }
+    });
+
+    it(`${d.id}: station miles increase and the finish equals the race length`, () => {
+      const miles = d.aidStations.map(i => stationMile(theme.aidStations[i], d.id));
+      for (let k = 1; k < miles.length; k++) expect(miles[k]).toBeGreaterThan(miles[k - 1]);
+      expect(miles[miles.length - 1]).toBe(d.runMiles);
+    });
+  }
+});
+
 describe('pocantico-hills · built HTML', () => {
   it('compiled HTML inlines both loop datasets + turns + weather', () => {
     expect(existsSync(DIST_HTML)).toBe(true);
@@ -132,6 +245,20 @@ describe('pocantico-hills · built HTML', () => {
     expect(html).toContain('LOOP_TURNS');
     expect(html).toContain('AID_STATIONS_ALL');
     expect(html).toContain('var DEFAULT_DISTANCE_ID');
+  });
+
+  it('compiled profiles and turns are rescaled to the official race length', () => {
+    const html = readFileSync(DIST_HTML, 'utf8');
+    const inlined = name => JSON.parse(html.match(new RegExp(`var ${name}\\s*=\\s*(.*);\\n`))[1]);
+    const official = { marathonData: 26.2, halfData: 13.1 };
+    for (const [name, miles] of Object.entries(official)) {
+      const profile = inlined(name).profile;
+      expect(profile[profile.length - 1].d).toBeCloseTo(miles, 2);
+    }
+    const turns = inlined('LOOP_TURNS');
+    expect(Math.max(...turns['marathon'].map(t => t.mile))).toBeLessThanOrEqual(26.2);
+    expect(Math.max(...turns['half-marathon'].map(t => t.mile))).toBeLessThanOrEqual(13.1);
+    expect(html).toContain('var AID_SITES');
   });
 
   it('compiled HTML has both distance picker chips with mile labels', () => {

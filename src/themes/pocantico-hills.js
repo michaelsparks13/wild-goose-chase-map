@@ -111,7 +111,7 @@ module.exports = {
   // needs its own copy. See [[race-map-editorial-copy-overrides]].
   editorialCopy: {
     profileSub: 'Full course · marathon flagship loop · half marathon shares the first half',
-    aidSub:     'Eight stations on a shared spine — the marathon hits all eight, the half hits four. Water + electrolytes throughout; six of eight stations carry a full hot/cold spread including broth, boiled potatoes, salt, brined snacks, PB&J, fruit, chips, and candy.',
+    aidSub:     'Eight stations at four sites — the course passes each site twice. The marathon hits all eight, the half hits four. Water + electrolytes throughout; six of eight stations carry a full hot/cold spread including broth, boiled potatoes, salt, brined snacks, PB&J, fruit, chips, and candy.',
     daySub:     'Marathon rolls out at 8:00 AM (walkers 7:00 AM). Half marathon starts at 9:00 AM. Award ceremony for the half at 12:00 noon at Rockwood Hall.',
   },
 
@@ -130,8 +130,11 @@ module.exports = {
       {
         id: 'marathon',
         displayName: 'Marathon',
-        kilometers: 43.2,
-        miles: 26.81,
+        // Official race distance. The GPX measures 26.81 mi; config.js
+        // rescales the line, profile and turns so every mile on the
+        // page reads against 26.2.
+        kilometers: 42.2,
+        miles: 26.2,
         // Real values from data/marathon.geojson properties — Open-Meteo
         // DEM via scripts/build-pocantico-hills-courses.js. Rockefeller
         // Preserve sits on the Hudson bluff so the carriage roads roll
@@ -142,31 +145,32 @@ module.exports = {
         defaultDirection: 'CW',
         cues: [
           { mile: 0.0,  kind: 'landmark', text: 'Roll out from Rockwood Hall — the William Rockefeller mansion foundation sits behind the start arch with sweeping views of the Hudson and Palisades.' },
-          { mile: 2.1,  kind: 'water',    text: 'First aid station — water only, at the OCA trail bridge over Route 117.' },
-          { mile: 5.5,  kind: 'landmark', text: 'Underpass under Old Sleepy Hollow Rd — full aid station and porta-johns. From here you climb into the Pocantico River watershed.' },
-          { mile: 9.5,  kind: 'hazard',   text: 'Cutoff: 11:30 AM at Aid #3, the underpass under Bedford Rd. Miss it and the marathon is over. Half-pace ≈ 16:40/mi to make this point from the gun.' },
-          { mile: 12.6, kind: 'water',    text: 'Aid #4 at the FL/RL trail junction — entering the far Pocantico Hills loop.' },
-          { mile: 15.1, kind: 'landmark', text: 'Aid #5 back at the FL/RL junction — you have closed the far loop. Swan Lake (22 acres) lies south of this junction.' },
-          { mile: 16.9, kind: 'hazard',   text: 'Cutoff: 2:30 PM at Aid #6, second pass under Bedford Rd. Walk-friendly pace from here to the finish.' },
-          { mile: 24.1, kind: 'water',    text: 'Last aid — under Route 117 on the Thirteen Bridges Trail. Two miles of carriage road and you are home.' },
+          { mile: 2.0,  kind: 'water',    text: 'Aid #1 — water only, where the Old Croton Aqueduct crosses Route 117. You pass this spot again as Aid #8.' },
+          { mile: 5.5,  kind: 'landmark', text: 'Aid #2 at the underpass below Old Sleepy Hollow Rd — full aid and porta-johns. The half and marathon split here; you return to this station as Aid #7.' },
+          { mile: 9.5,  kind: 'hazard',   text: 'Cutoff: 11:30 AM at Aid #3, the underpass below Bedford Rd (Route 448). Miss it and the marathon is over — about 22:00/mi from the 8:00 AM gun.' },
+          { mile: 11.2, kind: 'water',    text: 'Aid #4 at the Ferguson Lake Trail / Reservoir Loop junction — head out on the far Pocantico Hills loop.' },
+          { mile: 13.6, kind: 'landmark', text: 'Aid #5 — back at the same junction. You have closed the far loop.' },
+          { mile: 16.7, kind: 'hazard',   text: 'Cutoff: 2:30 PM at Aid #6, the same Bedford Rd underpass as Aid #3. Walk-friendly pace from here to the finish.' },
+          { mile: 19.8, kind: 'water',    text: 'Aid #7 — back under Old Sleepy Hollow Rd at the Aid #2 station.' },
+          { mile: 23.8, kind: 'water',    text: 'Last aid — Aid #8, at the Old Croton Aqueduct / Route 117 crossing where Aid #1 stood. A little over two miles to go.' },
           { mile: 26.0, kind: 'landmark', text: 'Final approach to Rockwood Hall — the Hudson opens to the west, the foundation arch comes into view.' },
         ],
       },
       {
         id: 'half-marathon',
         displayName: 'Half Marathon',
-        kilometers: 21.4,
-        miles: 13.30,
+        kilometers: 21.1,
+        miles: 13.1, // official distance; the GPX measures 13.30 mi
         elevationGain: 1477,
         elevationGainM: 450,
         color: '#F5C400', // golden yellow — matches the host's static course map
         defaultDirection: 'CW',
         cues: [
           { mile: 0.0,  kind: 'landmark', text: 'Roll out from Rockwood Hall at 9:00 AM — the half shares the marathon course out to Old Sleepy Hollow Rd before peeling off back toward the Hudson.' },
-          { mile: 2.1,  kind: 'water',    text: 'First aid — water only, at the OCA trail bridge over Route 117.' },
-          { mile: 5.5,  kind: 'landmark', text: 'Underpass under Old Sleepy Hollow Rd — full aid + porta-johns. The half turns toward the return spine from here.' },
-          { mile: 8.0,  kind: 'water',    text: 'Half-marathon third aid station — under Old Sleepy Hollow Rd on the return, second time through.' },
-          { mile: 11.0, kind: 'water',    text: 'Final half-marathon aid station — under Route 117 on the Thirteen Bridges Trail.' },
+          { mile: 2.0,  kind: 'water',    text: 'Aid #1 — water only, where the Old Croton Aqueduct crosses Route 117. You pass this spot again as Aid #8.' },
+          { mile: 5.6,  kind: 'landmark', text: 'Aid #2 at the underpass below Old Sleepy Hollow Rd — full aid and porta-johns. The half turns toward the return spine from here.' },
+          { mile: 6.7,  kind: 'water',    text: 'Aid #7 — back through the same Old Sleepy Hollow Rd underpass on the return.' },
+          { mile: 10.7, kind: 'water',    text: 'Final aid — Aid #8, at the Old Croton Aqueduct / Route 117 crossing where Aid #1 stood.' },
           { mile: 12.8, kind: 'landmark', text: 'Awards at 12:00 noon under the tent at the mansion foundation site.' },
         ],
       },
@@ -180,8 +184,8 @@ module.exports = {
         id: 'marathon',
         label: 'Marathon 26.2 mi',
         shortLabel: 'Marathon',
-        kilometers: 43.2,
-        runMiles: 26.81,
+        kilometers: 42.2,
+        runMiles: 26.2,
         runGainFt: 2969,
         runGainM: 905,
         color: '#E4151B', // route red — matches the host's static course map
@@ -200,8 +204,8 @@ module.exports = {
         id: 'half-marathon',
         label: 'Half Marathon 13.1 mi',
         shortLabel: 'Half',
-        kilometers: 21.4,
-        runMiles: 13.30,
+        kilometers: 21.1,
+        runMiles: 13.1,
         runGainFt: 1477,
         runGainM: 450,
         color: '#F5C400', // golden yellow — matches the host's static course map
@@ -209,8 +213,8 @@ module.exports = {
         startTime: '9:00 AM',
         startWindow: '9:00 AM',
         assembly: [{ loopId: 'half-marathon', direction: 'CW' }],
-        // The half hits the marathon's stations 1, 2, 7, 8
-        // (numbering from the host site) plus the shared finish at
+        // The half hits the marathon's stations 1, 2, 7, 8 — two
+        // shared sites, each visited twice — plus the finish at
         // Rockwood Hall. Indexed into the shared spine: 0, 1, 6, 7, 8.
         aidStations: [0, 1, 6, 7, 8],
       },
@@ -246,76 +250,109 @@ module.exports = {
     ],
     cutoffs: [
       { mile: 9.5,  time: '11:30 AM', label: 'Marathon Mile 9.5 cutoff (Aid #3)' },
-      { mile: 16.9, time: '2:30 PM',  label: 'Marathon Mile 16.9 cutoff (Aid #6)' },
+      { mile: 16.7, time: '2:30 PM',  label: 'Marathon Mile 16.7 cutoff (Aid #6)' },
       { mile: 26.2, time: '5:00 PM',  label: 'Marathon finish cutoff' },
     ],
   },
 
-  // Aid station spine, in order along the marathon course. The half
-  // marathon's `aidStations: [0,1,6,7]` indexes the four it visits.
-  // Mile values are the marathon-distance positions; the half's
-  // back-half stops sit at different mile readings (8.0, 11.0)
-  // because the half is shorter — those positions are computed at
-  // runtime from the half's coordinate distances.
+  // Physical aid sites. The course doubles back through each one, so
+  // two numbered stations share every site (#1/#8, #2/#7, #3/#6,
+  // #4/#5 — per the race director and the host's volunteer roster).
+  // Coordinates are where the course line meets the OSM feature that
+  // names the station: the Route 117 / Sleepy Hollow Rd / Route 448
+  // road bridges the carriage roads pass under, and the Ferguson Lake
+  // Trail × Reservoir Loop junction node.
+  aidSites: [
+    { id: 'oca-117',          name: 'Old Croton Aqueduct · Route 117',          lngLat: [-73.85446, 41.10926] },
+    { id: 'sleepy-hollow-rd', name: 'Underpass · Old Sleepy Hollow Rd',         lngLat: [-73.84925, 41.09360] },
+    { id: 'bedford-rd',       name: 'Underpass · Bedford Rd (Route 448)',       lngLat: [-73.82019, 41.10937] },
+    { id: 'fl-rl-junction',   name: 'Ferguson Lake Trail × Reservoir Loop',     lngLat: [-73.82089, 41.10132] },
+  ],
+
+  // Aid station spine — one entry per visit, in marathon order. Each
+  // distance's `aidStations` indexes into this list. `mile` is the
+  // marathon position in official miles (course rescaled to 26.2);
+  // `mileByLoop` overrides it for the half, which reaches the shared
+  // sites at different distances. The half visits #1, #2, #7, #8.
   aidStations: [
     {
-      name: 'Aid #1 — OCA Trail Bridge over Route 117',
-      mile: 2.1,
-      kilometer: 3.4,
+      number: 1,
+      site: 'oca-117',
+      name: 'Aid #1 — Old Croton Aqueduct · Route 117',
+      mile: 2.0,
+      kilometer: 3.2,
+      mileByLoop: { 'half-marathon': 2.0 },
       stocked: 'Water only',
     },
     {
+      number: 2,
+      site: 'sleepy-hollow-rd',
       name: 'Aid #2 — Underpass · Old Sleepy Hollow Rd',
       mile: 5.5,
       kilometer: 8.9,
+      mileByLoop: { 'half-marathon': 5.6 },
       stocked: 'Full aid spread · porta-johns',
     },
     {
-      name: 'Aid #3 — Underpass · Bedford Rd (Route 448) · CUTOFF 11:30 AM',
+      number: 3,
+      site: 'bedford-rd',
+      name: 'Aid #3 — Underpass · Bedford Rd (Route 448)',
       mile: 9.5,
       kilometer: 15.3,
-      stocked: 'Full aid · porta-johns · CUTOFF 11:30 AM',
+      cutoff: '11:30 AM',
+      stocked: 'Full aid · porta-johns',
     },
     {
-      name: 'Aid #4 — FL/RL Trail Junction',
-      mile: 12.6,
-      kilometer: 20.3,
+      number: 4,
+      site: 'fl-rl-junction',
+      name: 'Aid #4 — Ferguson Lake Trail × Reservoir Loop',
+      mile: 11.2,
+      kilometer: 18.0,
       stocked: 'Full aid spread',
     },
     {
-      name: 'Aid #5 — FL/RL Trail Junction (after far loop)',
-      mile: 15.1,
-      kilometer: 24.3,
+      number: 5,
+      site: 'fl-rl-junction',
+      name: 'Aid #5 — Ferguson Lake Trail × Reservoir Loop (after the loop)',
+      mile: 13.6,
+      kilometer: 21.9,
       stocked: 'Full aid spread',
     },
     {
-      name: 'Aid #6 — Underpass · Bedford Rd · CUTOFF 2:30 PM',
-      mile: 16.9,
-      kilometer: 27.2,
-      stocked: 'Full aid · porta-johns · CUTOFF 2:30 PM',
+      number: 6,
+      site: 'bedford-rd',
+      name: 'Aid #6 — Underpass · Bedford Rd (2nd pass)',
+      mile: 16.7,
+      kilometer: 26.9,
+      cutoff: '2:30 PM',
+      stocked: 'Full aid · porta-johns',
     },
     {
+      number: 7,
+      site: 'sleepy-hollow-rd',
       name: 'Aid #7 — Underpass · Old Sleepy Hollow Rd (2nd pass)',
-      mile: 20.1,
-      kilometer: 32.3,
+      mile: 19.8,
+      kilometer: 31.9,
+      mileByLoop: { 'half-marathon': 6.7 },
       stocked: 'Full aid spread',
     },
     {
-      name: 'Aid #8 — Thirteen Bridges Trail · last aid',
-      mile: 24.1,
-      kilometer: 38.8,
+      number: 8,
+      site: 'oca-117',
+      name: 'Aid #8 — Old Croton Aqueduct · Route 117 · last aid',
+      mile: 23.8,
+      kilometer: 38.3,
+      mileByLoop: { 'half-marathon': 10.7 },
       stocked: 'Full aid spread',
     },
     {
-      // Explicit Finish entry at the end of the aid spine. The mile
-      // value is the marathon's total course length; override.js
-      // auto-detects that this point is within 50 m of the start
-      // (Rockwood Hall is the start AND finish for both distances)
-      // and skips rendering an HTML marker, since the start GL
-      // symbol layer already represents both.
+      // Explicit Finish entry at the end of the aid spine. It has no
+      // site: Rockwood Hall is the start AND finish for both
+      // distances, and the start GL symbol already marks it.
       name: 'Rockwood Hall · Finish',
-      mile: 26.81,
-      kilometer: 43.2,
+      mile: 26.2,
+      kilometer: 42.2,
+      mileByLoop: { 'half-marathon': 13.1 },
       stocked: 'Race-day finish line · refreshments · gear retrieval',
     },
   ],
@@ -333,7 +370,7 @@ module.exports = {
   },
 
   cartographerNotes:
-    'Both distances start and finish at Rockwood Hall — the foundation of the William Rockefeller mansion, on a bluff over the Hudson. The marathon is a single 26.2-mile loop that touches every corner of the preserve; the half marathon is the same outbound spine for the first 5.5 miles, then peels off and returns by way of the Thirteen Bridges Trail back to Rockwood. Everything is carriage road — no pavement, no cars, no roots. The carriage roads were laid out by John D. Rockefeller Jr. in the 1890s-1910s and are still maintained today by the Friends of the Rockefeller State Park Preserve, who receive a share of race proceeds. Aid is generously stocked at six of the eight stations (full hot/cold spread including broth, boiled potatoes, salt, brined snacks, and PB&J); the first station is water-only. The marathon carries two hard cutoffs — Mile 9.5 by 11:30 AM, Mile 16.9 by 2:30 PM — and a finish cutoff of 5:00 PM. The Mile 9.5 cutoff is the tightest: it requires an average pace of about 21:00/mi from the 8:00 AM gun. Walkers start an hour early at 7:00 AM to keep that math friendly. There is no on-course shade in mid-November because the leaves are down — dress for wind off the Hudson and bring a hat. The carriage roads can be muddy after rain; the surface is groomed gravel and crushed stone, not single-track.',
+    'Both distances start and finish at Rockwood Hall — the foundation of the William Rockefeller mansion, on a bluff over the Hudson. The marathon is a single 26.2-mile loop that touches every corner of the preserve; the half marathon is the same outbound spine for the first 5.5 miles, then peels off and returns by way of the Thirteen Bridges Trail back to Rockwood. Everything is carriage road — no pavement, no cars, no roots. The carriage roads were laid out by John D. Rockefeller Jr. in the 1890s-1910s and are still maintained today by the Friends of the Rockefeller State Park Preserve, who receive a share of race proceeds. Aid is generously stocked at six of the eight stations (full hot/cold spread including broth, boiled potatoes, salt, brined snacks, and PB&J); the first station is water-only. The marathon carries two hard cutoffs — Mile 9.5 by 11:30 AM, Mile 16.7 by 2:30 PM — and a finish cutoff of 5:00 PM. The Mile 9.5 cutoff is the tightest: it requires an average pace of about 22:00/mi from the 8:00 AM gun. Walkers start an hour early at 7:00 AM to keep that math friendly. There is no on-course shade in mid-November because the leaves are down — dress for wind off the Hudson and bring a hat. The carriage roads can be muddy after rain; the surface is groomed gravel and crushed stone, not single-track.',
 
   crossLinks: [
     { slug: 'tupper-lake-tinman',  name: 'Tupper Lake Tinman 13.1M',   region: 'Tupper Lake · NY' },

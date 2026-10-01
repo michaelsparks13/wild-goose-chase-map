@@ -91,16 +91,20 @@ function pmParseStartHour(s) {
   return h + min / 60;
 }
 
-// Aid stations for a multi-loop distance: index the shared spine and clamp
-// miles to the loop length — matching the live map's renderAidMarkers().
-function pmResolveAidStations(race) {
+// Aid stations for a multi-loop distance: index the shared spine, prefer a
+// station's per-distance mile (mileByLoop — set where a shorter distance
+// reaches a shared station at a different mile), and clamp to the loop
+// length — matching the live map's aid markers.
+function pmResolveAidStations(race, raceId) {
   if (typeof AID_STATIONS_ALL === 'undefined' || !race.aidIdx) return null;
   var out = [];
   var loopLen = race.miles;
   for (var i = 0; i < race.aidIdx.length; i++) {
     var a = AID_STATIONS_ALL[race.aidIdx[i]];
     if (!a) continue;
-    var mile = (a.mile != null) ? a.mile : (a.kilometer != null ? a.kilometer / 1.609344 : 0);
+    var mile = (a.mileByLoop && a.mileByLoop[raceId] != null) ? a.mileByLoop[raceId]
+      : (a.mile != null) ? a.mile
+      : (a.kilometer != null ? a.kilometer / 1.609344 : 0);
     if (mile > loopLen) mile = loopLen;
     out.push({ name: a.name, mile: Math.round(mile * 10) / 10, services: a.stocked || a.services || '' });
   }
@@ -187,7 +191,7 @@ function pmResolveFromLoops() {
     profileMileStep: race.miles > 18 ? 5 : 3,
     finishCoords: null,
     colors: pmElevationPalette(primary),
-    aidStations: pmResolveAidStations(race),
+    aidStations: pmResolveAidStations(race, raceId),
     cutoffs: null,
     trailsData: null,
     mileMarkerFillColor: primary,

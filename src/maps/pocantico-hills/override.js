@@ -84,6 +84,13 @@ function escapeHtml(s) {
   });
 }
 
+// Profile x-axis tick label. Intermediate ticks round to whole miles
+// past 10; the final tick is the race length, so it keeps its decimal
+// (26.2, not 26).
+function fmtAxisMi(mi, isLast) {
+  return mi.toFixed(isLast || mi < 10 ? 1 : 0);
+}
+
 function getCoordAtMile(loopId, mile) {
   var loop = LOOPS[loopId];
   if (!loop || !loop.geojson) return [0, 0];
@@ -466,76 +473,69 @@ function clearAidMarkers() {
   aidMarkers = [];
 }
 
+// A station's mile on the active distance. The half reaches the shared
+// sites at different distances than the marathon, so stations carry a
+// per-loop override (mileByLoop) alongside the marathon `mile`.
+function aidMile(stn) {
+  if (stn.mileByLoop && stn.mileByLoop[currentRaceId] != null) return stn.mileByLoop[currentRaceId];
+  return stn.mile;
+}
+
+// The active distance's station visits, grouped by physical site. The
+// Rockwood Hall finish has no site — the start pennant marks it.
+function aidVisitsBySite(race) {
+  var bySite = {};
+  (race.aidIdx || []).forEach(function(i) {
+    var stn = AID_STATIONS_ALL[i];
+    if (!stn || !stn.site) return;
+    (bySite[stn.site] = bySite[stn.site] || []).push(stn);
+  });
+  return bySite;
+}
+
+function aidSitePopupHtml(site, visits) {
+  var rows = visits.map(function(stn) {
+    return '<li class="aid-popup__visit">' +
+        '<div class="aid-popup__km">Aid #' + stn.number + ' · Mile ' + aidMile(stn).toFixed(1) + '</div>' +
+        (stn.cutoff ? '<div class="aid-popup__cutoff">Cutoff ' + escapeHtml(stn.cutoff) + '</div>' : '') +
+        '<div class="aid-popup__stocked">' + escapeHtml(stn.stocked) + '</div>' +
+      '</li>';
+  }).join('');
+  return '<div class="aid-popup">' +
+      '<div class="aid-popup__name">' + escapeHtml(site.name) + '</div>' +
+      '<ul class="aid-popup__visits">' + rows + '</ul>' +
+    '</div>';
+}
+
+// One marker per site, not per visit: the course passes each site
+// twice, and two markers on one spot would hide the second popup.
 function renderAidMarkers() {
   clearAidMarkers();
   var race = RACES[currentRaceId];
   updateHqStartLayer(race);
-  if (!aidOn) return;
-  if (!race) return;
-  var idxs = race.aidIdx || [];
-  idxs.forEach(function(i, n) {
-    var stn = AID_STATIONS_ALL[i];
-    if (!stn) return;
-    var isStart = (n === 0);
-    if (isStart) return; // rendered by the hq-start GL symbol layer (below place labels)
-    var raceMile = (stn.mile != null) ? stn.mile : (stn.kilometer != null ? stn.kilometer / KM_PER_MI : 0);
-    var loopLenMi = LOOPS[currentRaceId].miles;
-    if (raceMile > loopLenMi) raceMile = loopLenMi;
-    var coord = getCoordAtMile(currentRaceId, raceMile);
-
-    var isFinish = (n === idxs.length - 1);
-    // For loop courses (start coord === finish coord, within ~50m) the
-    // finish marker would stack directly on top of the start. Visually
-    // it's redundant — one rust "S/F" pennant carries the meaning. Skip
-    // the finish marker entirely; let the start popup name tell the
-    // rider "Start / Finish".
-    if (isFinish) {
-      var startCoord = LOOPS[currentRaceId].geojson.geometry.coordinates[0];
-      var dx = (coord[0] - startCoord[0]) * 111000 * Math.cos(startCoord[1] * Math.PI / 180);
-      var dy = (coord[1] - startCoord[1]) * 111000;
-      if (Math.hypot(dx, dy) < 50) return; // overlap; skip
-    }
+  if (!aidOn || !race) return;
+  var visitsBySite = aidVisitsBySite(race);
+  AID_SITES.forEach(function(site) {
+    var visits = visitsBySite[site.id];
+    if (!visits) return;
     var el = document.createElement('div');
-    el.className = isFinish ? 'aid-marker aid-marker--finish' : 'aid-marker';
+    el.className = 'aid-marker';
+    el.dataset.site = site.id;
+    el.setAttribute('aria-label', visits.map(function(stn) { return 'Aid #' + stn.number; }).join(' and ') + ' — ' + site.name);
 
-    // SVGs use currentColor for fills; the wrapper sets color via CSS
-    // (.aid-marker / --finish), since CSS var() in fill="..." attributes
-    // is not reliably supported across browsers.
-    var svgInner;
-    if (isFinish) {
-      // Finish flag — checkered pennant on a pole, brand-color disc
-      svgInner =
-        '<svg viewBox="0 0 32 32" aria-hidden="true">' +
-          '<circle cx="16" cy="16" r="13" fill="currentColor" stroke="#fff" stroke-width="2.5"/>' +
-          '<path d="M11 8 L11 24" stroke="#fff" stroke-width="2" stroke-linecap="round"/>' +
-          '<path d="M11.5 8 L21 8 L21 16 L11.5 16 Z" fill="#fff"/>' +
-          '<rect x="11.5" y="8"  width="3.2" height="2.7" fill="#1A1A1A"/>' +
-          '<rect x="17.8" y="8"  width="3.2" height="2.7" fill="#1A1A1A"/>' +
-          '<rect x="14.7" y="10.7" width="3.1" height="2.7" fill="#1A1A1A"/>' +
-          '<rect x="11.5" y="13.4" width="3.2" height="2.6" fill="#1A1A1A"/>' +
-          '<rect x="17.8" y="13.4" width="3.2" height="2.6" fill="#1A1A1A"/>' +
-        '</svg>';
-    } else {
-      // Aid station — ochre disc with white water-drop + cross (Tinman style)
-      svgInner =
-        '<svg viewBox="0 0 28 28" aria-hidden="true">' +
-          '<circle cx="14" cy="14" r="11" fill="currentColor" stroke="#fff" stroke-width="2"/>' +
-          '<path d="M14 7 C 10.5 11.5, 9 13.5, 9 15.8 a5 5 0 0 0 10 0 C 19 13.5, 17.5 11.5, 14 7 Z" fill="#fff"/>' +
-          '<path d="M14 12.2 v3.2 M12.4 13.8 h3.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>' +
-        '</svg>';
-    }
-    setHtml(el, svgInner);
-
-    var popupHtml =
-      '<div class="aid-popup">' +
-        '<div class="aid-popup__name">' + escapeHtml(stn.name) + '</div>' +
-        '<div class="aid-popup__km">Mile ' + (stn.mile != null ? stn.mile.toFixed(1) : '—') + '</div>' +
-        '<div class="aid-popup__stocked">' + escapeHtml(stn.stocked) + '</div>' +
-      '</div>';
+    // Ochre disc with white water-drop + cross (Tinman style). The SVG
+    // fills use currentColor; the wrapper sets color via CSS, since
+    // CSS var() in fill="..." attributes is not reliably supported.
+    setHtml(el,
+      '<svg viewBox="0 0 28 28" aria-hidden="true">' +
+        '<circle cx="14" cy="14" r="11" fill="currentColor" stroke="#fff" stroke-width="2"/>' +
+        '<path d="M14 7 C 10.5 11.5, 9 13.5, 9 15.8 a5 5 0 0 0 10 0 C 19 13.5, 17.5 11.5, 14 7 Z" fill="#fff"/>' +
+        '<path d="M14 12.2 v3.2 M12.4 13.8 h3.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>' +
+      '</svg>');
 
     var marker = new maplibregl.Marker({ element: el, anchor: 'center', opacityWhenCovered: '0.99' })
-      .setLngLat(coord)
-      .setPopup(new maplibregl.Popup({ offset: 16, maxWidth: '300px' }).setHTML(popupHtml))
+      .setLngLat(site.lngLat)
+      .setPopup(new maplibregl.Popup({ offset: 16, maxWidth: '300px' }).setHTML(aidSitePopupHtml(site, visits)))
       .addTo(map);
     aidMarkers.push(marker);
   });
@@ -982,7 +982,7 @@ function drawProfile() {
     var miX = (totalMi * t) / ticks;
     var x = padL + (plotW * t) / ticks;
     ctx.fillStyle = 'rgba(26,26,26,0.55)';
-    ctx.fillText(miX.toFixed(miX < 10 ? 1 : 0) + ' mi', x, H - 8);
+    ctx.fillText(fmtAxisMi(miX, t === ticks) + ' mi', x, H - 8);
   }
 
   var color = race ? race.color : '#1A1A1A';
@@ -1411,7 +1411,7 @@ function drawSimTerrain(atMi) {
   for (var t = 0; t <= ticks; t++) {
     var miX = (totalMi2 * t) / ticks;
     var tx = padL + (plotW * t) / ticks;
-    ctx.fillText(miX.toFixed(miX < 10 ? 1 : 0) + 'mi', tx, H - padB + 6);
+    ctx.fillText(fmtAxisMi(miX, t === ticks) + 'mi', tx, H - padB + 6);
   }
 
   // Marker at current km

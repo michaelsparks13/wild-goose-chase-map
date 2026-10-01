@@ -21,10 +21,29 @@ function loadJSON(file) {
 
 const theme = require('../../themes/pocantico-hills.js');
 
-const marathonGeo     = loadJSON('data/marathon.geojson');
-const marathonProfile = loadJSON('data/marathon-profile.json');
-const halfGeo         = loadJSON('data/half-marathon.geojson');
-const halfProfile     = loadJSON('data/half-marathon-profile.json');
+const marathonGeo = loadJSON('data/marathon.geojson');
+const halfGeo     = loadJSON('data/half-marathon.geojson');
+
+// Every distance on the page reads against the official race length
+// (26.2 / 13.1), not the GPX's measured length (26.81 / 13.30). The
+// data files stay the raw GPX record; this factor rescales each loop's
+// profile and turn miles at build time. The course line itself is
+// normalized to the same length at runtime (loopCoordDistances below).
+function officialScale(loopId, geo) {
+  const loop = theme.raceFormat.loops.find(l => l.id === loopId);
+  return loop.miles / geo.features[0].properties.distance_mi;
+}
+const MILE_SCALE = {
+  'marathon':      officialScale('marathon', marathonGeo),
+  'half-marathon': officialScale('half-marathon', halfGeo),
+};
+
+function loadProfile(loopId) {
+  const roundMi = d => Math.round(d * MILE_SCALE[loopId] * 1000) / 1000;
+  return loadJSON(`data/${loopId}-profile.json`).map(p => ({ d: roundMi(p.d), e: p.e }));
+}
+const marathonProfile = loadProfile('marathon');
+const halfProfile     = loadProfile('half-marathon');
 
 const weatherData = fs.existsSync(path.join(__dirname, 'data/weather.json'))
   ? loadJSON('data/weather.json') : null;
@@ -39,7 +58,7 @@ function loadLoopTurns(loopId) {
   const fc = JSON.parse(fs.readFileSync(file, 'utf8'));
   return fc.features.map((f, i) => ({
     n: i + 1,
-    mile: f.properties.course_mi,
+    mile: Math.round(f.properties.course_mi * MILE_SCALE[loopId] * 100) / 100,
     direction: f.properties.direction,
     intensity: f.properties.intensity,
     label: f.properties.label || '',
@@ -66,10 +85,11 @@ const racesJsLines = theme.raceFormat.distances.map(d => {
 }).join(',\n');
 
 // Inline the shared aid-station spine. Each distance's `aidIdx`
-// indexes into this list to render only the stations it visits.
-// Both `mile` and `kilometer` fields are carried so the runtime
-// can prefer mile (per theme.displayUnits === 'mi').
+// indexes into this list to render only the stations it visits; each
+// station names the physical site (AID_SITES) it stands at, so a site
+// visited twice renders as one marker.
 const aidStationsJs = JSON.stringify(theme.aidStations);
+const aidSitesJs = JSON.stringify(theme.aidSites);
 
 const configDataJs = `
 var LOOPS = {
@@ -90,10 +110,7 @@ var LOOP_CUES = ${JSON.stringify(
   }, {})
 )};
 
-var LOOP_TURNS = {
-  'marathon':      ${JSON.stringify(marathonTurns)},
-  'half-marathon': ${JSON.stringify(halfTurns)}
-};
+var LOOP_TURNS = ${JSON.stringify({ 'marathon': marathonTurns, 'half-marathon': halfTurns })};
 
 // No dinosaur icons on this race — the chip-strip icon slot renders
 // a simple distance numeral via override.js. DINO_SVGS is left empty
@@ -102,6 +119,7 @@ var LOOP_TURNS = {
 var DINO_SVGS = {};
 
 var AID_STATIONS_ALL = ${aidStationsJs};
+var AID_SITES = ${aidSitesJs};
 
 var HQ = [${theme.geography.startLng}, ${theme.geography.startLat}];
 
