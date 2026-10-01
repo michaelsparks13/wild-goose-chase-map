@@ -155,6 +155,48 @@ test.describe('Pocantico Hills Marathon — desktop (1440×900)', () => {
     await expect(rows.nth(8).locator('td').first()).toHaveText('26.2');
   });
 
+  test('map opens already framed on the course — no camera jump when it loads', async ({ page }) => {
+    // Record the camera the instant the map exists, before any tiles
+    // load, and compare it with where the map settles.
+    await page.addInitScript(() => {
+      const poll = setInterval(() => {
+        if (!window.map || !window.map.getCenter) return;
+        clearInterval(poll);
+        window.__firstCamera = { center: window.map.getCenter().toArray(), zoom: window.map.getZoom() };
+      }, 1);
+    });
+    await page.reload();
+    await page.waitForFunction(() => window.map && window.map.loaded() && window.map.areTilesLoaded());
+    const { first, settled } = await page.evaluate(() => ({
+      first: window.__firstCamera,
+      settled: { center: window.map.getCenter().toArray(), zoom: window.map.getZoom() },
+    }));
+    const metersMoved = Math.hypot(
+      (settled.center[0] - first.center[0]) * Math.cos(first.center[1] * Math.PI / 180),
+      settled.center[1] - first.center[1]) * 111320;
+    expect(metersMoved).toBeLessThan(5);
+    expect(Math.abs(settled.zoom - first.zoom)).toBeLessThan(0.01);
+  });
+
+  test('map attribution starts collapsed to the info button', async ({ page }) => {
+    await page.waitForFunction(() => window.map && window.map.loaded());
+    const attrib = page.locator('#map .maplibregl-ctrl-attrib');
+    await expect(attrib).toHaveClass(/maplibregl-compact/);
+    await expect(attrib).not.toHaveClass(/maplibregl-compact-show/);
+    await expect(attrib.locator('.maplibregl-ctrl-attrib-inner')).toBeHidden();
+  });
+
+  test('weather radar waits until its panel nears the viewport', async ({ page }) => {
+    const radarRequests = [];
+    page.on('request', req => { if (req.url().includes('rainviewer')) radarRequests.push(req.url()); });
+    await page.reload();
+    await page.waitForFunction(() => window.map && window.map.loaded());
+    await expect(page.locator('#radarMapContainer')).toHaveCount(0);
+    expect(radarRequests).toEqual([]);
+    await page.locator('#weatherRadar').scrollIntoViewIfNeeded();
+    await expect(page.locator('#radarMapContainer canvas')).toBeVisible({ timeout: 10000 });
+  });
+
   test('elevation profile axis ends at the official race length', async ({ page }) => {
     // Canvas text never reaches the DOM — record fillText calls instead.
     await page.addInitScript(() => {

@@ -292,6 +292,22 @@
       });
   }
 
+  // Build the radar only once its panel nears the viewport. The mini-map
+  // is a second WebGL context plus a dozen tile requests, and on most
+  // pages it sits below the fold (or in a collapsed or not-yet-relocated
+  // panel), where building it at load only delays the main map.
+  function initRadarWhenNear() {
+    var container = document.getElementById('weatherRadar');
+    if (!container) return;
+    if (!('IntersectionObserver' in window)) { fetchRadarTimestamps(); return; }
+    var observer = new IntersectionObserver(function(entries) {
+      if (!entries.some(function(entry) { return entry.isIntersecting; })) return;
+      observer.disconnect();
+      fetchRadarTimestamps();
+    }, { rootMargin: '300px 0px' });
+    observer.observe(container);
+  }
+
   function renderRadarMap(radarData) {
     var container = document.getElementById('weatherRadar');
     if (!container || !mapCenter) return;
@@ -420,7 +436,7 @@
   renderDailyAverages();
   renderExplainer();
   fetchCurrentWeather();
-  fetchRadarTimestamps();
+  initRadarWhenNear();
 
   // Refresh current weather every 10 minutes
   setInterval(fetchCurrentWeather, 600000);

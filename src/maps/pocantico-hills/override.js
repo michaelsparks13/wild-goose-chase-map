@@ -342,13 +342,36 @@ function setActiveDistance(distanceId) {
   });
 }
 
-function fitToActiveLoop(animate) {
-  var b = loopBounds(currentRaceId);
-  if (!b) return;
+// Framing for the active loop — shared by the Map constructor (so the
+// first frame already shows the course) and fitToActiveLoop (distance
+// switches).
+function loopFitOptions() {
   var pad = window.innerWidth < 700
     ? { top: 60, right: 24, bottom: 60, left: 24 }
     : { top: 80, right: 60, bottom: 80, left: 60 };
-  map.fitBounds([b[0], b[1]], { padding: pad, duration: animate ? 800 : 0, maxZoom: 12.5 });
+  return { padding: pad, maxZoom: 12.5 };
+}
+
+function fitToActiveLoop(animate) {
+  var b = loopBounds(currentRaceId);
+  if (!b) return;
+  map.fitBounds(b, Object.assign(loopFitOptions(), { duration: animate ? 800 : 0 }));
+}
+
+// Start the compact attribution collapsed to its ⓘ button. MapLibre
+// expands it when the basemap's attribution text first arrives and only
+// collapses it on the first drag; this applies that same collapse the
+// moment it opens.
+function collapseAttributionOnOpen() {
+  function collapse() {
+    var attrib = map.getContainer().querySelector('.maplibregl-ctrl-attrib.maplibregl-compact-show');
+    if (!attrib) return;
+    attrib.classList.remove('maplibregl-compact-show');
+    map.off('styledata', collapse);
+    map.off('sourcedata', collapse);
+  }
+  map.on('styledata', collapse);
+  map.on('sourcedata', collapse);
 }
 
 // ─── HQ start marker (GL symbol layer) ───────────────────────────────
@@ -1561,11 +1584,13 @@ function toggleWeatherPanel() {
 // ─── Init ────────────────────────────────────────────────────────────
 
 function initMap() {
+  // Open framed on the course: its geometry is inlined, so the bounds
+  // are known before the first tile loads and the camera never jumps.
   map = new maplibregl.Map({
     container: 'map',
     style: BASEMAP_STYLE,
-    center: HQ,
-    zoom: 13.2,
+    bounds: loopBounds(currentRaceId),
+    fitBoundsOptions: loopFitOptions(),
     pitch: 0,
     attributionControl: { compact: true },
     // On phones the map dominates the viewport; without cooperative
@@ -1579,6 +1604,7 @@ function initMap() {
   // against this. Scale bar at the bottom is the one MapLibre control
   // we keep for situational scale awareness.
   map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }));
+  collapseAttributionOnOpen();
 
   map.on('load', function() {
     // Add the AWS Terrarium hillshade overlay on top of OpenFreeMap's
@@ -1621,7 +1647,6 @@ function initMap() {
     setActiveDistance(currentRaceId);
     renderAidMarkers();
     rebuildKmMarkers();
-    fitToActiveLoop(false);
     applyTerrain(false);  // honors the default terrain3D = true
     drawProfile();
     renderDirectionsList();
