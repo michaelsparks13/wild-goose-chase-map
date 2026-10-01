@@ -344,12 +344,15 @@ function setActiveDistance(distanceId) {
 
 // Framing for the active loop — shared by the Map constructor (so the
 // first frame already shows the course) and fitToActiveLoop (distance
-// switches).
+// switches). The course runs nearly edge to edge; the top inset clears
+// the HQ badge and Layers trigger, which stack below 1024px (see
+// override.css), and the bottom clears the scale bar and attribution.
 function loopFitOptions() {
-  var pad = window.innerWidth < 700
-    ? { top: 60, right: 24, bottom: 60, left: 24 }
-    : { top: 80, right: 60, bottom: 80, left: 60 };
-  return { padding: pad, maxZoom: 12.5 };
+  var stackedChrome = window.matchMedia('(max-width: 1023px)').matches;
+  return {
+    padding: { top: stackedChrome ? 96 : 56, right: 20, bottom: 40, left: 20 },
+    maxZoom: 15,
+  };
 }
 
 function fitToActiveLoop(animate) {
