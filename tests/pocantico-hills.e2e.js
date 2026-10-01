@@ -197,6 +197,19 @@ test.describe('Pocantico Hills Marathon — desktop (1440×900)', () => {
     await expect(page.locator('#radarMapContainer canvas')).toBeVisible({ timeout: 10000 });
   });
 
+  test('mile markers render along each distance, including the last round mile', async ({ page }) => {
+    const renderedMiles = () => page.evaluate(() => {
+      const m = window.map;
+      if (!m.getLayer('km-markers-label')) return [];
+      const labels = m.queryRenderedFeatures({ layers: ['km-markers-label'] }).map(f => f.properties.label);
+      return [...new Set(labels)].sort((a, b) => a - b);
+    });
+    await page.waitForFunction(() => window.map && window.map.loaded() && window.map.areTilesLoaded());
+    await expect.poll(renderedMiles).toEqual(['5', '10', '15', '20', '25']);
+    await page.locator('[data-race="half-marathon"]').click();
+    await expect.poll(renderedMiles).toEqual(['2.5', '5', '7.5', '10', '12.5']);
+  });
+
   test('elevation profile axis ends at the official race length', async ({ page }) => {
     // Canvas text never reaches the DOM — record fillText calls instead.
     await page.addInitScript(() => {
